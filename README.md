@@ -43,3 +43,28 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 Note: because the repository ships with local `fastapi` and `pydantic` shims, avoid setting `PYTHONPATH=backend` when running uvicorn so the real packages from your environment are used.
+
+## Docker Compose stack (frontend + backend + db + cache)
+
+A full-stack sandbox with Postgres, Redis, the FastAPI service, a worker, and the Next.js dashboard lives in `infrastructure/docker-compose.yml`.
+
+```
+cd infrastructure
+docker compose up --build
+```
+
+Services:
+- Frontend: http://localhost:3000
+- API: http://localhost:8000
+- Postgres: localhost:5432 (user/password `app`/`secret`)
+- Redis: localhost:6379
+
+## Frontend
+
+The Next.js dashboard prototype is in `frontend/`. To run it standalone:
+
+```
+cd frontend
+npm install
+npm run dev
+```
