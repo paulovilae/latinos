@@ -1,0 +1,21 @@
+[project]
+name = "latinos-backend"
+version = "0.1.0"
+description = "Investment bot management platform API"
+authors = [{name = "Auto Generated"}]
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "pydantic[email]",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "httpx",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
