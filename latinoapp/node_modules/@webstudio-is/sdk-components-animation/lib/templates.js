@@ -1,0 +1,2 @@
+//! SPDX-License-Identifier: LicenseRef-Webstudio,Inc-Proprietary
+"use strict";import{jsx as o}from"react/jsx-runtime";import{createProxy as i,$ as n}from"@webstudio-is/template";const a=i("@webstudio-is/sdk-components-animation:"),t={category:"animations",description:"Video Animation",order:2,template:o(a.VideoAnimation,{children:o(n.Video,{preload:"auto",autoPlay:!0,muted:!0,playsInline:!0,crossOrigin:"anonymous"})})};export{t as VideoAnimation};

@@ -1,0 +1,14 @@
+{
+  "name": "auth-api-tests",
+  "version": "1.0.0",
+  "description": "Test scripts for authentication API endpoints",
+  "main": "test-auth.js",
+  "scripts": {
+    "test": "node test-auth.js",
+    "test:bash": "bash test-auth.sh"
+  },
+  "dependencies": {
+    "axios": "^1.6.5",
+    "chalk": "^4.1.2"
+  }
+}

@@ -1,0 +1,157 @@
+/* Simplified RichTextEditor styles */
+.rich-text-editor-simple {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  background-color: white;
+}
+
+/* Dark mode */
+.dark .rich-text-editor-simple {
+  border-color: #444;
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+.editor-toolbar {
+  display: flex;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  background-color: #f9fafb;
+  flex-wrap: wrap;
+}
+
+.dark .editor-toolbar {
+  background-color: #334155;
+  border-color: #475569;
+}
+
+.toolbar-group {
+  display: flex;
+  margin-right: 12px;
+  border-right: 1px solid #eee;
+  padding-right: 12px;
+}
+
+.dark .toolbar-group {
+  border-color: #475569;
+}
+
+.toolbar-group:last-child {
+  border-right: none;
+}
+
+.toolbar-button {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  color: #333;
+  cursor: pointer;
+  font-size: 14px;
+  height: 28px;
+  margin-right: 4px;
+  min-width: 28px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dark .toolbar-button {
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+.toolbar-button:hover {
+  background-color: #f0f0f0;
+}
+
+.dark .toolbar-button:hover {
+  background-color: #475569;
+}
+
+.editor-content {
+  padding: 10px;
+}
+
+.editor-textarea {
+  width: 100%;
+  min-height: 150px;
+  border: none;
+  resize: vertical;
+  padding: 8px;
+  background-color: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.editor-textarea:focus {
+  outline: none;
+}
+
+.preview-panel {
+  padding: 10px;
+  border-top: 1px solid #eee;
+  background-color: #fafafa;
+}
+
+.dark .preview-panel {
+  border-color: #475569;
+  background-color: #1e293b;
+}
+
+.preview-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #666;
+}
+
+.dark .preview-title {
+  color: #94a3b8;
+}
+
+.preview-content {
+  padding: 8px;
+  border: 1px dashed #ddd;
+  border-radius: 4px;
+  min-height: 100px;
+  background-color: white;
+  color: #333;
+}
+
+.dark .preview-content {
+  border-color: #475569;
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Format the preview content */
+.preview-content h1, 
+.preview-content h2, 
+.preview-content h3 {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.preview-content p {
+  margin-bottom: 10px;
+}
+
+.preview-content ul, 
+.preview-content ol {
+  margin-left: 20px;
+  margin-bottom: 10px;
+}
+
+.preview-content a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.dark .preview-content a {
+  color: #60a5fa;
+}

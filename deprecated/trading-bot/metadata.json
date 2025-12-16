@@ -1,0 +1,5 @@
+{
+  "name": "AI Trading Bot Platform",
+  "description": "A dynamic web application for managing and monitoring AI trading bots, featuring a CMS-like structure for content, user dashboards, market analysis tools, and Gemini API integration for news summarization.",
+  "requestFramePermissions": []
+}

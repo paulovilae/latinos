@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Trading Bot Platform API</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f9fafb;
+            --dark: #1f2937;
+            --gray-light: #e5e7eb;
+            --gray: #9ca3af;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: var(--light);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            flex-grow: 1;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 2rem 0;
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .subtitle {
+            font-size: 1.25rem;
+            font-weight: 300;
+            max-width: 800px;
+            margin-bottom: 2rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: white;
+            color: var(--primary);
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-primary {
+            background-color: white;
+            color: var(--primary);
+        }
+        
+        section {
+            margin-bottom: 3rem;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--gray-light);
+            padding-bottom: 0.5rem;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--primary-dark);
+        }
+        
+        p {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--gray-light);
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-icon {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            color: var(--primary);
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+        
+        .status-complete {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .status-in-progress {
+            background-color: var(--warning);
+            color: white;
+        }
+        
+        .status-planned {
+            background-color: var(--gray);
+            color: white;
+        }
+        
+        footer {
+            background-color: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: auto;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .note {
+            background-color: #e7f3fe;
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0.25rem;
+        }
+        
+        .endpoint-list {
+            margin-top: 1.5rem;
+        }
+        
+        .endpoint-category {
+            margin-bottom: 2rem;
+        }
+        
+        .endpoint-group {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        
+        .endpoint-group-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .endpoint-item {
+            display: flex;
+            border-bottom: 1px solid var(--gray-light);
+            padding: 1rem 1.5rem;
+        }
+        
+        .endpoint-item:last-child {
+            border-bottom: none;
+        }
+        
+        .endpoint-method {
+            flex-shrink: 0;
+            width: 80px;
+            font-weight: 600;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            text-align: center;
+            margin-right: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .method-get {
+            background-color: #61affe;
+        }
+        
+        .method-post {
+            background-color: #49cc90;
+        }
+        
+        .method-put {
+            background-color: #fca130;
+        }
+        
+        .method-delete {
+            background-color: #f93e3e;
+        }
+        
+        .endpoint-path {
+            flex-grow: 1;
+            font-family: 'Courier New', monospace;
+            font-weight: 500;
+            margin-right: 1rem;
+            padding-top: 0.25rem;
+        }
+        
+        .endpoint-desc {
+            flex-grow: 2;
+            color: var(--gray);
+            font-size: 0.95rem;
+            padding-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-robot"></i>
+            </div>
+            <h1>AI Trading Bot Platform API</h1>
+            <p class="subtitle">A powerful backend service for authentication, content management, and trading bot configuration.</p>
+            <a href="/api-docs" class="btn btn-primary">
+                <i class="fas fa-book"></i> 
+                Interactive API Documentation
+            </a>
+        </div>
+    </header>
+    
+    <div class="container">
+        <section>
+            <h2>About This API</h2>
+            <p>
+                The AI Trading Bot Platform API provides a comprehensive set of endpoints for building, managing, and interacting with algorithmic trading bots. 
+                It features a robust authentication system, a flexible content management system (CMS), and specialized endpoints for trading bot configuration and performance monitoring.
+            </p>
+            <div class="note">
+                <strong><i class="fas fa-info-circle"></i> Note:</strong> This is an API server, not a web interface. It is designed to be consumed by 
+                frontend applications and other services. For the user interface, please use the React frontend application.
+            </div>
+        </section>
+        
+        <section>
+            <h2>API Endpoints</h2>
+            <p>
+                The following endpoints are available in the API. For detailed information about request and response formats, authentication requirements, 
+                and examples, please refer to the <a href="/api-docs">interactive Swagger documentation</a>.
+            </p>
+            
+            <div class="endpoint-list">
+                <!-- Authentication Endpoints -->
+                <div class="endpoint-category">
+                    <h3><i class="fas fa-lock"></i> Authentication</h3>
+                    <div class="endpoint-group">
+                        <div class="endpoint-group-header">User Authentication</div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-post">POST</div>
+                            <div class="endpoint-path">/api/auth/register</div>
+                            <div class="endpoint-desc">Register a new user account</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-post">POST</div>
+                            <div class="endpoint-path">/api/auth/login</div>
+                            <div class="endpoint-desc">Authenticate and get access tokens</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-post">POST</div>
+                            <div class="endpoint-path">/api/auth/refresh-token</div>
+                            <div class="endpoint-desc">Refresh an expired access token</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-post">POST</div>
+                            <div class="endpoint-path">/api/auth/logout</div>
+                            <div class="endpoint-desc">Revoke tokens and log out</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/auth/me</div>
+                            <div class="endpoint-desc">Get current user profile</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Content Type Endpoints -->
+                <div class="endpoint-category">
+                    <h3><i class="fas fa-sitemap"></i> Content Types</h3>
+                    <div class="endpoint-group">
+                        <div class="endpoint-group-header">Content Type Management</div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/content-types</div>
+                            <div class="endpoint-desc">List all content types</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-post">POST</div>
+                            <div class="endpoint-path">/api/cms/content-types</div>
+                            <div class="endpoint-desc">Create a new content type</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/content-types/{id}</div>
+                            <div class="endpoint-desc">Get a specific content type by ID</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-put">PUT</div>
+                            <div class="endpoint-path">/api/cms/content-types/{id}</div>
+                            <div class="endpoint-desc">Update a content type</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-delete">DELETE</div>
+                            <div class="endpoint-path">/api/cms/content-types/{id}</div>
+                            <div class="endpoint-desc">Delete a content type</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Content Endpoints -->
+                <div class="endpoint-category">
+                    <h3><i class="fas fa-file-alt"></i> Content</h3>
+                    <div class="endpoint-group">
+                        <div class="endpoint-group-header">Content Management</div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/content</div>
+                            <div class="endpoint-desc">List content entries with filtering options</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-post">POST</div>
+                            <div class="endpoint-path">/api/cms/content</div>
+                            <div class="endpoint-desc">Create a new content entry</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/content/{id}</div>
+                            <div class="endpoint-desc">Get a specific content entry</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-put">PUT</div>
+                            <div class="endpoint-path">/api/cms/content/{id}</div>
+                            <div class="endpoint-desc">Update a content entry</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-delete">DELETE</div>
+                            <div class="endpoint-path">/api/cms/content/{id}</div>
+                            <div class="endpoint-desc">Delete a content entry</div>
+                        </div>
+                    </div>
+                    
+                    <div class="endpoint-group">
+                        <div class="endpoint-group-header">Content Versioning</div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/content/{contentId}/versions</div>
+                            <div class="endpoint-desc">Get all versions of a content</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/content/{contentId}/versions/{versionNumber}</div>
+                            <div class="endpoint-desc">Get a specific version of content</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-post">POST</div>
+                            <div class="endpoint-path">/api/cms/content/{contentId}/versions/{versionNumber}/publish</div>
+                            <div class="endpoint-desc">Publish a specific version</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-post">POST</div>
+                            <div class="endpoint-path">/api/cms/content/{contentId}/versions/{versionNumber}/restore</div>
+                            <div class="endpoint-desc">Restore to a previous version</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Media Endpoints -->
+                <div class="endpoint-category">
+                    <h3><i class="fas fa-images"></i> Media</h3>
+                    <div class="endpoint-group">
+                        <div class="endpoint-group-header">Media Asset Management</div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/media</div>
+                            <div class="endpoint-desc">List all media assets</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-post">POST</div>
+                            <div class="endpoint-path">/api/cms/media</div>
+                            <div class="endpoint-desc">Upload a new media asset</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/media/{id}</div>
+                            <div class="endpoint-desc">Get a specific media asset</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-put">PUT</div>
+                            <div class="endpoint-path">/api/cms/media/{id}</div>
+                            <div class="endpoint-desc">Update media metadata</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-delete">DELETE</div>
+                            <div class="endpoint-path">/api/cms/media/{id}</div>
+                            <div class="endpoint-desc">Delete a media asset</div>
+                        </div>
+                    </div>
+                    
+                    <div class="endpoint-group">
+                        <div class="endpoint-group-header">Media File Access</div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/media/file/{filename}</div>
+                            <div class="endpoint-desc">Serve a media file with optional variant</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/media/thumbnails/{filename}</div>
+                            <div class="endpoint-desc">Serve a thumbnail image</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/media/optimized/{filename}</div>
+                            <div class="endpoint-desc">Serve an optimized image</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-post">POST</div>
+                            <div class="endpoint-path">/api/cms/media/attach</div>
+                            <div class="endpoint-desc">Attach a media to content</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Role and Permission Endpoints -->
+                <div class="endpoint-category">
+                    <h3><i class="fas fa-user-shield"></i> Roles & Permissions</h3>
+                    <div class="endpoint-group">
+                        <div class="endpoint-group-header">Role Management</div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/roles</div>
+                            <div class="endpoint-desc">List all roles</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-post">POST</div>
+                            <div class="endpoint-path">/api/cms/roles</div>
+                            <div class="endpoint-desc">Create a new role</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/roles/{id}</div>
+                            <div class="endpoint-desc">Get a specific role</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-put">PUT</div>
+                            <div class="endpoint-path">/api/cms/roles/{id}</div>
+                            <div class="endpoint-desc">Update a role</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-delete">DELETE</div>
+                            <div class="endpoint-path">/api/cms/roles/{id}</div>
+                            <div class="endpoint-desc">Delete a role</div>
+                        </div>
+                    </div>
+                    
+                    <div class="endpoint-group">
+                        <div class="endpoint-group-header">Permission Management</div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/permissions</div>
+                            <div class="endpoint-desc">List all permissions</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/permissions/{id}</div>
+                            <div class="endpoint-desc">Get a specific permission</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/permissions/categories/list</div>
+                            <div class="endpoint-desc">Get all permission categories</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/cms/permissions/grouped/by-category</div>
+                            <div class="endpoint-desc">Get permissions grouped by category</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Utility Endpoints -->
+                <div class="endpoint-category">
+                    <h3><i class="fas fa-tools"></i> Utility</h3>
+                    <div class="endpoint-group">
+                        <div class="endpoint-group-header">System Endpoints</div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/health</div>
+                            <div class="endpoint-desc">Check API health status</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/api/debug</div>
+                            <div class="endpoint-desc">Debug connection information</div>
+                        </div>
+                        
+                        <div class="endpoint-item">
+                            <div class="endpoint-method method-get">GET</div>
+                            <div class="endpoint-path">/cloudflare-test</div>
+                            <div class="endpoint-desc">Simple test for Cloudflare tunnel connectivity</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section>
+            <h2>Implementation Status</h2>
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon"><i class="fas fa-lock"></i></div>
+                        <div class="card-title">Authentication System</div>
+                    </div>
+                    <div class="card-body">
+                        <p>JWT-based authentication with secure refresh token rotation and user role management.</p>
+                        <span class="status status-complete">Fully Implemented</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon"><i class="fas fa-file-alt"></i></div>
+                        <div class="card-title">Content Management System (CMS)</div>
+                    </div>
+                    <div class="card-body">
+                        <p>Flexible content types, content versioning, role-based access control, and media management.</p>
+                        <span class="status status-complete">Fully Implemented</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon"><i class="fas fa-server"></i></div>
+                        <div class="card-title">API Gateway</div>
+                    </div>
+                    <div class="card-body">
+                        <p>Gateway to connect the backend services with the bot microservice for formula management.</p>
+                        <span class="status status-in-progress">In Progress</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="card-title">Performance Metrics</div>
+                    </div>
+                    <div class="card-body">
+                        <p>Aggregation and analysis of trading bot performance data for dashboard visualization.</p>
+                        <span class="status status-planned">Planned</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon"><i class="fas fa-cogs"></i></div>
+                        <div class="card-title">Bot Configuration</div>
+                    </div>
+                    <div class="card-body">
+                        <p>User-specific trading bot configuration with formula selection and parameter customization.</p>
+                        <span class="status status-in-progress">In Progress</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon"><i class="fas fa-book"></i></div>
+                        <div class="card-title">API Documentation</div>
+                    </div>
+                    <div class="card-body">
+                        <p>Interactive Swagger documentation with comprehensive endpoint descriptions and examples.</p>
+                        <span class="status status-complete">Fully Implemented</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section>
+            <h2>Quick Links</h2>
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon"><i class="fas fa-book"></i></div>
+                        <div class="card-title">API Documentation</div>
+                    </div>
+                    <div class="card-body">
+                        <p>Interactive documentation with all endpoints, parameters, and response schemas.</p>
+                        <a href="/api-docs" class="btn btn-primary">View API Docs</a>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon"><i class="fas fa-terminal"></i></div>
+                        <div class="card-title">API Health Check</div>
+                    </div>
+                    <div class="card-body">
+                        <p>Check if the API is running and responsive.</p>
+                        <a href="/api/health" class="btn btn-primary">Check Health</a>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon"><i class="fas fa-vial"></i></div>
+                        <div class="card-title">Debug Endpoint</div>
+                    </div>
+                    <div class="card-body">
+                        <p>Testing endpoint for Cloudflare tunnel and networking diagnostics.</p>
+                        <a href="/api/debug" class="btn btn-primary">Test Connection</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <footer>
+        <div class="footer-content">
+            <p>AI Trading Bot Platform API &copy; 2025</p>
+        </div>
+    </footer>
+</body>
+</html>

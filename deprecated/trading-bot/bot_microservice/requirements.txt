@@ -1,0 +1,29 @@
+# Core Dependencies
+fastapi==0.111.0
+uvicorn==0.30.1
+APScheduler==3.10.4
+pandas==2.2.2
+numpy==2.0.0
+plotly==5.20.0
+python-dotenv==1.0.1
+
+# Trading Dependencies
+# Install tvdatafeed directly from GitHub:
+# pip install git+https://github.com/rongardF/tvdatafeed.git
+git+https://github.com/rongardF/tvdatafeed.git
+
+# Database and Cache
+redis==5.0.3
+#psycopg2==2.9.9
+psycopg2_binary==2.9.9
+
+# API Integrations
+alpaca_trade_api==3.2.0
+websocket-client>=1.4.0
+
+# Security
+cryptography==42.0.5
+
+# Visualization and Development
+streamlit
+watchdog

@@ -1,0 +1,35 @@
+import { props as e } from "./__generated__/option.props.js";
+const l = {
+  option: [
+    {
+      property: "background-color",
+      state: ":checked",
+      value: {
+        type: "rgb",
+        alpha: 1,
+        r: 209,
+        g: 209,
+        b: 209
+      }
+    }
+  ]
+}, a = {
+  category: "hidden",
+  description: "An item within a drop-down menu that users can select as their chosen value.",
+  presetStyle: l,
+  states: [
+    // Applies when option is being activated (clicked)
+    { selector: ":active", label: "Active" },
+    // Applies to the currently selected option
+    { selector: ":checked", label: "Checked" },
+    // For <option> elements: The :default pseudo-class selects the <option> that has the selected attribute when the page loads. This is true even if the user later selects a different option.
+    { selector: ":default", label: "Default" },
+    { selector: ":hover", label: "Hover" },
+    { selector: ":disabled", label: "Disabled" }
+  ],
+  initialProps: ["label", "value", "label", "disabled"],
+  props: e
+};
+export {
+  a as meta
+};

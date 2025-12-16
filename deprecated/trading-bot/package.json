@@ -1,0 +1,55 @@
+{
+  "name": "ai-trading-bot-platform",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "axios": "^1.6.2",
+    "quill-image-uploader": "^1.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-icons": "^4.12.0",
+    "react-quill": "^2.0.0",
+    "react-router-dom": "^6.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.4",
+    "@types/quill": "^2.0.14",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.16",
+    "cross-env": "^7.0.3",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.6"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start:platform": "node startup/orchestrator.js",
+    "stop:platform": "node startup/orchestrator.js --stop",
+    "start:dev": "cross-env PLATFORM_MODE=development node startup/orchestrator.js",
+    "test": "npm run test:components && npm run test:services && npm run test:contexts",
+    "test:components": "vite test tests/components",
+    "test:services": "vite test tests/services",
+    "test:contexts": "vite test tests/contexts",
+    "test:backend": "cd backend && npm run test:all",
+    "test:bot": "cd bot_microservice && python -m pytest",
+    "test:startup": "node tests/startup/test-startup-system.js",
+    "test:failures": "node tests/startup/test-startup-failures.js",
+    "test:all": "powershell -ExecutionPolicy Bypass -File scripts/testing/run-all-tests.ps1"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

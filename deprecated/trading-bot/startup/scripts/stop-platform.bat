@@ -1,0 +1,3 @@
+@echo off
+echo Stopping AI Trading Bot Platform...
+node ../orchestrator.js --stop

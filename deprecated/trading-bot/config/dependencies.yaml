@@ -1,0 +1,57 @@
+# AI Trading Bot Platform - Required Dependencies
+# This file lists all dependencies required for the platform to operate correctly
+
+nodejs:
+  version: ">=16.0.0"
+  packages:
+    - name: react
+      version: "^19.0.0"
+    - name: react-dom
+      version: "^19.0.0"
+    - name: react-router-dom
+      version: "^6.20.0"
+    - name: axios
+      version: "^1.6.2"
+    - name: react-icons
+      version: "^4.12.0"
+    - name: react-quill
+      version: "^2.0.0"
+    - name: quill-image-uploader
+      version: "^1.3.0"
+
+python:
+  version: ">=3.9.0"
+  packages:
+    - name: fastapi
+      version: ">=0.68.0"
+    - name: uvicorn
+      version: ">=0.15.0"
+    - name: pandas
+      version: ">=1.3.0"
+    - name: numpy
+      version: ">=1.21.0"
+    - name: alpaca_trade_api
+      version: ">=2.0.0"
+    - name: tradingview_datafeed
+      version: ">=1.0.0"
+    - name: redis
+      version: ">=4.0.0"
+    - name: APScheduler
+      version: ">=3.8.0"
+    - name: plotly
+      version: ">=5.0.0"
+    - name: streamlit
+      version: ">=1.0.0"
+
+system:
+  ports:
+    - frontend: 5173
+    - backend: 3000-3020
+    - bot: 5555
+  requirements:
+    - name: "Port availability"
+      description: "Required ports must be available"
+    - name: "File permissions"
+      description: "Read/write access to project directories"
+    - name: "Network access"
+      description: "Local network access for inter-service communication"

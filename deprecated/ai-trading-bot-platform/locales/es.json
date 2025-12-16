@@ -1,0 +1,282 @@
+{
+  "appName": "Trader IA Monocromo",
+  "appSubtitle": "Soluciones de trading IA automatizadas, refinadas.",
+  "role": {
+    "admin": "Administrador"
+  },
+  "nav": {
+    "home": "Inicio",
+    "products": "Productos",
+    "news": "Noticias",
+    "testimonials": "Testimonios",
+    "contact": "Contacto",
+    "dashboard": "Panel",
+    "login": "Ingresar",
+    "logout": "Salir",
+    "register": "Registrarse",
+    "training": "Centro de Formación"
+  },
+  "footer": {
+    "quickLinks": "Enlaces Rápidos",
+    "legal": "Legal",
+    "privacyPolicy": "Política de Privacidad",
+    "termsOfService": "Términos de Servicio",
+    "disclaimer": "Descargo de Responsabilidad",
+    "copyright": "© {year} {appName}. Todos los derechos reservados. No es asesoramiento financiero. Operar conlleva riesgos.",
+    "enhancementsTitle": "Posibles Mejoras Futuras"
+  },
+  "homePage": {
+    "heroTitle": "Trading Impulsado por IA,<br /> <span class='text-light-accent dark:text-dark-accent'>Precisión Monocromática.</span>",
+    "heroSubtitle": "Aproveche la inteligencia artificial de vanguardia con una interfaz elegante y enfocada. Diseño minimalista para máxima claridad.",
+    "getStarted": "Comenzar",
+    "learnMore": "Aprender Más",
+    "discoverBotsTitle": "Descubra Nuestros Bots",
+    "discoverBotsSubtitle": "Soluciones a medida para cada tipo de trader, desde novatos hasta profesionales.",
+    "whyChooseUsTitle": "¿Por Qué Elegirnos?",
+    "featureA": "Algoritmos de IA Avanzados",
+    "featureB": "Interfaz Minimalista e Intuitiva",
+    "featureC": "Seguridad Robusta",
+    "featureD": "Rendimiento Transparente",
+    "testimonialsTitle": "Confiado por Traders",
+    "viewAllTestimonials": "Ver Todos los Testimonios",
+    "newsTitle": "Últimas Noticias y Perspectivas",
+    "readMoreNews": "Leer Más Noticias"
+  },
+  "product": {
+    "viewDetails": "Ver Detalles",
+    "keyBenefits": "Beneficios Clave:",
+    "pricingTiers": "Niveles de Precios:",
+    "getStartedWith": "Comenzar con {productName}",
+    "starterBot": {
+      "name": "Bot de Inicio",
+      "description": "Perfecto para principiantes, usando estrategias probadas con gestión de riesgo conservadora.",
+      "benefit1": "Fácil configuración",
+      "benefit2": "Bajo perfil de riesgo",
+      "benefit3": "Automatizado 24/7",
+      "benefit4": "Perspectivas básicas",
+      "tierFree": {
+        "name": "Prueba Gratuita",
+        "feature1": "1 Bot",
+        "feature2": "Estrategias limitadas",
+        "feature3": "Soporte comunitario"
+      },
+      "tierStarter": {
+        "name": "Inicial",
+        "feature1": "1 Bot",
+        "feature2": "3 Estrategias clave",
+        "feature3": "Soporte por email"
+      }
+    },
+    "proTrader": {
+      "name": "Trader Pro",
+      "description": "Para traders experimentados que buscan estrategias avanzadas y personalización.",
+      "benefit1": "Múltiples bots",
+      "benefit2": "Constructor de estrategias avanzadas",
+      "benefit3": "Soporte prioritario",
+      "benefit4": "Análisis detallado",
+      "tierPro": {
+        "name": "Pro",
+        "feature1": "5 Bots",
+        "feature2": "Todas las estrategias + Personalizadas",
+        "feature3": "Soporte prioritario",
+        "feature4": "Acceso API"
+      },
+      "tierEnterprise": {
+        "name": "Empresarial",
+        "feature1": "Bots ilimitados",
+        "feature2": "Gestor Dedicado",
+        "feature3": "Soluciones a Medida"
+      }
+    }
+  },
+  "testimonial": {
+    "role": {
+      "dayTrader": "Trader Intradía",
+      "cryptoEnthusiast": "Entusiasta Cripto",
+      "financialAdvisor": "Asesor Financiero"
+    },
+    "sarahL": {
+      "quote": "Esta plataforma ha revolucionado mi trading. ¡Los bots son inteligentes y la interfaz es intuitiva!"
+    },
+    "johnB": {
+      "quote": "Finalmente, una plataforma de bots de trading que cumple. Mi portafolio ha visto un crecimiento consistente."
+    },
+    "alexK": {
+      "quote": "Recomiendo esto a clientes que buscan automatizar. La gestión de riesgos es de primera."
+    }
+  },
+  "news": {
+    "dateLabel": "Fecha",
+    "sourceLabel": "Fuente",
+    "aiSummary": "Resumen IA",
+    "generatingSummary": "Generando...",
+    "regenerateSummary": "Regenerar Resumen IA",
+    "getAiSummary": "Obtener Resumen IA",
+    "article1": {
+      "title": "Volatilidad del Mercado: Bots de IA Prosperan",
+      "summary": "Recientes cambios en el mercado prueban estrategias; bots de IA muestran adaptabilidad.",
+      "content": "Contenido completo del artículo 1..."
+    },
+    "article2": {
+      "title": "Futuro del Trading: Colaboración Humano-IA",
+      "summary": "Expertos discuten cómo la IA aumenta capacidades humanas, no las reemplaza.",
+      "content": "Contenido completo del artículo 2..."
+    },
+    "article3": {
+      "title": "Nuevas Regulaciones IA en Finanzas: Qué Saber",
+      "summary": "Gobiernos redactan regulaciones de IA para mercados financieros. Desglose de puntos clave.",
+      "content": "Contenido completo del artículo 3..."
+    },
+    "source": {
+        "financialTimesAI": "Financial Times IA",
+        "bloombergCrypto": "Bloomberg Crypto",
+        "reuters": "Reuters"
+    }
+  },
+  "loginPage": {
+    "title": "Ingrese a Su Cuenta",
+    "emailLabel": "Correo electrónico",
+    "passwordLabel": "Contraseña",
+    "emailPlaceholder": "usted@ejemplo.com",
+    "passwordPlaceholder": "Ingrese su contraseña",
+    "rememberMe": "Recordarme",
+    "forgotPassword": "¿Olvidó su contraseña?",
+    "signIn": "Ingresar",
+    "noAccount": "¿No tiene una cuenta?",
+    "registerHere": "Regístrese aquí"
+  },
+  "registerPage": {
+    "title": "Cree Su Cuenta",
+    "nameLabel": "Nombre completo",
+    "namePlaceholder": "Juan Pérez",
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "usted@ejemplo.com",
+    "passwordLabel": "Contraseña",
+    "passwordPlaceholder": "Cree una contraseña",
+    "confirmPasswordLabel": "Confirmar Contraseña",
+    "confirmPasswordPlaceholder": "Confirme su contraseña",
+    "register": "Registrarse",
+    "haveAccount": "¿Ya tiene una cuenta?",
+    "loginHere": "Ingrese aquí"
+  },
+  "dashboard": {
+    "sidebar": {
+        "overview": "Resumen",
+        "analysis": "Análisis Técnico",
+        "performance": "Rendimiento",
+        "configure": "Configuración de Bots",
+        "training": "Centro de Formación"
+    },
+    "trainingPage": {
+        "title": "Centro de Formación",
+        "description": "Aprenda a maximizar el uso de la plataforma y mejorar sus habilidades de trading.",
+        "module": "Módulo",
+        "estimatedTimeLabel": "Tiempo Est.",
+        "startTraining": "Comenzar Formación",
+        "comingSoon": "Próximamente"
+    },
+    "userProgress": {
+        "title": "Tu Progreso",
+        "points": "Puntos: {points}",
+        "level": "Nivel: {level}",
+        "achievements": "Logros",
+        "noAchievements": "Aún no hay logros. ¡Sigue explorando!"
+    },
+    "overviewPage": {
+        "welcome": "¡Bienvenido de nuevo, {name}!",
+        "adminMessage": "Ha iniciado sesión como Administrador."
+    },
+    "analysis": {
+      "mainChartTitle": "Gráfico de Análisis de Mercado",
+      "chartPlaceholder": "El gráfico de análisis técnico se mostrará aquí.",
+      "additionalContentPlaceholder": "Herramientas e indicadores adicionales estarán disponibles aquí."
+    },
+    "performance": {
+      "summaryTitle": "Resumen de Rendimiento de Bots",
+      "summaryPlaceholder": "Los datos de rendimiento agregados se mostrarán aquí.",
+      "detailedReportPlaceholder": "Informes detallados de rendimiento y desglose por bot se mostrarán aquí."
+    },
+    "configure": {
+      "title": "Configure Sus Bots de Trading",
+      "description": "Gestione sus bots existentes o cree nuevos.",
+      "addBot": "Añadir Nuevo Bot",
+      "editBot": "Editar Bot",
+      "deleteBot": "Eliminar Bot",
+      "activateBot": "Activar Bot",
+      "deactivateBot": "Desactivar Bot",
+      "investment": "Inversión",
+      "risk": "Riesgo",
+      "addBotActionPlaceholder": "¡La funcionalidad para añadir un nuevo bot estará disponible pronto!",
+      "editBotActionPlaceholder": "¡La funcionalidad para editar el bot {botId} estará disponible pronto!",
+      "confirmDeleteBot": "¿Está seguro de que desea eliminar {botName}?",
+      "noBotsYet": "Aún No Hay Bots Configurados",
+      "noBotsYetSubtitle": "No ha configurado ningún bot de trading. ¡Cree el primero para comenzar!",
+      "addFirstBot": "Añadir Su Primer Bot",
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "botStrategy": {
+      "MovingAverageCrossover": "Cruce de Medias Móviles",
+      "RSIDivergence": "Divergencia RSI",
+      "Scalping": "Scalping",
+      "SwingTrading": "Swing Trading"
+    },
+    "botRisk": {
+      "low": "Bajo",
+      "medium": "Medio",
+      "high": "Alto"
+    },
+    "overview": {
+      "welcome": "¡Bienvenido de nuevo, {name}!",
+      "adminMessage": "Ha iniciado sesión como Administrador.",
+      "activeBots": "Bots Activos",
+      "totalProfit": "Ganancia Total (Sim.)",
+      "winRate": "Tasa de Éxito General (Sim.)",
+      "recentAlerts": "Alertas Recientes",
+      "recentActivity": "Actividad Reciente",
+      "performanceChart": "Rendimiento General (Sim.)",
+      "chartComingSoon": "Gráfico principal de rendimiento próximamente.",
+      "mockActivity": "Elemento de registro de actividad simulado #{item} relacionado con sus bots."
+    }
+  },
+  "training": {
+    "module": {
+        "intro": {
+            "title": "Introducción al Trading con IA",
+            "description": "Comprenda los conceptos básicos de la IA en el trading y cómo funciona nuestra plataforma."
+        },
+        "strategies": {
+            "title": "Explicación de Estrategias de Bot",
+            "description": "Profundice en las estrategias de trading disponibles y sus parámetros."
+        },
+        "risk": {
+            "title": "Gestión de Riesgos",
+            "description": "Aprenda a gestionar el riesgo eficazmente al usar bots de trading."
+        }
+    }
+  },
+  "achievement": {
+    "signup": { "name": "Cuenta Creada", "description": "Se registró exitosamente en la plataforma." },
+    "firstBot": { "name": "Primer Bot Configurado", "description": "¡Ha configurado su primer bot de trading!" },
+    "1000points": { "name": "Coleccionista de Puntos", "description": "Alcanzó 1000 puntos." },
+    "firstTrade": { "name": "Primera Operación Ejecutada", "description": "Su bot realizó su primera operación (simulada)." }
+  },
+  "social": {
+    "twitter": "Síganos en Twitter",
+    "linkedin": "Conéctese en LinkedIn",
+    "github": "Ver en GitHub",
+    "facebook": "Dénos Me Gusta en Facebook"
+  },
+  "error": {
+    "bothFieldsRequired": "Por favor, ingrese correo electrónico y contraseña.",
+    "allFieldsRequired": "Todos los campos son obligatorios.",
+    "invalidEmail": "Por favor, ingrese un correo electrónico válido.",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden.",
+    "passwordTooShort": "La contraseña debe tener al menos {minLength} caracteres.",
+    "noContentForSummary": "Contenido completo del artículo no disponible para resumir.",
+    "apiKeyMissing": "La clave API no está configurada. Por favor, establezca la variable de entorno API_KEY.",
+    "apiKeyMissingOrInvalid": "La Clave API de Gemini falta o no es válida. Resumen deshabilitado.",
+    "summaryFailed": "Falló la obtención del resumen IA. Por favor, inténtelo de nuevo más tarde.",
+    "unknownError": "Ocurrió un error inesperado."
+  }
+}

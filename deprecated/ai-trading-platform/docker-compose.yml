@@ -1,0 +1,203 @@
+version: '3.8'
+
+services:
+  # Part 1: Marketing Payload CMS
+  marketing-payload:
+    build: 
+      context: ./apps/marketing
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URI=postgresql://trading_user:trading_pass@postgres:5432/trading_platform
+      - PAYLOAD_SECRET=marketing-super-secret-key-change-in-production
+      - PAYLOAD_CONFIG_PATH=./payload.config.ts
+      - NEXT_PUBLIC_SERVER_URL=http://localhost:3000
+      - NEXT_PUBLIC_TRADING_URL=http://localhost:3001
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./apps/marketing:/app
+      - /app/node_modules
+    networks:
+      - trading-network
+    restart: unless-stopped
+
+  # Part 2: Trading Payload CMS
+  trading-payload:
+    build:
+      context: ./apps/trading
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URI=postgresql://trading_user:trading_pass@postgres:5432/trading_platform
+      - PAYLOAD_SECRET=trading-super-secret-key-change-in-production
+      - PAYLOAD_CONFIG_PATH=./payload.config.ts
+      - NEXT_PUBLIC_SERVER_URL=http://localhost:3001
+      - NEXT_PUBLIC_MARKETING_URL=http://localhost:3000
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./apps/trading:/app
+      - /app/node_modules
+    networks:
+      - trading-network
+    restart: unless-stopped
+
+  # Part 3: Python FastAPI Analytics Backend
+  trading-api:
+    build:
+      context: ./apps/trading-api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://trading_user:trading_pass@postgres:5432/trading_platform
+      - REDIS_URL=redis://redis:6379
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=trading-platform-token
+      - INFLUXDB_ORG=trading-platform
+      - INFLUXDB_BUCKET=market-data
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - MARKETING_PAYLOAD_URL=http://marketing-payload:3000
+      - TRADING_PAYLOAD_URL=http://trading-payload:3001
+      - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY:-demo}
+      - ALPACA_API_KEY=${ALPACA_API_KEY:-}
+      - ALPACA_SECRET_KEY=${ALPACA_SECRET_KEY:-}
+      - ALPACA_BASE_URL=${ALPACA_BASE_URL:-https://paper-api.alpaca.markets}
+    depends_on:
+      - postgres
+      - redis
+      - influxdb
+      - ollama
+    volumes:
+      - ./apps/trading-api:/app
+    networks:
+      - trading-network
+    restart: unless-stopped
+
+  # Shared PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: trading_platform
+      POSTGRES_USER: trading_user
+      POSTGRES_PASSWORD: trading_pass
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - trading-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trading_user -d trading_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - trading-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # InfluxDB for Time Series Data
+  influxdb:
+    image: influxdb:2.7-alpine
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: trading-platform-admin
+      DOCKER_INFLUXDB_INIT_ORG: trading-platform
+      DOCKER_INFLUXDB_INIT_BUCKET: market-data
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: trading-platform-token
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
+    networks:
+      - trading-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Ollama AI Models
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - trading-network
+    restart: unless-stopped
+    environment:
+      - OLLAMA_ORIGINS=*
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Grafana for Monitoring (Optional)
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3002:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-influxdb-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - trading-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  influxdb_data:
+    driver: local
+  influxdb_config:
+    driver: local
+  ollama_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  trading-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

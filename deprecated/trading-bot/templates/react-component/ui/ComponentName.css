@@ -1,0 +1,76 @@
+/* 
+ * ComponentName Component Styles
+ * 
+ * This file contains styles for the ComponentName component.
+ * Follow project styling conventions:
+ * - Use kebab-case for class names
+ * - Group related styles together
+ * - Comment sections for clarity
+ * - Use variables for colors and spacing
+ */
+
+/* Main container */
+.component-name {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  border-radius: 0.25rem;
+  background-color: var(--card-bg-color, #ffffff);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Component states */
+.component-name:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.component-name.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Label styling */
+.component-name-label {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-color-primary, #333333);
+}
+
+/* Description styling */
+.component-name-description {
+  font-size: 0.875rem;
+  color: var(--text-color-secondary, #666666);
+  line-height: 1.4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .component-name {
+    padding: 0.75rem;
+  }
+  
+  .component-name-label {
+    font-size: 0.9rem;
+  }
+  
+  .component-name-description {
+    font-size: 0.8rem;
+  }
+}
+
+/* Dark theme adjustments (if applicable) */
+.dark-theme .component-name {
+  background-color: var(--dark-card-bg-color, #2a2a2a);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.dark-theme .component-name-label {
+  color: var(--dark-text-color-primary, #e0e0e0);
+}
+
+.dark-theme .component-name-description {
+  color: var(--dark-text-color-secondary, #b0b0b0);
+}

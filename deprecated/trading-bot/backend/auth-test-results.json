@@ -1,0 +1,203 @@
+{
+  "registration": [
+    {
+      "test": "Registration - Valid Data",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.286Z",
+      "response": {
+        "status": "success",
+        "message": "User registered successfully",
+        "data": {
+          "user": {
+            "id": "ec2e98a8-da1f-463d-bd27-0da4d61eff99",
+            "email": "test@example.com",
+            "username": "testuser",
+            "firstName": "Test",
+            "lastName": "User",
+            "role": "user"
+          },
+          "tokens": {
+            "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYzJlOThhOC1kYTFmLTQ2M2QtYmQyNy0wZGE0ZDYxZWZmOTkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwicm9sZSI6InVzZXIiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzUwMzYyMDczLCJleHAiOjE3NTAzNjI5NzN9.i420g0nRjl6iLDKKE0tGh9umdSXojomja0i3siNEQkI",
+            "refreshToken": "f970590c-3fec-4fd0-baf3-9dc840c9232d",
+            "expiresAt": "2025-06-26T19:41:13.269Z"
+          }
+        }
+      }
+    },
+    {
+      "test": "Registration - Duplicate Email",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.295Z",
+      "response": {
+        "status": "error",
+        "message": "Email already in use"
+      }
+    },
+    {
+      "test": "Registration - Duplicate Username",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.302Z",
+      "response": {
+        "status": "error",
+        "message": "Username already taken"
+      }
+    },
+    {
+      "test": "Registration - Password Mismatch",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.307Z",
+      "response": {
+        "status": "error",
+        "message": "Validation failed",
+        "errors": [
+          {
+            "message": "Password confirmation does not match password"
+          }
+        ]
+      }
+    }
+  ],
+  "login": [
+    {
+      "test": "Login with Email",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.393Z",
+      "response": {
+        "status": "success",
+        "message": "Login successful",
+        "data": {
+          "user": {
+            "id": "ec2e98a8-da1f-463d-bd27-0da4d61eff99",
+            "email": "test@example.com",
+            "username": "testuser",
+            "firstName": "Test",
+            "lastName": "User",
+            "role": "user"
+          },
+          "tokens": {
+            "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYzJlOThhOC1kYTFmLTQ2M2QtYmQyNy0wZGE0ZDYxZWZmOTkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwicm9sZSI6InVzZXIiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzUwMzYyMDczLCJleHAiOjE3NTAzNjI5NzN9.i420g0nRjl6iLDKKE0tGh9umdSXojomja0i3siNEQkI",
+            "refreshToken": "62941dab-2ecb-467f-9fca-a2b8f12ea5ce",
+            "expiresAt": "2025-06-26T19:41:13.383Z"
+          }
+        }
+      }
+    },
+    {
+      "test": "Login with Username",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.469Z",
+      "response": {
+        "status": "success",
+        "message": "Login successful",
+        "data": {
+          "user": {
+            "id": "ec2e98a8-da1f-463d-bd27-0da4d61eff99",
+            "email": "test@example.com",
+            "username": "testuser",
+            "firstName": "Test",
+            "lastName": "User",
+            "role": "user"
+          },
+          "tokens": {
+            "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYzJlOThhOC1kYTFmLTQ2M2QtYmQyNy0wZGE0ZDYxZWZmOTkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwicm9sZSI6InVzZXIiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzUwMzYyMDczLCJleHAiOjE3NTAzNjI5NzN9.i420g0nRjl6iLDKKE0tGh9umdSXojomja0i3siNEQkI",
+            "refreshToken": "eb7c382b-27d3-46d0-93f8-9169c97bbda4",
+            "expiresAt": "2025-06-26T19:41:13.462Z"
+          }
+        }
+      }
+    },
+    {
+      "test": "Login - Invalid Credentials",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.534Z",
+      "response": {
+        "status": "error",
+        "message": "Invalid credentials"
+      }
+    }
+  ],
+  "protectedRoutes": [
+    {
+      "test": "Protected Route - Valid Token",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.541Z",
+      "response": {
+        "status": "success",
+        "data": {
+          "user": {
+            "id": "ec2e98a8-da1f-463d-bd27-0da4d61eff99",
+            "email": "test@example.com",
+            "username": "testuser",
+            "firstName": "Test",
+            "lastName": "User",
+            "role": "user",
+            "isVerified": false,
+            "lastLogin": "2025-06-19T19:41:13.456Z"
+          }
+        }
+      }
+    },
+    {
+      "test": "Protected Route - Invalid Token",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.543Z",
+      "response": {
+        "status": "error",
+        "message": "Invalid token: Invalid token"
+      }
+    },
+    {
+      "test": "Protected Route - No Token",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.545Z",
+      "response": {
+        "status": "error",
+        "message": "Access denied. No token provided."
+      }
+    }
+  ],
+  "refreshToken": [
+    {
+      "test": "Refresh Token - Valid",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.554Z",
+      "response": {
+        "status": "success",
+        "message": "Token refreshed successfully",
+        "data": {
+          "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlYzJlOThhOC1kYTFmLTQ2M2QtYmQyNy0wZGE0ZDYxZWZmOTkiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJ1c2VybmFtZSI6InRlc3R1c2VyIiwicm9sZSI6InVzZXIiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzUwMzYyMDczLCJleHAiOjE3NTAzNjI5NzN9.i420g0nRjl6iLDKKE0tGh9umdSXojomja0i3siNEQkI",
+          "expiresAt": "2025-06-26T19:41:13.462Z"
+        }
+      }
+    },
+    {
+      "test": "Refresh Token - Invalid",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.561Z",
+      "response": {
+        "status": "error",
+        "message": "Invalid refresh token"
+      }
+    }
+  ],
+  "logout": [
+    {
+      "test": "Logout - Valid Token",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.573Z",
+      "response": {
+        "status": "success",
+        "message": "Logged out successfully"
+      }
+    },
+    {
+      "test": "Refresh After Logout",
+      "passed": true,
+      "timestamp": "2025-06-19T19:41:13.578Z",
+      "response": {
+        "status": "error",
+        "message": "Invalid refresh token"
+      }
+    }
+  ]
+}

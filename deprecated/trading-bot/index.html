@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Trading Bot Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class', // Enable class-based dark mode
+      theme: {
+        extend: {
+          colors: {
+            // Light Theme Colors
+            'light-bg': '#FFFFFF',
+            'light-card': '#F5F5F5',
+            'light-border': '#E0E0E0',
+            'light-text': '#212121',
+            'light-text-secondary': '#757575',
+            'light-accent': '#424242', // Main interactive elements
+            'light-accent-hover': '#616161',
+            'light-accent-text': '#FFFFFF', // Text on accent bg
+            'light-positive': '#4CAF50',
+            'light-negative': '#F44336',
+
+
+            // Dark Theme Colors
+            'dark-bg': '#121212',
+            'dark-card': '#1E1E1E',
+            'dark-border': '#424242',
+            'dark-text': '#E0E0E0',
+            'dark-text-secondary': '#BDBDBD',
+            'dark-accent': '#BBBBBB', // Main interactive elements
+            'dark-accent-hover': '#D7D7D7',
+            'dark-accent-text': '#121212', // Text on accent bg
+            'dark-positive': '#81C784',
+            'dark-negative': '#E57373',
+          },
+          animation: {
+            'fade-in-up': 'fadeInUp 0.5s ease-out',
+            'slide-in-left': 'slideInLeft 0.5s ease-out forwards',
+          },
+          keyframes: {
+            fadeInUp: {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            slideInLeft: {
+              '0%': { transform: 'translateX(-100%)' },
+              '100%': { transform: 'translateX(0)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+<!-- Remove import map and let Vite handle imports properly -->
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="transition-colors duration-300">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
