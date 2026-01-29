@@ -1,7 +1,22 @@
 __pycache__/
 *.pyc
 .venv/
-frontend/node_modules/
-frontend/.next/
-frontend/.env.local
 .env.local
+.env
+
+# Dependencies
+**/node_modules/
+
+# Build Outputs
+**/.next/
+**/dist/
+**/build/
+*.egg-info/
+
+# Logs and System
+*.log
+**/.DS_Store
+
+# Untracked/Deprecated
+deprecated/
+docs/general/

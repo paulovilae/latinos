@@ -143,7 +143,7 @@ export default async function Home() {
               <p className="text-xs text-muted">Range: {b.range}</p>
               <div className="flex items-center gap-2">
                 <TagPill label={b.status} tone={b.status === "completed" ? "success" : "warning"} />
-                <span className="text-xs text-muted">PnL: {b.results?.pnl ?? "N/A"}</span>
+<span className="text-xs text-muted">PnL: {`${b.results?.pnl ?? "N/A"}`}</span>
                 <span className="text-xs text-muted">Hit rate: {Math.round((b.results?.hit_rate ?? 0) * 100)}%</span>
               </div>
             </div>
