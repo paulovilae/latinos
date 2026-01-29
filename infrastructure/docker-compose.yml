@@ -25,9 +25,9 @@ services:
 
   frontend:
     build: ../frontend
-    command: npm run dev -- --hostname 0.0.0.0 --port 3003
+    command: npm run dev -- --hostname 0.0.0.0 --port 3306
     ports:
-      - "3003:3003"
+      - "3306:3306"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
@@ -41,7 +41,7 @@ services:
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: app
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 

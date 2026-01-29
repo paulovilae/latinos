@@ -1,201 +1,226 @@
-import type { ReactNode } from "react";
-
-import { BotManager } from "@/components/BotManager";
-import { FormulaWorkbench } from "@/components/FormulaWorkbench";
+import Link from "next/link";
 import { LocalizedText } from "@/components/LocalizedText";
-import { MetricCard } from "@/components/MetricCard";
-import { SectionCard } from "@/components/SectionCard";
-import { TagPill } from "@/components/TagPill";
-import { UserManager } from "@/components/UserManager";
-import { fetchDashboardSummary, fetchUsers } from "@/lib/api";
-import type { DashboardSummary, User } from "@/lib/types";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
 
-function SectionGrid({ children }: { children: ReactNode }) {
-  return <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>;
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toISOString().split("T")[0];
-}
-
-export default async function Home() {
-  const [summary, users]: [DashboardSummary, User[]] = await Promise.all([fetchDashboardSummary(), fetchUsers()]);
-  const { metrics, bots, formulas, signals, backtests, plans, market_universe } = summary;
-  const botNameMap = new Map(bots.map((bot) => [bot.id, bot.name]));
-
+export default function LandingPage() {
   return (
-    <main className="space-y-6">
-      <SectionGrid>
-        <MetricCard label="Users" value={metrics.users} helper="with JWT + MFA" />
-        <MetricCard label="Bots" value={metrics.bots} helper="draft/running/paused" />
-        <MetricCard label="Formulas" value={metrics.formulas} helper="versioned strategies" />
-        <MetricCard label="Signals" value={metrics.signals} helper="live + paper feed" />
-      </SectionGrid>
-
-      <SectionCard
-        id="workbench"
-        title={<LocalizedText id="strategyTitle" fallback="Strategy workbench" />}
-        description={
-          <LocalizedText
-            id="strategyDescription"
-            fallback="Edit formula payloads, pick symbols, and preview real prices + plots."
-          />
-        }
-      >
-        <FormulaWorkbench bots={bots} initialUniverse={market_universe} />
-      </SectionCard>
-
-      <SectionCard
-        id="bots"
-        title={<LocalizedText id="botsTitle" fallback="Bots" />}
-        description={
-          <LocalizedText id="botsDescription" fallback="CRUD + deploy/pause flows backed by FastAPI" />
-        }
-      >
-        <BotManager initialBots={bots} />
-      </SectionCard>
-
-      <SectionCard
-        id="users"
-        title={<LocalizedText id="usersTitle" fallback="User management" />}
-        description={<LocalizedText id="usersDescription" fallback="Invite teammates, toggle MFA, and prune accounts." />}
-      >
-        <UserManager initialUsers={users} />
-      </SectionCard>
-
-      <SectionGrid>
-        <SectionCard
-          id="formulas"
-          title={<LocalizedText id="formulasTitle" fallback="Formulas" />}
-          description={
-            <LocalizedText
-              id="formulasDescription"
-              fallback="Versioned strategy payloads with publish toggles and history"
-            />
-          }
-        >
-          <div className="space-y-3">
-            {formulas.map((formula) => (
-              <div key={formula.id} className="flex items-center justify-between border border-slate-800 rounded-xl p-3">
-                <div>
-                  <p className="font-semibold">{botNameMap.get(formula.bot_id) ?? `Bot #${formula.bot_id}`}</p>
-                  <p className="text-xs text-muted">
-                    v{formula.version} created {formatDate(formula.created_at)}
-                  </p>
-                </div>
-                <TagPill label={formula.published ? "published" : "draft"} tone={formula.published ? "success" : "warning"} />
-              </div>
-            ))}
-            <p className="text-xs text-muted">
-              API: POST /bots/:id/formulas, PUT /formulas/:id, POST /formulas/:id/publish, GET /formulas/:id/history
-            </p>
+    <div className="flex flex-col min-h-screen bg-slate-950 text-slate-100">
+      <header className="px-6 py-4 flex items-center justify-between border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+            <span className="text-emerald-400 font-bold">L</span>
           </div>
-        </SectionCard>
-
-        <SectionCard
-          id="signals"
-          title={<LocalizedText id="signalsTitle" fallback="Signals" />}
-          description={
-            <LocalizedText
-              id="signalsDescription"
-              fallback="Websocket-friendly feed for buy/sell/info events with delivery state"
-            />
-          }
-        >
-          <ul className="space-y-3">
-            {signals.map((signal) => (
-              <li key={signal.id} className="border border-slate-800 rounded-xl p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold">{botNameMap.get(signal.bot_id) ?? `Bot #${signal.bot_id}`}</p>
-                    <p className="text-xs text-muted">{JSON.stringify(signal.payload)}</p>
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <TagPill label={signal.type.toUpperCase()} tone={signal.type === "buy" ? "success" : "warning"} />
-                    <TagPill label={signal.mode} />
-                    <span className="text-xs text-muted">{formatDate(signal.emitted_at)}</span>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </SectionCard>
-      </SectionGrid>
-
-      <SectionCard
-        id="backtests"
-        title={<LocalizedText id="backtestsTitle" fallback="Backtests" />}
-        description={
-          <LocalizedText
-            id="backtestsDescription"
-            fallback="Celery workers process submissions; results stream back to dashboard"
-          />
-        }
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {backtests.map((b) => (
-            <div key={b.id} className="border border-slate-800 rounded-xl p-4 space-y-1">
-              <p className="font-semibold">{botNameMap.get(b.bot_id) ?? `Bot #${b.bot_id}`}</p>
-              <p className="text-xs text-muted">Range: {b.range}</p>
-              <div className="flex items-center gap-2">
-                <TagPill label={b.status} tone={b.status === "completed" ? "success" : "warning"} />
-<span className="text-xs text-muted">PnL: {`${b.results?.pnl ?? "N/A"}`}</span>
-                <span className="text-xs text-muted">Hit rate: {Math.round((b.results?.hit_rate ?? 0) * 100)}%</span>
-              </div>
-            </div>
-          ))}
+          <span className="font-bold text-lg tracking-tight">Latino's Trading</span>
         </div>
-        <p className="text-xs text-muted">API: POST /backtests, GET /backtests/:id, /ws for live progress</p>
-      </SectionCard>
+        <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
+          <Link href="#features" className="hover:text-emerald-400 transition-colors"><LocalizedText id="navFeatures" fallback="Features" /></Link>
+          <Link href="#pricing" className="hover:text-emerald-400 transition-colors"><LocalizedText id="navPricing" fallback="Pricing" /></Link>
+          <Link href="#about" className="hover:text-emerald-400 transition-colors"><LocalizedText id="navAbout" fallback="About" /></Link>
+        </nav>
+        <div className="flex items-center gap-3">
+          <LanguageSwitch />
+          <Link href="/auth/signin" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+            <LocalizedText id="navSignIn" fallback="Sign In" />
+          </Link>
+          <Link 
+            href="/auth/signin" 
+            className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow-lg shadow-emerald-900/20"
+          >
+            <LocalizedText id="navGetStarted" fallback="Get Started" />
+          </Link>
+        </div>
+      </header>
 
-      <SectionGrid>
-        <SectionCard
-          id="billing"
-          title={<LocalizedText id="billingTitle" fallback="Billing" />}
-          description={<LocalizedText id="billingDescription" fallback="Stripe checkout + customer portal links" />}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {plans.map((plan) => (
-              <div key={plan.name} className="border border-slate-800 rounded-xl p-3 space-y-2">
-                <p className="font-semibold">{plan.name}</p>
-                <p className="text-sm text-muted">{plan.description}</p>
-                <div>
-                  <p className="text-2xl font-bold">{plan.price_monthly}</p>
-                  <p className="text-xs text-muted">Billed monthly</p>
-                </div>
-                <div>
-                  <p className="text-lg font-semibold text-emerald-300">{plan.price_yearly}</p>
-                  <p className="text-xs text-muted">Annual commitment</p>
-                </div>
-                <p className="text-sm text-muted">{plan.limits}</p>
-                <ul className="text-xs text-muted space-y-1">
-                  {plan.features.map((feature) => (
-                    <li key={feature}>• {feature}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+      <main className="flex-1 flex flex-col">
+        {/* Hero Section */}
+        <section className="flex-1 flex flex-col items-center justify-center text-center px-6 py-24 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/20 via-slate-950 to-slate-950 -z-10" />
+          
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/30 border border-emerald-500/20 text-emerald-400 text-xs font-medium mb-8 animate-fade-in-up">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            V2.0 is Live
           </div>
-          <p className="text-xs text-muted">
-            Backend endpoints: /billing/checkout, /billing/portal, Stripe webhooks -&gt; Celery
-          </p>
-        </SectionCard>
 
-        <SectionCard
-          title={<LocalizedText id="operationsTitle" fallback="Operations" />}
-          description={<LocalizedText id="operationsDescription" fallback="Health, metrics, audit log observability" />}
-        >
-          <ul className="text-sm text-muted space-y-1">
-            <li>Health check: GET /admin/health</li>
-            <li>Metrics: GET /admin/metrics (users/bots/formulas/backtests/signals)</li>
-            <li>Audit logs: GET /admin/audit-logs</li>
-          </ul>
-        </SectionCard>
-      </SectionGrid>
-    </main>
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 max-w-4xl bg-gradient-to-br from-white via-slate-200 to-slate-500 bg-clip-text text-transparent">
+            <LocalizedText id="landingHero" fallback="Algorithmic Trading for Everyone" />
+          </h1>
+          
+          <p className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl leading-relaxed">
+            <LocalizedText id="landingSubhero" fallback="Build, backtest, and deploy automated trading strategies with ease." />
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+            <Link 
+              href="/auth/signin" 
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-8 py-3.5 rounded-xl transition-all hover:scale-105 shadow-xl shadow-emerald-900/20 flex items-center justify-center gap-2"
+            >
+              <LocalizedText id="landingCtaPrimary" fallback="Start Trading Free" />
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </Link>
+            <Link 
+              href="/dashboard"
+              className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold px-8 py-3.5 rounded-xl border border-slate-800 transition-all hover:border-slate-700 flex items-center justify-center"
+            >
+              <LocalizedText id="landingCtaSecondary" fallback="View Demo" />
+            </Link>
+          </div>
+
+          {/* Abstract UI Mockup */}
+          <div className="mt-20 relative w-full max-w-5xl aspect-video rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur-sm shadow-2xl overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent z-10" />
+            <div className="p-4 grid grid-cols-3 gap-4 h-full opacity-50 group-hover:opacity-75 transition-opacity duration-500">
+               <div className="col-span-2 space-y-4">
+                  <div className="h-48 rounded-lg bg-slate-800/50 animate-pulse" />
+                  <div className="h-32 rounded-lg bg-slate-800/30" />
+               </div>
+               <div className="space-y-4">
+                  <div className="h-20 rounded-lg bg-emerald-900/20 border border-emerald-500/20" />
+                  <div className="h-20 rounded-lg bg-slate-800/30" />
+                  <div className="h-full rounded-lg bg-slate-800/20" />
+               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Grid */}
+        <section id="features" className="py-24 px-6 bg-slate-950 border-t border-slate-900">
+           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                { titleKey: "feature1Title", descKey: "feature1Desc", icon: "⚡" },
+                { titleKey: "feature2Title", descKey: "feature2Desc", icon: "📡" },
+                { titleKey: "feature3Title", descKey: "feature3Desc", icon: "📊" }
+              ].map((f, i) => (
+                <div key={i} className="p-6 rounded-2xl bg-slate-900/30 border border-slate-800 hover:border-emerald-500/30 transition-colors group">
+                   <div className="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">{f.icon}</div>
+                   <h3 className="text-xl font-bold text-white mb-2">
+                       <LocalizedText id={f.titleKey as any} fallback="Feature" />
+                   </h3>
+                   <p className="text-slate-400 leading-relaxed">
+                       <LocalizedText id={f.descKey as any} fallback="Description" />
+                   </p>
+                </div>
+              ))}
+           </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="py-24 px-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-slate-950 -z-20" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950 -z-10" />
+
+          <div className="max-w-6xl mx-auto">
+             <div className="text-center mb-16">
+               <h2 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent mb-6">
+                 <LocalizedText id="pricingTitle" fallback="Simple Pricing" />
+               </h2>
+               <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+                 <LocalizedText id="pricingSubtitle" fallback="Start small and scale as you grow. No hidden fees." />
+               </p>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+               {/* Starter */}
+               <div className="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all group backdrop-blur-sm">
+                 <div className="mb-8">
+                   <h3 className="text-xl font-semibold text-slate-300 mb-2">Starter</h3>
+                   <div className="flex items-baseline gap-1">
+                     <span className="text-4xl font-bold text-white">$0</span>
+                     <span className="text-slate-500">/mo</span>
+                   </div>
+                   <p className="text-slate-500 text-sm mt-4">Perfect for testing strategies.</p>
+                 </div>
+                 <ul className="space-y-4 mb-8 text-sm text-slate-400">
+                   <li className="flex items-center gap-3">
+                     <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                     Paper Trading Only
+                   </li>
+                   <li className="flex items-center gap-3">
+                     <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                     1 Active Bot
+                   </li>
+                   <li className="flex items-center gap-3">
+                     <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                     Basic Charts
+                   </li>
+                 </ul>
+                 <Link href="/auth/signin" className="block w-full py-3 px-6 text-center rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium transition-colors border border-slate-700">
+                   Get Started
+                 </Link>
+               </div>
+
+               {/* Pro */}
+               <div className="p-8 rounded-3xl bg-emerald-950/20 border border-emerald-500/50 hover:border-emerald-500 transition-all group relative hover:-translate-y-2 duration-300 shadow-2xl shadow-emerald-900/10">
+                 <div className="absolute top-0 right-0 p-3">
+                    <span className="bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">Popular</span>
+                 </div>
+                 <div className="mb-8">
+                   <h3 className="text-xl font-semibold text-emerald-400 mb-2">Pro</h3>
+                   <div className="flex items-baseline gap-1">
+                     <span className="text-4xl font-bold text-white">$20</span>
+                     <span className="text-emerald-500/80">/mo</span>
+                   </div>
+                   <p className="text-slate-400 text-sm mt-4">For serious algo traders.</p>
+                 </div>
+                 <ul className="space-y-4 mb-8 text-sm text-slate-300">
+                   <li className="flex items-center gap-3">
+                     <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                     Live Trading
+                   </li>
+                   <li className="flex items-center gap-3">
+                     <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                     10 Active Bots
+                   </li>
+                   <li className="flex items-center gap-3">
+                     <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                     Priority Backtesting
+                   </li>
+                   <li className="flex items-center gap-3">
+                     <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                     Webhook Access
+                   </li>
+                 </ul>
+                 <Link href="/auth/signin" className="block w-full py-3 px-6 text-center rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-all shadow-lg shadow-emerald-900/20">
+                   Upgrade Now
+                 </Link>
+               </div>
+
+               {/* Enterprise */}
+               <div className="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all group backdrop-blur-sm">
+                 <div className="mb-8">
+                   <h3 className="text-xl font-semibold text-slate-300 mb-2">Enterprise</h3>
+                   <div className="flex items-baseline gap-1">
+                     <span className="text-4xl font-bold text-white">Custom</span>
+                   </div>
+                   <p className="text-slate-500 text-sm mt-4">For funds and heavy users.</p>
+                 </div>
+                 <ul className="space-y-4 mb-8 text-sm text-slate-400">
+                   <li className="flex items-center gap-3">
+                     <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                     Unlimited Bots
+                   </li>
+                   <li className="flex items-center gap-3">
+                     <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                     Dedicated Infrastructure
+                   </li>
+                   <li className="flex items-center gap-3">
+                     <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                     SLA & High Priority
+                   </li>
+                 </ul>
+                 <button className="block w-full py-3 px-6 text-center rounded-xl bg-transparent hover:bg-slate-800 text-slate-300 border border-slate-700 transition-colors">
+                   Contact Sales
+                 </button>
+               </div>
+             </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="py-8 px-6 border-t border-slate-900 text-center text-slate-500 text-sm">
+        <p>&copy; {new Date().getFullYear()} <LocalizedText id="footerRights" fallback="Latino's Trading Platform. All rights reserved." /></p>
+      </footer>
+    </div>
   );
 }

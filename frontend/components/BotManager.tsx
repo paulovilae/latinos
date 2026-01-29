@@ -10,6 +10,8 @@ import { TagPill } from "./TagPill";
 
 interface BotManagerProps {
   initialBots: Bot[];
+  userPlan?: string;
+  isPro?: boolean;
 }
 
 const statusTone: Record<string, "neutral" | "success" | "warning"> = {
@@ -18,7 +20,7 @@ const statusTone: Record<string, "neutral" | "success" | "warning"> = {
   paused: "warning",
 };
 
-export function BotManager({ initialBots }: BotManagerProps) {
+export function BotManager({ initialBots, userPlan, isPro }: { initialBots: Bot[], userPlan?: string, isPro?: boolean }) {
   const [bots, setBots] = useState<Bot[]>(initialBots);
   const [form, setForm] = useState({ name: "", description: "", tags: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -164,13 +166,22 @@ export function BotManager({ initialBots }: BotManagerProps) {
           onChange={(event) => setForm((prev) => ({ ...prev, tags: event.target.value }))}
         />
         <div className="md:col-span-4 flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="bg-emerald-600 text-white text-sm font-semibold px-4 py-2 rounded-xl disabled:opacity-50"
-          >
-            {submitting ? "..." : t("createBot", "Create bot")}
-          </button>
+            {(isPro || bots.length < 1) ? (
+              <button
+                type="submit"
+                disabled={submitting}
+                className="bg-emerald-600 text-white text-sm font-semibold px-4 py-2 rounded-xl disabled:opacity-50"
+              >
+                {submitting ? "..." : t("createBot", "Create bot")}
+              </button>
+            ) : (
+                <a
+                  href="/dashboard?upgrade=required"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-xl inline-block text-center"
+                >
+                  Upgrade to Create More
+                </a>
+            )}
           <button
             type="button"
             onClick={refreshBots}

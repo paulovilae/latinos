@@ -127,6 +127,42 @@ export const translations = {
   sectorPlaceholder: { en: "Sector", es: "Sector" },
   targetBot: { en: "Target bot", es: "Bot objetivo" },
   savePublish: { en: "Save & publish", es: "Guardar y publicar" },
+  chartTitle: {
+    en: "Market Overview",
+    es: "Visión General del Mercado",
+  },
+  chartDesc: {
+    en: "Real-time price feed for BTC-USD",
+    es: "Precios en tiempo real para BTC-USD",
+  },
+  profileTitle: {
+    en: "My Profile",
+    es: "Mi Perfil",
+  },
+  landingHero: {
+    en: "Algorithmic Trading for Everyone",
+    es: "Trading Algorítmico para Todos",
+  },
+  landingSubhero: {
+    en: "Build, backtest, and deploy automated trading strategies with ease. Connect to major exchanges and let your bots work for you 24/7.",
+    es: "Construye, prueba y despliega estrategias automatizadas fácilmente. Conecta con los principales exchanges y deja que tus bots trabajen 24/7.",
+  },
+  landingCtaPrimary: { en: "Start Trading Free", es: "Empezar Gratis" },
+  landingCtaSecondary: { en: "View Demo", es: "Ver Demo" },
+  feature1Title: { en: "Visual Strategy Builder", es: "Constructor Visual" },
+  feature1Desc: { en: "Create complex algorithms without writing code properly.", es: "Crea algoritmos complejos sin escribir código." },
+  feature2Title: { en: "Real-time Signals", es: "Señales en Tiempo Real" },
+  feature2Desc: { en: "Get instant alerts via WebSocket or Webhook when your strategy triggers.", es: "Recibe alertas instantáneas vía WebSocket o Webhook cuando tu estrategia se active." },
+  feature3Title: { en: "Robust Backtesting", es: "Backtesting Robusto" },
+  feature3Desc: { en: "Test your ideas against historical data with millisecond precision.", es: "Prueba tus ideas contra datos históricos con precisión de milisegundos." },
+  navFeatures: { en: "Features", es: "Características" },
+  navPricing: { en: "Pricing", es: "Precios" },
+  navAbout: { en: "About", es: "Acerca de" },
+  navSignIn: { en: "Sign In", es: "Iniciar Sesión" },
+  navGetStarted: { en: "Get Started", es: "Empezar" },
+  pricingTitle: { en: "Simple Pricing", es: "Precios Simples" },
+  pricingSubtitle: { en: "Start small and scale as you grow. No hidden fees.", es: "Empieza pequeño y escala. Sin tarifas ocultas." },
+  footerRights: { en: "Latino's Trading Platform. All rights reserved.", es: "Plataforma de Trading Latino's. Todos los derechos reservados." },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

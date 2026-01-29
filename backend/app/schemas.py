@@ -9,6 +9,7 @@ from pydantic import BaseModel, EmailStr, Field
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    role: str = "user"
 
 
 class RegisterRequest(BaseModel):
@@ -36,15 +37,22 @@ class PasswordResetRequest(BaseModel):
     email: EmailStr
 
 
+class SocialLoginRequest(BaseModel):
+    email: EmailStr
+    name: str
+    provider: str = "google"
+
+
 class UserOut(BaseModel):
     id: int
     email: EmailStr
     name: str
     role: str
     mfa_enabled: bool
+    subscription_tier: str = "free"
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserUpdateRequest(BaseModel):
@@ -59,6 +67,7 @@ class UserCreateRequest(RegisterRequest):
 class BotBase(BaseModel):
     name: str
     description: str
+    script: Optional[str] = ""
     tags: List[str] = []
 
 
@@ -69,6 +78,7 @@ class BotCreate(BotBase):
 class BotUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    script: Optional[str] = None
     tags: Optional[List[str]] = None
     status: Optional[str] = None
 
@@ -79,7 +89,7 @@ class BotOut(BotBase):
     owner_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class FormulaBase(BaseModel):
@@ -111,7 +121,7 @@ class FormulaOut(BaseModel):
     notes: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class FormulaHistoryResponse(BaseModel):
@@ -124,7 +134,7 @@ class FormulaPublishRequest(BaseModel):
 
 class BacktestCreate(BaseModel):
     bot_id: int
-    formula_version_id: int
+    formula_version_id: Optional[int] = None
     range: str
     market: str
 
@@ -132,7 +142,7 @@ class BacktestCreate(BaseModel):
 class BacktestOut(BaseModel):
     id: int
     bot_id: int
-    formula_version_id: int
+    formula_version_id: Optional[int] = None
     range: str
     market: str
     status: str
@@ -140,7 +150,7 @@ class BacktestOut(BaseModel):
     submitted_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class SignalCreate(BaseModel):
@@ -160,7 +170,7 @@ class SignalOut(BaseModel):
     delivery_status: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class BillingCheckoutResponse(BaseModel):

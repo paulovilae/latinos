@@ -13,6 +13,7 @@ export interface Bot {
   status: string;
   owner_id: number;
   tags: string[];
+  script?: string;
 }
 
 export interface Formula {
