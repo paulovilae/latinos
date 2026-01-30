@@ -1,4 +1,3 @@
-"use strict";
 "use client";
 
 import {
@@ -76,8 +75,8 @@ export function PriceChart({ symbol, data, signals = [], showSMA = false, showVo
   // Volume scale (separate axis or normalized? Separate axis is better in ComposedChart)
   
   return (
-    <div className="h-96 w-full">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="w-full" style={{ height: 400, minHeight: 400 }}>
+      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
         <ComposedChart data={chartData}>
           <defs>
             <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">

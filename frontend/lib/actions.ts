@@ -2,8 +2,8 @@
 
 import { apiFetch } from "@/lib/api";
 
-export async function actionCreateCheckoutSession() {
-  return await apiFetch<{ checkout_url: string }>("/billing/checkout", { method: "POST" });
+export async function actionCreateCheckoutSession(billingPeriod: "monthly" | "annual" = "monthly") {
+  return await apiFetch<{ checkout_url: string }>(`/billing/checkout?billing_period=${billingPeriod}`, { method: "POST" });
 }
 
 export async function actionCreatePortalSession() {

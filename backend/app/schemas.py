@@ -233,3 +233,4 @@ class DashboardSummary(BaseModel):
     backtests: List[BacktestOut]
     plans: List[Plan]
     market_universe: List[MarketUniverseItem]
+    subscription_tier: str

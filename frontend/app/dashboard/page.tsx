@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { fetchDashboardSummary } from "@/lib/api";
 import type { DashboardSummary } from "@/lib/types";
@@ -21,7 +21,7 @@ function formatDate(value: string) {
   return date.toISOString().split("T")[0];
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
   let summary: DashboardSummary;
 
   try {
@@ -43,13 +43,22 @@ export default async function DashboardPage() {
         <MetricCard label="Backtests" value={metrics.backtests} helper="completed runs" />
       </SectionGrid>
 
-      {/* Main Chart Section */}
+      {/* Main Chart Section - Loads asynchronously */}
       <SectionCard 
         id="chart" 
         title={<LocalizedText id="chartTitle" fallback="Market Overview" />}
         description={<LocalizedText id="chartDesc" fallback="Real-time price feed for BTC-USD" />}
       >
-         <DashboardChartWrapper signals={signals} />
+         <Suspense fallback={
+           <div className="h-80 flex items-center justify-center bg-slate-900/50 rounded-lg border border-slate-800 animate-pulse">
+             <div className="text-center text-slate-500">
+               <div className="animate-spin h-8 w-8 border-2 border-emerald-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+               <p className="text-sm">Loading market data...</p>
+             </div>
+           </div>
+         }>
+           <DashboardChartWrapper signals={signals} />
+         </Suspense>
       </SectionCard>
 
       <SectionGrid>
@@ -115,7 +124,11 @@ export default async function DashboardPage() {
           description={<LocalizedText id="billingDescription" fallback="Stripe checkout + customer portal links" />}
         >
           <div className="mt-2">
-             <BillingPlans plans={plans} />
+             <BillingPlans 
+                plans={plans} 
+                currentTier={summary.subscription_tier} 
+                mockPortalActive={searchParams?.portal === "mock_session_active"}
+             />
           </div>
         </SectionCard>
 

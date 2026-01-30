@@ -23,12 +23,28 @@ class MarketDataError(Exception):
     """Raised when a remote market data provider fails."""
 
 
+# Cache for market data (30 seconds TTL - fresh enough for dashboard, reduces API load)
+from cachetools import TTLCache
+_market_cache = TTLCache(maxsize=50, ttl=30)
+
+
 def fetch_market_series(symbol: str, interval: str, range_: str) -> Tuple[str | None, List[dict]]:
-    """Attempt Yahoo! Finance first, fall back to deterministic synthetic data."""
+    """Attempt Yahoo! Finance first, fall back to deterministic synthetic data.
+    
+    Results are cached for 30 seconds to reduce API load while maintaining freshness.
+    """
+    cache_key = f"{symbol}:{interval}:{range_}"
+    
+    if cache_key in _market_cache:
+        return _market_cache[cache_key]
+    
     try:
-        return _fetch_from_yahoo(symbol, interval, range_)
+        result = _fetch_from_yahoo(symbol, interval, range_)
     except MarketDataError:
-        return "USD", _synthetic_series(symbol)
+        result = ("USD", _synthetic_series(symbol))
+    
+    _market_cache[cache_key] = result
+    return result
 
 
 def _fetch_from_yahoo(symbol: str, interval: str, range_: str) -> Tuple[str | None, List[dict]]:
@@ -36,7 +52,7 @@ def _fetch_from_yahoo(symbol: str, interval: str, range_: str) -> Tuple[str | No
     encoded_symbol = parse.quote(symbol.upper())
     url = f"{YAHOO_ENDPOINT.format(symbol=encoded_symbol)}?{params}"
     try:
-        with request.urlopen(url, timeout=10) as resp:
+        with request.urlopen(url, timeout=3) as resp:
             payload = json.loads(resp.read().decode("utf-8"))
     except error.URLError as exc:
         raise MarketDataError(str(exc)) from exc

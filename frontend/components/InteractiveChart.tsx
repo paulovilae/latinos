@@ -1,8 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { PriceChart } from "./PriceChart";
+import dynamic from "next/dynamic";
 import { actionGetMarketData } from "@/lib/actions";
+
+const PriceChart = dynamic(() => import("./PriceChart").then(mod => mod.PriceChart), { 
+  ssr: false,
+  loading: () => <div className="h-96 w-full bg-slate-900/50 animate-pulse rounded-xl" />
+});
 
 const SYMBOLS = [
   "BTC-USD",
@@ -106,7 +111,6 @@ export function InteractiveChart({ initialData, signals = [] }: InteractiveChart
       </div>
 
       <div className={`transition-opacity duration-300 ${isPending ? "opacity-50" : "opacity-100"}`}>
-      <div className={`transition-opacity duration-300 ${isPending ? "opacity-50" : "opacity-100"}`}>
         <PriceChart 
             symbol={symbol} 
             data={data} 
@@ -114,7 +118,6 @@ export function InteractiveChart({ initialData, signals = [] }: InteractiveChart
             showSMA={showSMA}
             showVolume={showVolume}
         />
-      </div>
       </div>
     </div>
   );

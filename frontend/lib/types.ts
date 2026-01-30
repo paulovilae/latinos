@@ -80,4 +80,5 @@ export interface DashboardSummary {
   backtests: Backtest[];
   plans: Plan[];
   market_universe: MarketUniverseItem[];
+  subscription_tier: string;
 }

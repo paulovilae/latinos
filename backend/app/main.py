@@ -25,7 +25,17 @@ load_dotenv()
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 STRIPE_PRICE_ID = os.getenv("STRIPE_PRICE_ID")
+STRIPE_PRICE_ID_ANNUAL = os.getenv("STRIPE_PRICE_ID_ANNUAL")  # Optional: falls back to monthly
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3306")
+
+# Caching Configuration
+from cachetools import TTLCache
+from functools import lru_cache
+
+# Cache for dashboard metrics (60 seconds TTL)
+dashboard_cache = TTLCache(maxsize=100, ttl=60)
+# Cache for static data like plans (24 hours TTL)
+static_cache = TTLCache(maxsize=50, ttl=86400)
 
 app = FastAPI(title="Investment Bot Platform - Latinos Trading")
 
@@ -122,8 +132,22 @@ def social_login(payload: schemas.SocialLoginRequest, db: Session = Depends(get_
         )
         user = crud.create_user(db, reg_payload)
     
-    # Return same token as login
-    return schemas.TokenResponse(access_token=DEMO_TOKEN, role=user.role)
+    # Generate a real JWT for this user (same as NextAuth expects)
+    from jose import jwt
+    from .dependencies import SECRET_KEY, ALGORITHM
+    from datetime import datetime, timedelta, timezone
+    
+    token_data = {
+        "sub": str(user.id),
+        "email": user.email,
+        "name": user.name,
+        "role": user.role,
+        "iat": datetime.now(timezone.utc),
+        "exp": datetime.now(timezone.utc) + timedelta(days=30)
+    }
+    access_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+    
+    return schemas.TokenResponse(access_token=access_token, role=user.role)
 
 @app.post("/auth/mfa/verify", response_model=schemas.HealthResponse)
 def verify_mfa(payload: schemas.MFARequest):
@@ -358,14 +382,26 @@ def market_data(symbol: str, interval: str = "1d", range: str = "1mo"):
 # Billing / Stripe
 
 @app.post("/billing/checkout", response_model=schemas.BillingCheckoutResponse)
-def billing_checkout(user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if not stripe.api_key or not STRIPE_PRICE_ID:
+def billing_checkout(
+    billing_period: str = "monthly",  # "monthly" or "annual"
+    user: models.User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    # Select price based on billing period
+    price_id = STRIPE_PRICE_ID
+    if billing_period == "annual" and STRIPE_PRICE_ID_ANNUAL:
+        price_id = STRIPE_PRICE_ID_ANNUAL
+    elif billing_period == "annual":
+        # Fallback: use monthly if annual not configured
+        print("WARNING: Annual price not configured, using monthly.")
+    
+    if not stripe.api_key or not price_id or "..." in stripe.api_key:
         # Mock Billing for Development
         print("WARNING: Stripe not configured. Mocking upgrade.")
         user.subscription_tier = "pro"
         user.subscription_status = "active"
         db.commit()
-        return schemas.BillingCheckoutResponse(checkout_url=f"{FRONTEND_URL}/dashboard?upgrade=success")
+        return schemas.BillingCheckoutResponse(checkout_url="/dashboard?upgrade=success")
         
     try:
         checkout_session = stripe.checkout.Session.create(
@@ -373,12 +409,12 @@ def billing_checkout(user: models.User = Depends(get_current_user), db: Session 
             client_reference_id=str(user.id),
             payment_method_types=['card'],
             line_items=[
-                {'price': STRIPE_PRICE_ID, 'quantity': 1},
+                {'price': price_id, 'quantity': 1},
             ],
             mode='subscription',
             success_url=f"{FRONTEND_URL}/dashboard?upgrade=success",
             cancel_url=f"{FRONTEND_URL}/dashboard",
-            metadata={'user_id': str(user.id)}
+            metadata={'user_id': str(user.id), 'billing_period': billing_period}
         )
         return schemas.BillingCheckoutResponse(checkout_url=checkout_session.url)
     except Exception as e:
@@ -386,10 +422,9 @@ def billing_checkout(user: models.User = Depends(get_current_user), db: Session 
         raise HTTPException(status_code=400, detail="Error creating checkout session")
 
 @app.get("/billing/portal", response_model=schemas.BillingPortalResponse)
-@app.get("/billing/portal", response_model=schemas.BillingPortalResponse)
 def billing_portal(user: models.User = Depends(get_current_user)):
-    if not stripe.api_key:
-         return schemas.BillingPortalResponse(portal_url=f"{FRONTEND_URL}/dashboard")
+    if not stripe.api_key or "..." in stripe.api_key:
+         return schemas.BillingPortalResponse(portal_url="/dashboard?portal=mock_session_active")
     
     if not user.stripe_customer_id:
         raise HTTPException(status_code=400, detail="No billing account found")
@@ -460,31 +495,45 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None),
 
 @app.get("/dashboard/summary", response_model=schemas.DashboardSummary)
 def dashboard_summary(user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    user_count = db.query(models.User).count()
-    bot_count = db.query(models.Bot).count()
-    formula_count = db.query(models.FormulaVersion).count()
-    signal_count = db.query(models.Signal).count()
-    backtest_count = db.query(models.Backtest).count()
+    # Check cache for metrics (shared across all users)
+    cache_key = "dashboard_metrics"
+    cached_data = dashboard_cache.get(cache_key)
+    
+    if cached_data:
+        metrics, bots, formulas, signals, backtests = cached_data
+    else:
+        # Fetch from database
+        user_count = db.query(models.User).count()
+        bot_count = db.query(models.Bot).count()
+        formula_count = db.query(models.FormulaVersion).count()
+        signal_count = db.query(models.Signal).count()
+        backtest_count = db.query(models.Backtest).count()
 
-    bots = db.query(models.Bot).all()
-    formulas = db.query(models.FormulaVersion).limit(10).all() 
-    signals = db.query(models.Signal).limit(10).all()
-    backtests = db.query(models.Backtest).limit(10).all()
-
-    return schemas.DashboardSummary(
-        metrics=schemas.MetricsResponse(
+        bots = db.query(models.Bot).all()
+        formulas = db.query(models.FormulaVersion).limit(10).all() 
+        signals = db.query(models.Signal).limit(10).all()
+        backtests = db.query(models.Backtest).limit(10).all()
+        
+        metrics = schemas.MetricsResponse(
             users=user_count,
             bots=bot_count,
             formulas=formula_count,
             backtests=backtest_count,
             signals=signal_count,
-        ),
+        )
+        
+        # Cache the results (60s TTL)
+        dashboard_cache[cache_key] = (metrics, bots, formulas, signals, backtests)
+
+    return schemas.DashboardSummary(
+        metrics=metrics,
         bots=bots,
         formulas=formulas,
         signals=signals,
         backtests=backtests,
-        plans=PLANS,
+        plans=PLANS,  # PLANS is static, no need to cache
         market_universe=[schemas.MarketUniverseItem(**item) for item in MARKET_UNIVERSE],
+        subscription_tier=user.subscription_tier or "free",  # User-specific, not cached
     )
 
 @app.get("/plans", response_model=List[schemas.Plan])

@@ -50,8 +50,8 @@ export function AppHeader() {
           </>
         )}
 
-        <Link href="#billing" className="hover:text-cyan-300">
-          <LocalizedText id="navBilling" fallback="Billing" />
+        <Link href="/facturacion" className="hover:text-cyan-300">
+          <LocalizedText id="navBilling" fallback="Facturación" />
         </Link>
       </nav>
     </header>
