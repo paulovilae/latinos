@@ -17,7 +17,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv(
         "ALLOWED_ORIGINS", 
-        "http://localhost:3003,http://localhost:3306,https://latinos.paulovila.org,https://apilatinos.paulovila.org,https://api-latinos.paulovila.org,https://back-latinos.paulovila.org,https://api.latinos.paulovila.org"
+        "http://localhost:3003,http://localhost:3306,https://latinos.paulovila.org,https://apilatinos.paulovila.org,https://api-latinos.paulovila.org,https://back-latinos.paulovila.org,https://api.latinos.paulovila.org,https://latinos-liard.vercel.app"
     ).split(","),
     allow_credentials=True,
     allow_methods=["*"],
