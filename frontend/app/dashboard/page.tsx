@@ -10,6 +10,7 @@ import { LocalizedText } from "@/components/LocalizedText";
 import { BillingPlans } from "@/components/BillingPlans";
 import { DashboardChartWrapper } from "./DashboardChartWrapper";
 import { SignalFeed } from "@/components/signals/SignalFeed";
+import { LiveTradingDashboardWrapper } from "@/components/dashboard/LiveTradingDashboardWrapper";
 
 function SectionGrid({ children }: { children: ReactNode }) {
   return <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>;
@@ -63,45 +64,24 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
          </Suspense>
       </SectionCard>
 
-      <SectionGrid>
-        <SectionCard
-          id="signals"
-          title={<LocalizedText id="signalsTitle" fallback="Signals" />}
-          description={
+      {/* Live Trading Section */}
+      <SectionCard
+        id="live-trading"
+        title={<LocalizedText id="signalsTitle" fallback="Live Trading" />}
+        description={
             <LocalizedText
               id="signalsDescription"
-              fallback="Websocket-friendly feed for buy/sell/info events with delivery state"
+              fallback="Monitor your active trading robots and real-time performance."
             />
-          }
-        >
-          <SignalFeed initialSignals={signals} botNameMap={botNameMap} />
-        </SectionCard>
-
-         <SectionCard
-          id="backtests"
-          title={<LocalizedText id="backtestsTitle" fallback="Backtests" />}
-          description={
-            <LocalizedText
-              id="backtestsDescription"
-              fallback="Celery workers process submissions; results stream back to dashboard"
-            />
-          }
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {backtests.map((b) => (
-              <div key={b.id} className="border border-slate-800 rounded-xl p-4 space-y-1">
-                <p className="font-semibold">{botNameMap.get(b.bot_id) ?? `Bot #${b.bot_id}`}</p>
-                <p className="text-xs text-muted">Range: {b.range}</p>
-                <div className="flex items-center gap-2">
-                  <TagPill label={b.status} tone={b.status === "completed" ? "success" : "warning"} />
-                  <span className="text-xs text-muted">PnL: {`${b.results?.pnl ?? "N/A"}`}</span>
-                  <span className="text-xs text-muted">Hit rate: {Math.round(((b.results?.hit_rate as number) ?? 0) * 100)}%</span>
-                </div>
-              </div>
-            ))}
+        }
+      >
+          <div className="mt-4">
+             {/* Dynamic Import to avoid hydration issues since it uses random mock data */}
+             <Suspense fallback={<div className="h-64 animate-pulse bg-slate-900 rounded-xl"></div>}>
+                <LiveTradingDashboardWrapper />
+             </Suspense>
           </div>
-        </SectionCard>
-      </SectionGrid>
+      </SectionCard>
 
       <SectionGrid>
         <SectionCard

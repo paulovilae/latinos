@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLocale } from "@/components/LocalizationProvider";
+import { CodeEditor } from "./CodeEditor";
+import { AIAssistant } from "./AIAssistant";
 // Using Next.js API routes (no direct backend calls)
 
 interface Signal {
@@ -11,6 +14,7 @@ interface Signal {
 }
 
 export function SignalEditor() {
+  const { t } = useLocale();
   const [signals, setSignals] = useState<Signal[]>([]);
   const [selectedSignal, setSelectedSignal] = useState<Signal | null>(null);
   
@@ -68,14 +72,14 @@ export function SignalEditor() {
       await refreshSignals();
       // Show success message
       if (selectedSignal) {
-        alert("✅ Signal updated successfully!");
+        alert(t("signalSuccessUpdate", "✅ Signal updated successfully!"));
       } else {
-        alert("✅ Signal created successfully!");
+        alert(t("signalSuccessCreate", "✅ Signal created successfully!"));
         setName("");
         setCode("");
       }
     } catch (e) {
-      alert("Failed to save signal");
+      alert(t("signalError", "Failed to save signal"));
     } finally {
       setIsSubmitting(false);
     }
@@ -85,7 +89,7 @@ export function SignalEditor() {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[500px]">
       {/* List */}
       <div className="md:col-span-1 border-r border-slate-700 pr-4 overflow-y-auto">
-        <h3 className="text-sm font-semibold text-slate-400 mb-3">Your Signals</h3>
+        <h3 className="text-sm font-semibold text-slate-400 mb-3">{t("yourSignals", "Your Signals")}</h3>
         <div className="space-y-2">
             {signals.map(sig => (
                 <div 
@@ -95,7 +99,11 @@ export function SignalEditor() {
                         setSelectedSignal(sig);
                         setName(sig.payload.name || "");
                         setType(sig.type);
-                        setCode(sig.payload.code);
+                        // Fix for visible "\n" literals in legacy data
+                        const cleanCode = sig.payload.code 
+                            ? sig.payload.code.replace(/\\n/g, '\n') 
+                            : "";
+                        setCode(cleanCode);
                     }}
                 >
                     <div>
@@ -106,7 +114,7 @@ export function SignalEditor() {
                         className="p-1 hover:bg-red-500/20 rounded text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                         onClick={async (e) => {
                             e.stopPropagation();
-                            if(!confirm("Delete this signal?")) return;
+                            if(!confirm(t("confirmDelete", "Delete this signal?"))) return;
                             try {
                                 await fetch(`/api/signals/${sig.id}`, { method: "DELETE" });
                                 refreshSignals();
@@ -116,7 +124,7 @@ export function SignalEditor() {
                                     setCode("");
                                 }
                             } catch(err) {
-                                alert("Failed to delete signal");
+                                alert(t("signalError", "Failed to delete signal"));
                             }
                         }}
                     >
@@ -125,7 +133,7 @@ export function SignalEditor() {
                 </div>
             ))}
              {signals.length === 0 && (
-                <div className="text-sm text-slate-500 italic">No signals yet.</div>
+                <div className="text-sm text-slate-500 italic">{t("noSignalsYet", "No signals yet.")}</div>
             )}
         </div>
         <button 
@@ -136,16 +144,16 @@ export function SignalEditor() {
                 setCode("");
             }}
         >
-            + New Signal
+            + {t("newSignal", "New Signal")}
         </button>
       </div>
 
       {/* Editor */}
       <div className="md:col-span-2 flex flex-col gap-4">
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
             <input 
                 className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 flex-1 text-white"
-                placeholder="Signal Name"
+                placeholder={t("signalNamePlaceholder", "Signal Name")}
                 value={name}
                 onChange={e => setName(e.target.value)}
             />
@@ -154,17 +162,21 @@ export function SignalEditor() {
                 value={type}
                 onChange={e => setType(e.target.value as any)}
             >
-                <option value="FORMULA">Math Formula</option>
-                <option value="PYTHON">Python Script</option>
+                <option value="FORMULA">{t("mathFormula", "Math Formula")}</option>
+                <option value="PYTHON">{t("pythonCode", "Python Script")}</option>
             </select>
+            <AIAssistant 
+                language={type === 'FORMULA' ? 'formula' : 'python'}
+                onGenerate={(generated) => setCode(generated)}
+            />
         </div>
 
-        <div className="flex-1 relative">
-            <textarea 
-                className="w-full h-full bg-slate-950 border border-slate-700 rounded-lg p-4 font-mono text-sm text-green-400 resize-none focus:outline-none focus:border-indigo-500"
-                placeholder={type === 'FORMULA' ? "close > open" : "if data.close > data.open:\n    result = True"}
+        <div className="flex-1 relative h-[350px]">
+            <CodeEditor 
                 value={code}
-                onChange={e => setCode(e.target.value)}
+                onChange={setCode}
+                language={type === 'FORMULA' ? 'formula' : 'python'}
+                placeholder={type === 'FORMULA' ? "close > open" : "if data.close > data.open:\n    result = True"}
             />
         </div>
         
@@ -174,7 +186,7 @@ export function SignalEditor() {
                 onClick={handleSave}
                 disabled={isSubmitting || !code}
              >
-                {selectedSignal ? "Update Signal" : "Create Signal"}
+                {selectedSignal ? t("updateSignal", "Update Signal") : t("createSignal", "Create Signal")}
              </button>
         </div>
       </div>

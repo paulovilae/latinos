@@ -1,10 +1,12 @@
 "use client";
 
+import { useLocale } from "@/components/LocalizationProvider";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export function SignUpForm() {
+  const { t } = useLocale();
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,7 +29,7 @@ export function SignUpForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.detail || "Registration failed");
+        setError(data.detail || t("authError", "Registration failed"));
         setIsLoading(false);
         return;
       }
@@ -35,7 +37,7 @@ export function SignUpForm() {
       // Success - redirect to signin
       router.push("/auth/signin?registered=true");
     } catch (err) {
-      setError("Something went wrong");
+      setError(t("authError", "Something went wrong"));
       setIsLoading(false);
     }
   };
@@ -44,7 +46,7 @@ export function SignUpForm() {
     <div className="w-full max-w-sm space-y-4">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">Name</label>
+          <label className="block text-sm font-medium text-slate-300 mb-1">{t("nameLabel", "Name")}</label>
           <input
             type="text"
             value={name}
@@ -55,7 +57,7 @@ export function SignUpForm() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+          <label className="block text-sm font-medium text-slate-300 mb-1">{t("emailLabel", "Email")}</label>
           <input
             type="email"
             value={email}
@@ -66,7 +68,7 @@ export function SignUpForm() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+          <label className="block text-sm font-medium text-slate-300 mb-1">{t("passwordLabel", "Password")}</label>
           <input
             type="password"
             value={password}
@@ -76,7 +78,7 @@ export function SignUpForm() {
             required
             minLength={6}
           />
-          <p className="text-xs text-slate-500 mt-1">Minimum 6 characters</p>
+          <p className="text-xs text-slate-500 mt-1">{t("minChars", "Minimum 6 characters")}</p>
         </div>
         
         {error && (
@@ -90,14 +92,14 @@ export function SignUpForm() {
           disabled={isLoading}
           className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/20"
         >
-          {isLoading ? "Creating account..." : "Create Account"}
+          {isLoading ? t("creatingAccount", "Creating account...") : t("createAccountBtn", "Create Account")}
         </button>
       </form>
 
       <div className="text-center text-sm text-slate-400">
-        Already have an account?{" "}
+        {t("alreadyHaveAccount", "Already have an account?")}{" "}
         <Link href="/auth/signin" className="text-emerald-400 hover:text-emerald-300 font-medium">
-          Sign in
+          {t("signInLink", "Sign in")}
         </Link>
       </div>
     </div>

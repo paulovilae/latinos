@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { useLocale } from "@/components/LocalizationProvider";
 // Using Next.js API routes (no direct backend calls)
 
 interface Signal {
@@ -18,6 +19,7 @@ interface SavedRobot {
 }
 
 export function StackBuilder() {
+  const { t } = useLocale();
   const [availableSignals, setAvailableSignals] = useState<Signal[]>([]);
   const [stack, setStack] = useState<Signal[]>([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -70,7 +72,7 @@ export function StackBuilder() {
 
   const deleteBot = async (robot: SavedRobot, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm(`Are you sure you want to delete robot "${robot.name}"?`)) return;
+    if (!confirm(t("confirmDelete", `Are you sure you want to delete robot "${robot.name}"?`))) return;
     try {
       await fetch(`/api/bots/${robot.id}`, { method: "DELETE" });
       loadRobots();
@@ -89,7 +91,7 @@ export function StackBuilder() {
 
   const runBacktest = async () => {
     if (stack.length === 0) {
-      alert("Please add at least one signal to the stack to run a simulation.");
+      alert(t("emptyStack", "Please add at least one signal to the stack."));
       return;
     }
     setIsRunning(true);
@@ -111,7 +113,7 @@ export function StackBuilder() {
       setBacktestResult(result);
     } catch (e) {
       console.error(e);
-      alert("Backtest failed");
+      alert(t("error", "Backtest failed"));
     } finally {
       setIsRunning(false);
     }
@@ -119,7 +121,7 @@ export function StackBuilder() {
 
   const saveRobot = async () => {
     if (!robotName.trim() || stack.length === 0) {
-      alert("Please enter a robot name and add at least one signal.");
+      alert(t("error", "Please enter a robot name and add at least one signal."));
       return;
     }
     setIsSaving(true);
@@ -132,12 +134,12 @@ export function StackBuilder() {
           signal_ids: stack.map(s => s.id)
         })
       });
-      alert(`Robot "${robotName}" saved successfully!`);
+      alert(`${t("success", "Success")}: Robot "${robotName}" saved!`);
       setRobotName("");
       loadRobots();
     } catch (e) {
       console.error(e);
-      alert("Failed to save robot");
+      alert(t("error", "Failed to save robot"));
     } finally {
       setIsSaving(false);
     }
@@ -153,40 +155,65 @@ export function StackBuilder() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       
-      {/* Valid Signals List (Drag source equivalent) */}
-      <div className="flex flex-wrap gap-2 pb-2 border-b border-slate-800">
-        {availableSignals.map(sig => (
-            <button
-                key={sig.id}
-                className="flex-shrink-0 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 rounded-full border border-slate-700 transition"
-                onClick={() => addToStack(sig)}
-            >
-                + {sig.payload?.name || `Sig ${sig.id}`}
-            </button>
-        ))}
+      {/* Step 1: Add Signals */}
+      <div className="space-y-3">
+          <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-indigo-500/50">1</div>
+              <h3 className="text-sm font-semibold text-indigo-300 uppercase tracking-wider">{t("step1Guide", "Step 1: Add a Signal")}</h3>
+          </div>
+          
+          <div className="flex flex-wrap gap-2 p-4 bg-slate-900/50 rounded-xl border border-slate-800">
+            {availableSignals.length === 0 ? (
+                 <div className="text-slate-500 text-sm italic py-2">{t("noSignalsYet", "No signals available. Create one in Signal Studio.")}</div>
+            ) : (
+                availableSignals.map(sig => (
+                    <button
+                        key={sig.id}
+                        className="flex-shrink-0 px-3 py-1.5 bg-slate-800 hover:bg-indigo-600 hover:text-white text-xs text-slate-300 rounded-lg border border-slate-700 transition-all active:scale-95 flex items-center gap-2 group"
+                        onClick={() => addToStack(sig)}
+                    >
+                        <span>+</span>
+                        <span className="font-medium">{sig.payload?.name || `Sig ${sig.id}`}</span>
+                    </button>
+                ))
+            )}
+            <div className="ml-auto text-xs text-slate-500 self-center hidden sm:block">
+                {t("availableSignals", "Click to add to stack")}
+            </div>
+          </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* The Stack Visualization */}
-        <div className="relative border border-slate-700 rounded-xl bg-slate-950/50 p-6 min-h-[300px]">
-            <div className="absolute top-4 right-4 text-xs text-slate-500 font-mono">FLOW: SEQUENTIAL (AND)</div>
+        <div className="relative border border-slate-700 rounded-xl bg-slate-950/50 p-6 min-h-[400px] flex flex-col">
+            <div className="absolute top-4 right-4 text-xs text-slate-500 font-mono hidden sm:block">FLOW: SEQUENTIAL (AND)</div>
             
-            <div className="flex flex-col items-center space-y-2">
+            <div className="flex flex-col items-center space-y-2 flex-1">
                 
                 {/* Market Input Node */}
-                 <div className="w-48 py-2 text-center bg-slate-800 rounded border border-slate-600 text-slate-400 text-xs font-mono">
+                 <div className="w-48 py-2 text-center bg-slate-800 rounded border border-slate-600 text-slate-400 text-xs font-mono mb-2">
                     MARKET DATA (1D)
                  </div>
                  <div className="h-6 w-0.5 bg-slate-600"></div>
 
                  {/* Stack Items */}
+                 {stack.length === 0 && (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center py-12 animate-in fade-in zoom-in duration-500">
+                        <div className="w-16 h-16 rounded-full bg-slate-900 border-2 border-dashed border-slate-700 flex items-center justify-center mb-4 text-slate-600 text-2xl">
+                            +
+                        </div>
+                        <p className="text-slate-400 font-medium">{t("emptyStack", "Stack is empty.")}</p>
+                        <p className="text-slate-600 text-sm mt-1">{t("step1Guide", "Add signals from Step 1 above.")}</p>
+                    </div>
+                 )}
+
                  {stack.map((sig, idx) => (
-                    <div key={idx} className="flex flex-col items-center">
-                        <div className="relative group w-64 p-3 bg-slate-900 border border-indigo-500/50 rounded-lg shadow-lg shadow-indigo-500/10 flex items-center justify-between">
-                             <div className="flex flex-col gap-1 mr-2">
+                    <div key={idx} className="flex flex-col items-center animate-in slide-in-from-top-2 duration-300">
+                        <div className="relative group w-64 p-3 bg-slate-900 border border-indigo-500/50 rounded-lg shadow-lg shadow-indigo-500/10 flex items-center justify-between hover:border-indigo-400 transition-colors">
+                             <div className="flex flex-col gap-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button 
                                     disabled={idx === 0}
                                     onClick={() => {
@@ -194,7 +221,7 @@ export function StackBuilder() {
                                         [newStack[idx], newStack[idx-1]] = [newStack[idx-1], newStack[idx]];
                                         setStack(newStack);
                                     }}
-                                    className="text-slate-600 hover:text-white disabled:opacity-30 disabled:hover:text-slate-600"
+                                    className="text-slate-600 hover:text-white disabled:opacity-30"
                                 >
                                     ▲
                                 </button>
@@ -205,18 +232,18 @@ export function StackBuilder() {
                                         [newStack[idx], newStack[idx+1]] = [newStack[idx+1], newStack[idx]];
                                         setStack(newStack);
                                     }}
-                                    className="text-slate-600 hover:text-white disabled:opacity-30 disabled:hover:text-slate-600"
+                                    className="text-slate-600 hover:text-white disabled:opacity-30"
                                 >
                                     ▼
                                 </button>
                              </div>
 
-                             <span className="font-semibold text-white flex-1 text-center">{sig.payload?.name || `Signal ${sig.id}`}</span>
+                             <span className="font-semibold text-white flex-1 text-center truncate px-2">{sig.payload?.name || `Signal ${sig.id}`}</span>
                              
-                             <button onClick={() => removeFromStack(idx)} className="text-slate-500 hover:text-red-400 ml-2">×</button>
+                             <button onClick={() => removeFromStack(idx)} className="text-slate-500 hover:text-red-400 ml-2 p-1">×</button>
                              
                              {/* Traffic Light Logic Visualization */}
-                             <div className="absolute -right-12 top-1/2 -translate-y-1/2 flex flex-col gap-1">
+                             <div className="absolute -right-3 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 bg-slate-950 p-1.5 rounded-full border border-slate-800">
                                 <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
                                 <div className="w-2 h-2 rounded-full bg-rose-900/50"></div>
                              </div>
@@ -231,121 +258,128 @@ export function StackBuilder() {
                     </div>
                  ))}
 
-                 {stack.length === 0 && (
-                    <div className="py-12 text-slate-600 text-sm italic">
-                        Empty stack. Add signals from top bar.
-                    </div>
-                 )}
-
                  {stack.length > 0 && (
-                     <div className="w-48 py-2 text-center bg-emerald-900/30 border border-emerald-500 rounded text-emerald-300 font-bold text-sm shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-                        ACTION: BUY / SHORT
+                     <div className="w-48 py-3 text-center bg-emerald-900/20 border border-emerald-500 rounded-lg text-emerald-400 font-bold text-sm shadow-[0_0_15px_rgba(16,185,129,0.15)] animate-in zoom-in duration-300">
+                        {t("actionBuyShort", "ACTION: BUY / SHORT")}
                      </div>
                  )}
 
             </div>
         </div>
 
-        {/* Controls & Results */}
+        {/* Step 2: Controls & Results */}
         <div className="space-y-6">
-            <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all">
-                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
-                   <span>📊 Simulation (Entrenamiento)</span>
-                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-widest font-black">History</span>
-                </h4>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label className="block text-xs text-slate-400 mb-1">Symbol</label>
-                        <select 
-                            value={selectedSymbol}
-                            onChange={(e) => setSelectedSymbol(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-white"
-                        >
-                            <option value="AAPL">AAPL</option>
-                            <option value="BTC-USD">BTC-USD</option>
-                            <option value="NVDA">NVDA</option>
-                            <option value="SPY">SPY</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-xs text-slate-400 mb-1">Period</label>
-                        <select 
-                            value={selectedPeriod}
-                            onChange={(e) => setSelectedPeriod(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-white"
-                        >
-                            <option value="1y">1 Year</option>
-                            <option value="6mo">6 Months</option>
-                            <option value="3mo">3 Months</option>
-                            <option value="30d">30 Days</option>
-                        </select>
-                    </div>
+            <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-indigo-500/50">2</div>
+                    <h3 className="text-sm font-semibold text-indigo-300 uppercase tracking-wider">{t("step2Guide", "Step 2: Run Simulation")}</h3>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                    <div>
-                        <label className="block text-[10px] text-slate-400 mb-1 uppercase">Capital ($)</label>
-                        <input
-                            type="number"
-                            value={initialCapital}
-                            onChange={(e) => setInitialCapital(Number(e.target.value))}
-                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-emerald-400 font-mono"
-                        />
+                <div className="p-5 bg-slate-900 rounded-xl border border-slate-800 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all shadow-xl">
+                    <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
+                    <span>📊 {t("simulationTitle", "Simulation & Training")}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-widest font-black">History</span>
+                    </h4>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label className="block text-xs text-slate-400 mb-1">{t("tickerPlaceholder", "Symbol")}</label>
+                            <select 
+                                value={selectedSymbol}
+                                onChange={(e) => setSelectedSymbol(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-2 text-sm text-white focus:border-indigo-500 outline-none"
+                            >
+                                <option value="AAPL">AAPL</option>
+                                <option value="BTC-USD">BTC-USD</option>
+                                <option value="NVDA">NVDA</option>
+                                <option value="SPY">SPY</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs text-slate-400 mb-1">{t("tableStatus", "Period")}</label>
+                            <select 
+                                value={selectedPeriod}
+                                onChange={(e) => setSelectedPeriod(e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-2 text-sm text-white focus:border-indigo-500 outline-none"
+                            >
+                                <option value="1y">1 Year</option>
+                                <option value="6mo">6 Months</option>
+                                <option value="3mo">3 Months</option>
+                                <option value="30d">30 Days</option>
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-[10px] text-slate-400 mb-1 uppercase">Take Profit %</label>
-                        <input
-                            type="number"
-                            step="0.1"
-                            value={takeProfit}
-                            onChange={(e) => setTakeProfit(Number(e.target.value))}
-                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-emerald-300 font-mono"
-                        />
+
+                    <div className="grid grid-cols-3 gap-2 mb-6">
+                        <div>
+                            <label className="block text-[10px] text-slate-400 mb-1 uppercase">Capital ($)</label>
+                            <input
+                                type="number"
+                                value={initialCapital}
+                                onChange={(e) => setInitialCapital(Number(e.target.value))}
+                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-emerald-400 font-mono focus:border-emerald-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] text-slate-400 mb-1 uppercase">Take Profit %</label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                value={takeProfit}
+                                onChange={(e) => setTakeProfit(Number(e.target.value))}
+                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-emerald-300 font-mono focus:border-emerald-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] text-slate-400 mb-1 uppercase">Stop Loss %</label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                value={stopLoss}
+                                onChange={(e) => setStopLoss(Number(e.target.value))}
+                                className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-rose-300 font-mono focus:border-rose-500 outline-none"
+                            />
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-[10px] text-slate-400 mb-1 uppercase">Stop Loss %</label>
-                        <input
-                            type="number"
-                            step="0.1"
-                            value={stopLoss}
-                            onChange={(e) => setStopLoss(Number(e.target.value))}
-                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-rose-300 font-mono"
-                        />
-                    </div>
+                    
+                    <button 
+                        onClick={runBacktest}
+                        disabled={isRunning || stack.length === 0}
+                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    >
+                        {isRunning ? t("runningSimulation", "🚀 Running...") : t("runSimulationBtn", "▶️ Run Simulation")}
+                    </button>
+                    
+                    {stack.length === 0 && (
+                        <p className="text-center text-xs text-rose-400 mt-2 animate-pulse">{t("emptyStack", "Add signals before running simulation.")}</p>
+                    )}
                 </div>
-                <button 
-                    onClick={runBacktest}
-                    disabled={isRunning || stack.length === 0}
-                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
-                >
-                    {isRunning ? "🚀 Running Simulation..." : "▶️ Run Simulation (Entrenamiento)"}
-                </button>
             </div>
 
             {backtestResult && (
                  <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 animate-in fade-in slide-in-from-bottom-4">
-                    <h4 className="font-semibold text-white mb-4 border-b border-slate-800 pb-2">Results</h4>
+                    <h4 className="font-semibold text-white mb-4 border-b border-slate-800 pb-2">{t("success", "Results")}</h4>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                         <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
-                            <div className="text-xs text-slate-400 uppercase tracking-wider">Total PnL</div>
+                            <div className="text-xs text-slate-400 uppercase tracking-wider">{t("totalPnL", "Total PnL")}</div>
                             <div className={`text-xl font-mono font-bold ${(backtestResult.results?.pnl || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                                 ${(backtestResult.results?.pnl || 0).toFixed(2)}
                             </div>
                         </div>
                         <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
-                            <div className="text-xs text-slate-400 uppercase tracking-wider">Win Rate</div>
+                            <div className="text-xs text-slate-400 uppercase tracking-wider">{t("winRate", "Win Rate")}</div>
                             <div className="text-xl font-mono font-bold text-white">
                                 {(backtestResult.results?.win_rate || 0).toFixed(1)}%
                             </div>
                         </div>
                         <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
-                            <div className="text-xs text-slate-400 uppercase tracking-wider">Total Return</div>
+                            <div className="text-xs text-slate-400 uppercase tracking-wider">{t("totalReturn", "Total Return")}</div>
                             <div className={`text-xl font-mono font-bold ${(backtestResult.results?.total_return_pct || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                                 {(backtestResult.results?.total_return_pct || 0).toFixed(2)}%
                             </div>
                         </div>
                         <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
-                            <div className="text-xs text-slate-400 uppercase tracking-wider">Max Drawdown</div>
+                            <div className="text-xs text-slate-400 uppercase tracking-wider">{t("maxDrawdown", "Max Drawdown")}</div>
                             <div className="text-xl font-mono font-bold text-rose-400">
                                 -{(backtestResult.results?.max_drawdown || 0).toFixed(2)}%
                             </div>
@@ -445,11 +479,11 @@ export function StackBuilder() {
 
             {/* Save Robot Section */}
             <div className="p-4 bg-slate-900 rounded-xl border border-slate-800">
-                <h4 className="font-semibold text-white mb-4">Save as Robot</h4>
+                <h4 className="font-semibold text-white mb-4">{t("saveRobotTitle", "Save as Robot")}</h4>
                 <div className="flex gap-2 mb-4">
                     <input
                         type="text"
-                        placeholder="Enter robot name..."
+                        placeholder={t("robotNamePlaceholder", "Enter robot name...")}
                         value={robotName}
                         onChange={(e) => setRobotName(e.target.value)}
                         className="flex-1 bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-white placeholder:text-slate-500"
@@ -459,7 +493,7 @@ export function StackBuilder() {
                         disabled={isSaving || stack.length === 0 || !robotName.trim()}
                         className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
-                        {isSaving ? "Saving..." : "💾 Save"}
+                        {isSaving ? t("saving", "Saving...") : t("saveBtn", "💾 Save")}
                     </button>
                 </div>
             </div>
@@ -467,11 +501,11 @@ export function StackBuilder() {
             {/* Saved Robots */}
             {savedRobots.length > 0 && (
                 <div className="p-4 bg-slate-900 rounded-xl border border-slate-800">
-                    <h4 className="font-semibold text-white mb-4">My Robots</h4>
+                    <h4 className="font-semibold text-white mb-4">{t("myRobotsTitle", "My Robots")}</h4>
                     <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
                         {/* 1. New Signal Stacks */}
                         <div>
-                             <h5 className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Signal Stacks</h5>
+                             <h5 className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">{t("signalStacks", "Signal Stacks")}</h5>
                              <div className="space-y-2">
                                 {savedRobots.filter(r => r.signal_ids.length > 0).map(robot => (
                                     <div 
@@ -482,9 +516,9 @@ export function StackBuilder() {
                                         <div className="flex items-center gap-3">
                                             <span className="text-white font-medium">{robot.name}</span>
                                             {robot.status === "running" ? (
-                                                <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Active</span>
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{t("activeStatus", "Active")}</span>
                                             ) : (
-                                                <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-400 border border-slate-700">Paused</span>
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-400 border border-slate-700">{t("pausedStatus", "Paused")}</span>
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -512,7 +546,7 @@ export function StackBuilder() {
                         {/* 2. Legacy Robots */}
                         {savedRobots.some(r => r.signal_ids.length === 0) && (
                             <div className="border-t border-slate-800 pt-3">
-                                <h5 className="text-[10px] uppercase tracking-wider text-amber-500/70 font-bold mb-2">Legacy Script Robots</h5>
+                                <h5 className="text-[10px] uppercase tracking-wider text-amber-500/70 font-bold mb-2">{t("legacyRobots", "Legacy Script Robots")}</h5>
                                 <div className="space-y-2 opacity-70">
                                     {savedRobots.filter(r => r.signal_ids.length === 0).map(robot => (
                                         <div 

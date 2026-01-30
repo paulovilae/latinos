@@ -116,6 +116,14 @@ export const authOptions: NextAuthOptions = {
         token.plan = (user as any).subscription_tier;
         token.accessToken = (user as any).accessToken;
       }
+      
+      // Self-healing: if accessToken is missing (stale session) and it's the demo admin, restore it.
+      // This prevents 401 errors after server restarts or code changes.
+      if (!token.accessToken && token.email === "demo@latinos.dev") {
+          token.accessToken = "demo-admin-token";
+          token.role = "admin";
+      }
+      
       return token;
     },
     async session({ session, token }) {

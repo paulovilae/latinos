@@ -1,7 +1,11 @@
+"use client";
+
 import { Suspense } from "react";
 import { SignInForm } from "@/components/auth/SignInForm";
+import { useLocale } from "@/components/LocalizationProvider";
 
 export default function SignInPage() {
+  const { t } = useLocale();
   return (
     <div className="min-h-screen bg-[#0b1224] flex items-center justify-center p-4 relative overflow-hidden">
         {/* Background Effects */}
@@ -13,15 +17,15 @@ export default function SignInPage() {
                 <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-emerald-400 mb-2">
                     Latinos Trading
                 </h1>
-                <p className="text-slate-400">Sign in to your account</p>
+                <p className="text-slate-400">{t("signInTitle", "Sign in to your account")}</p>
             </div>
 
-            <Suspense fallback={<div className="text-center text-slate-500">Loading...</div>}>
+            <Suspense fallback={<div className="text-center text-slate-500">{t("loading", "Loading...")}</div>}>
                 <SignInForm />
             </Suspense>
 
             <div className="mt-6 text-center text-sm text-slate-500">
-                <p>Welcome back, Trader.</p>
+                <p>{t("welcomeBack", "Welcome back, Trader.")}</p>
             </div>
         </div>
     </div>

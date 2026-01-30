@@ -4,7 +4,10 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { useLocale } from "@/components/LocalizationProvider";
+
 export function SignInForm() {
+  const { t } = useLocale();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const [email, setEmail] = useState("");
@@ -26,14 +29,14 @@ export function SignInForm() {
       });
 
       if (res?.error) {
-        setError("Invalid email or password");
+        setError(t("invalidCredentials", "Invalid email or password"));
         setIsLoading(false);
       } else {
         // Redirect handled by router or full page reload
         window.location.href = callbackUrl;
       }
     } catch (err) {
-       setError("Something went wrong");
+       setError(t("authError", "Something went wrong"));
        setIsLoading(false);
     }
   };
@@ -46,7 +49,7 @@ export function SignInForm() {
     <div className="w-full max-w-sm space-y-4">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+          <label className="block text-sm font-medium text-slate-300 mb-1">{t("emailLabel", "Email")}</label>
           <input
             type="email"
             value={email}
@@ -57,7 +60,7 @@ export function SignInForm() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+          <label className="block text-sm font-medium text-slate-300 mb-1">{t("passwordLabel", "Password")}</label>
           <input
             type="password"
             value={password}
@@ -79,7 +82,7 @@ export function SignInForm() {
           disabled={isLoading}
           className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/20"
         >
-          {isLoading ? "Signing in..." : "Sign in with Email"}
+          {isLoading ? t("signingIn", "Signing in...") : t("signInEmailBtn", "Sign in with Email")}
         </button>
       </form>
 
@@ -88,7 +91,7 @@ export function SignInForm() {
           <div className="w-full border-t border-slate-700"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-[#0b1224] text-slate-500">Or continue with</span>
+          <span className="px-2 bg-[#0b1224] text-slate-500">{t("orContinue", "Or continue with")}</span>
         </div>
       </div>
 
@@ -129,13 +132,13 @@ export function SignInForm() {
         }}
         className="w-full bg-cyan-600 hover:bg-cyan-500 border border-cyan-500/30 text-white font-medium py-2.5 rounded-lg transition-all flex items-center justify-center gap-2"
       >
-        🚀 Demo Login (No Google Required)
+        {t("demoLogin", "🚀 Demo Login (No Google Required)")}
       </button>
 
       <div className="text-center text-sm text-slate-400 pt-2">
-        Don&apos;t have an account?{" "}
+        {t("noAccount", "Don't have an account?")}{" "}
         <a href="/auth/signup" className="text-emerald-400 hover:text-emerald-300 font-medium">
-          Create account
+          {t("createAccountLink", "Create account")}
         </a>
       </div>
     </div>

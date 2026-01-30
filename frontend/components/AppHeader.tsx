@@ -35,18 +35,17 @@ export function AppHeader() {
       </div>
       <nav className="flex flex-wrap gap-3 text-sm text-muted">
         <Link href="/dashboard" className="hover:text-cyan-300">
-           <LocalizedText id="navSignals" fallback="Live Data" />
+           <LocalizedText id="navLiveTrading" fallback="Live Trading" />
         </Link>
-        
         
         {/* Admin Links */}
         {(session?.user as any)?.role === "admin" && (
           <>
-            <Link href="/dashboard/signals" className="hover:text-cyan-300 text-purple-400">
-              <LocalizedText id="navSignalsPage" fallback="Signals" />
+            <Link href="/dashboard/signals" className="hover:text-cyan-300">
+              <LocalizedText id="navSignalStudio" fallback="Signal Studio" />
             </Link>
-            <Link href="/dashboard/robots" className="hover:text-cyan-300 text-emerald-400">
-              <LocalizedText id="navRobotsPage" fallback="Robots & Backtest" />
+            <Link href="/dashboard/robots" className="hover:text-cyan-300">
+              <LocalizedText id="navRobotStudio" fallback="Robot Studio" />
             </Link>
             <Link href="/dashboard/users" className="hover:text-cyan-300 text-purple-400">
               <LocalizedText id="navUsers" fallback="Users" />

@@ -16,16 +16,16 @@ export default async function SignalsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-white"><LocalizedText id="signalsTitle" fallback="Signal Library" /></h1>
+        <h1 className="text-2xl font-bold text-white"><LocalizedText id="navSignalStudio" fallback="Signal Studio" /></h1>
         <p className="text-slate-400">
-          <LocalizedText id="signalsDescription" fallback="Create reusable trading signals using formulas or python." />
+          <LocalizedText id="editorDescription" fallback="Create reusable trading signals using formulas or python." />
         </p>
       </div>
 
       <SectionCard
         id="signal-editor"
-        title="Signal Library"
-        description="Manage your trading signals."
+        title={<LocalizedText id="editorTitle" fallback="Signal Library" />}
+        description={<LocalizedText id="editorDescription" fallback="Manage your trading signals." />}
       >
         <SignalEditor />
       </SectionCard>
