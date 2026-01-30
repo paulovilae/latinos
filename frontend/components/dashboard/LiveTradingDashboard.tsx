@@ -200,7 +200,7 @@ export function LiveTradingDashboard() {
                              </tr>
                          </thead>
                          <tbody className="divide-y divide-slate-800">
-                             {signals.slice(0, 10).map((sig) => {
+                             {signals.filter(s => s.type === 'buy' || s.type === 'sell').slice(0, 10).map((sig) => {
                                  const bot = bots.find(b => b.id === sig.bot_id);
                                  const isBuy = sig.type === 'buy';
                                  return (
