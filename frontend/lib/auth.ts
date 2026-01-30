@@ -2,6 +2,18 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { NextAuthOptions } from "next-auth";
 
+const PRIMARY_API = process.env.NEXT_PUBLIC_API_URL_PRIMARY || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const SECONDARY_API = process.env.NEXT_PUBLIC_API_URL_SECONDARY || "";
+const CF_CLIENT_ID = process.env.NEXT_PUBLIC_CF_ACCESS_CLIENT_ID || "";
+const CF_CLIENT_SECRET = process.env.NEXT_PUBLIC_CF_ACCESS_CLIENT_SECRET || "";
+
+const getHeaders = (extra: Record<string, string> = {}) => ({
+  "Content-Type": "application/json",
+  ...(CF_CLIENT_ID ? { "CF-Access-Client-Id": CF_CLIENT_ID } : {}),
+  ...(CF_CLIENT_SECRET ? { "CF-Access-Client-Secret": CF_CLIENT_SECRET } : {}),
+  ...extra,
+});
+
 export const authOptions: NextAuthOptions = {
   providers: [
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
@@ -18,43 +30,38 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
-          // Use 127.0.0.1 primarily if local to avoid resolving issues
-          // But NEXT_PUBLIC_API_URL is available
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-          const res = await fetch(`${apiUrl}/api/auth/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: credentials?.email,
-              password: credentials?.password,
-            }),
-          });
+          const tryLogin = async (baseUrl: string) => {
+            const res = await fetch(`${baseUrl}/api/auth/login`, {
+              method: "POST",
+              headers: getHeaders(),
+              body: JSON.stringify({
+                email: credentials?.email,
+                password: credentials?.password,
+              }),
+            });
 
-          if (!res.ok) return null;
-          
-          const tokenData = await res.json();
-          // Demo Admin bypass
-          if (tokenData.access_token === "demo-admin-token") {
-              return {
-                  id: "1",
-                  name: "Demo Admin",
-                  email: "demo@latinos.dev",
-                  role: "admin",
-                  accessToken: tokenData.access_token
-              } as any
+            if (!res.ok) return null;
+            
+            const tokenData = await res.json();
+            
+            // Fetch Me
+            const meRes = await fetch(`${baseUrl}/api/users/me`, {
+              headers: getHeaders({ Authorization: `Bearer ${tokenData.access_token}` }),
+            });
+            
+            if(meRes.ok) {
+                const user = await meRes.json();
+                return { ...user, accessToken: tokenData.access_token };
+            }
+            return null;
+          };
+
+          try {
+            return await tryLogin(PRIMARY_API);
+          } catch (err) {
+            if (SECONDARY_API) return await tryLogin(SECONDARY_API);
+            throw err;
           }
-          
-           // Fetch Me
-           const meRes = await fetch(`${apiUrl}/api/users/me`, {
-            headers: { Authorization: `Bearer ${tokenData.access_token}` },
-          });
-          
-          if(meRes.ok) {
-              const user = await meRes.json();
-              return { ...user, accessToken: tokenData.access_token };
-          }
-          
-          return null;
 
         } catch (e) {
           console.error("Auth Error:", e)  
@@ -68,36 +75,45 @@ export const authOptions: NextAuthOptions = {
       if (account && account.provider === "google" && user) {
            // Exchange for Backend Token
            try {
-             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-             const res = await fetch(`${apiUrl}/api/auth/google`, {
-                 method: "POST",
-                 headers: { "Content-Type": "application/json" },
-                 body: JSON.stringify({
-                     email: user.email,
-                     name: user.name || "Google User",
-                     provider: "google"
-                 })
-             });
-             
-             if(res.ok) {
-                 const data = await res.json();
-                 token.accessToken = data.access_token;
-                 token.role = data.role; // Use role from backend (could be admin)
-                 // Fetch me to get plan
-                 const meRes = await fetch(`${apiUrl}/api/users/me`, {
-                    headers: { Authorization: `Bearer ${data.access_token}` },
-                 });
-                 if (meRes.ok) {
-                     const me = await meRes.json();
-                     token.plan = me.subscription_tier;
-                 }
+             const trySocial = async (baseUrl: string) => {
+               const res = await fetch(`${baseUrl}/api/auth/google`, {
+                   method: "POST",
+                   headers: getHeaders(),
+                   body: JSON.stringify({
+                       email: user.email,
+                       name: user.name || "Google User",
+                       provider: "google"
+                   })
+               });
+               
+               if(res.ok) {
+                   const data = await res.json();
+                   token.accessToken = data.access_token;
+                   token.role = data.role;
+                   
+                   const meRes = await fetch(`${baseUrl}/api/users/me`, {
+                      headers: getHeaders({ Authorization: `Bearer ${data.access_token}` }),
+                   });
+                   if (meRes.ok) {
+                       const me = await meRes.json();
+                       token.plan = me.subscription_tier;
+                   }
+                   return true;
+               }
+               return false;
+             };
+
+             try {
+               await trySocial(PRIMARY_API);
+             } catch (err) {
+               if (SECONDARY_API) await trySocial(SECONDARY_API);
              }
            } catch(e) {
                console.error("Social Login Error", e);
            }
       } else if (user) {
         token.role = (user as any).role;
-        token.plan = (user as any).subscription_tier; // From authorize()
+        token.plan = (user as any).subscription_tier;
         token.accessToken = (user as any).accessToken;
       }
       return token;
@@ -111,11 +127,8 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`;
-      // Allows callback URLs on the same origin
       if (new URL(url).origin === baseUrl) return url;
-      // Default to dashboard
       return `${baseUrl}/dashboard`;
     },
   },
