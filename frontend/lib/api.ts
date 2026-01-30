@@ -4,40 +4,49 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "./auth";
 import { DashboardSummary, Formula, User } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+const PRIMARY_API = process.env.NEXT_PUBLIC_API_URL_PRIMARY || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const SECONDARY_API = process.env.NEXT_PUBLIC_API_URL_SECONDARY || "";
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const session = await getServerSession(authOptions);
   const token = (session?.user as any)?.accessToken;
 
-  // Headers setup
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(init?.headers as Record<string, string> || {}),
+  const tryFetch = async (baseUrl: string) => {
+    // Headers setup
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(init?.headers as Record<string, string> || {}),
+    };
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    } else if (process.env.NEXT_PUBLIC_DEMO_TOKEN) {
+        headers["Authorization"] = `Bearer ${process.env.NEXT_PUBLIC_DEMO_TOKEN}`;
+    }
+
+    const response = await fetch(`${baseUrl}${path}`, {
+      ...init,
+      cache: "no-store",
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API request failed: ${response.status} ${errorText}`);
+    }
+    if (response.status === 204) return null as T;
+    return (await response.json()) as T;
   };
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  } else if (process.env.NEXT_PUBLIC_DEMO_TOKEN) {
-      // Fallback for development if needed, but ideally we force login
-      headers["Authorization"] = `Bearer ${process.env.NEXT_PUBLIC_DEMO_TOKEN}`;
+  try {
+    return await tryFetch(PRIMARY_API);
+  } catch (err: any) {
+    if (SECONDARY_API && (err.name === "TypeError" || err.message.includes("fetch") || err.message.includes("NetworkError"))) {
+      console.warn(`Primary Server-side API (${PRIMARY_API}) unreachable. Falling back to ${SECONDARY_API}...`);
+      return await tryFetch(SECONDARY_API);
+    }
+    throw err;
   }
-
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    cache: "no-store",
-    headers,
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    // Handle 401 explicitly?
-    throw new Error(`API request failed: ${response.status} ${errorText}`);
-  }
-  if (response.status === 204) {
-    return null as T;
-  }
-  return (await response.json()) as T;
 }
 
 export function fetchDashboardSummary(): Promise<DashboardSummary> {
