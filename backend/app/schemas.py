@@ -66,13 +66,13 @@ class UserCreateRequest(RegisterRequest):
 
 class BotBase(BaseModel):
     name: str
-    description: str
+    description: Optional[str] = ""
     script: Optional[str] = ""
     tags: List[str] = []
 
 
 class BotCreate(BotBase):
-    pass
+    signal_ids: Optional[List[int]] = None  # IDs of signals to associate with this bot
 
 
 class BotUpdate(BaseModel):
@@ -87,6 +87,7 @@ class BotOut(BotBase):
     id: int
     status: str
     owner_id: int
+    signals: Optional[List["SignalOut"]] = None
 
     class Config:
         from_attributes = True
@@ -111,7 +112,7 @@ class FormulaUpdate(BaseModel):
 
 class FormulaOut(BaseModel):
     id: int
-    bot_id: int
+    bot_id: Optional[int] = None
     version: int
     payload: Dict
     created_by: int
@@ -133,15 +134,16 @@ class FormulaPublishRequest(BaseModel):
 
 
 class BacktestCreate(BaseModel):
-    bot_id: int
+    bot_id: Optional[int] = None
     formula_version_id: Optional[int] = None
     range: str
     market: str
+    stack: Optional[List[int]] = None  # List of signal IDs to backtest
 
 
 class BacktestOut(BaseModel):
     id: int
-    bot_id: int
+    bot_id: Optional[int] = None
     formula_version_id: Optional[int] = None
     range: str
     market: str
@@ -154,20 +156,45 @@ class BacktestOut(BaseModel):
 
 
 class SignalCreate(BaseModel):
-    bot_id: int
+    bot_id: Optional[int] = None
     type: str
     payload: Dict
-    mode: str = "paper"
+    mode: str = "simulation"
 
 
 class SignalOut(BaseModel):
     id: int
-    bot_id: int
+    bot_id: Optional[int] = None
     type: str
     payload: Dict
     emitted_at: datetime
     mode: str
     delivery_status: str
+
+    class Config:
+        from_attributes = True
+
+
+class TradeCreate(BaseModel):
+    bot_id: Optional[int] = None
+    signal_id: Optional[int] = None
+    symbol: str
+    side: str
+    price: float
+    amount: float = 1.0
+
+
+class TradeOut(BaseModel):
+    id: int
+    user_id: int
+    bot_id: Optional[int] = None
+    signal_id: Optional[int] = None
+    symbol: str
+    side: str
+    price: float
+    amount: float
+    status: str
+    timestamp: datetime
 
     class Config:
         from_attributes = True
@@ -234,3 +261,34 @@ class DashboardSummary(BaseModel):
     plans: List[Plan]
     market_universe: List[MarketUniverseItem]
     subscription_tier: str
+
+class SignalType(str):
+    FORMULA = "FORMULA"
+    PYTHON = "PYTHON"
+
+class SignalDef(BaseModel):
+    id: str  # UUID
+    name: str
+    type: str # SignalType
+    code: str # Formula or Python script
+    description: Optional[str] = None
+
+class SignalStack(BaseModel):
+    id: str # UUID
+    name: str
+    signals: List[str]  # List of SignalDef IDs
+
+class StackBacktestRequest(BaseModel):
+    stack: SignalStack
+    symbol: str
+    period: int = 365 # days
+
+class BacktestResult(BaseModel):
+    total_trades: int
+    win_rate: float
+    pnl: float
+    history: List[Dict] = []
+
+
+# Rebuild models with forward references
+BotOut.model_rebuild()

@@ -10,7 +10,7 @@ export default function LandingPage() {
           <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
             <span className="text-emerald-400 font-bold">L</span>
           </div>
-          <span className="font-bold text-lg tracking-tight">Latino's Trading</span>
+          <span className="font-bold text-lg tracking-tight">Latino&apos;s Trading</span>
         </div>
         <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
           <Link href="#features" className="hover:text-emerald-400 transition-colors"><LocalizedText id="navFeatures" fallback="Features" /></Link>
@@ -134,7 +134,7 @@ export default function LandingPage() {
                  <ul className="space-y-4 mb-8 text-sm text-slate-400">
                    <li className="flex items-center gap-3">
                      <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                     Paper Trading Only
+                     Simulation (Entrenamiento) Only
                    </li>
                    <li className="flex items-center gap-3">
                      <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>

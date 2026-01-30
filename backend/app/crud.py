@@ -1,6 +1,7 @@
+import datetime
 from sqlalchemy.orm import Session
-from . import models, schemas
 from passlib.context import CryptContext
+from . import models, schemas
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -42,10 +43,21 @@ def update_user_subscription(db: Session, user_id: int, tier: str, status: str, 
     return user
 
 def create_bot(db: Session, bot: schemas.BotCreate, owner_id: int):
-    db_bot = models.Bot(**bot.dict(), owner_id=owner_id, status="draft")
+    # Exclude signal_ids from the bot model creation
+    bot_data = bot.model_dump(exclude={"signal_ids"})
+    db_bot = models.Bot(**bot_data, owner_id=owner_id, status="draft")
     db.add(db_bot)
     db.commit()
     db.refresh(db_bot)
+    
+    # Associate signals with this bot
+    if bot.signal_ids:
+        signals = db.query(models.Signal).filter(models.Signal.id.in_(bot.signal_ids)).all()
+        for sig in signals:
+            sig.bot_id = db_bot.id
+        db.commit()
+        db.refresh(db_bot)
+    
     return db_bot
 
 def get_bots(db: Session, owner_id: int = None, skip: int = 0, limit: int = 100):
@@ -80,12 +92,9 @@ def get_formulas(db: Session, bot_id: int):
              .all()
 
 def create_backtest(db: Session, backtest: schemas.BacktestCreate, user_id: int):
-    db_bt = models.Backtest(**backtest.dict(), status="pending", submitted_at=None)
-    import datetime
-    db_bt.submitted_at = datetime.datetime.utcnow()
+    db_bt = models.Backtest(**backtest.dict(), status="pending", submitted_at=datetime.datetime.utcnow())
     db.add(db_bt)
     db.commit()
-    db.refresh(db_bt)
     db.refresh(db_bt)
     return db_bt
 
@@ -93,10 +102,23 @@ def get_backtest(db: Session, backtest_id: int):
     return db.query(models.Backtest).filter(models.Backtest.id == backtest_id).first()
 
 def create_signal(db: Session, signal: schemas.SignalCreate):
-    db_sig = models.Signal(**signal.dict(), emitted_at=None, delivery_status="pending")
-    import datetime
-    db_sig.emitted_at = datetime.datetime.utcnow()
+    db_sig = models.Signal(**signal.dict(), emitted_at=datetime.datetime.utcnow(), delivery_status="pending")
     db.add(db_sig)
     db.commit()
     db.refresh(db_sig)
     return db_sig
+
+def delete_bot(db: Session, bot_id: int):
+    db_bot = db.query(models.Bot).filter(models.Bot.id == bot_id).first()
+    if db_bot:
+        db.delete(db_bot)
+        db.commit()
+        return True
+    return False
+
+def create_trade(db: Session, trade: schemas.TradeCreate, user_id: int):
+    db_trade = models.Trade(**trade.model_dump(), user_id=user_id)
+    db.add(db_trade)
+    db.commit()
+    db.refresh(db_trade)
+    return db_trade

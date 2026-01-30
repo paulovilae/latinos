@@ -41,8 +41,8 @@ export function AppHeader() {
         {/* Admin Links */}
         {(session?.user as any)?.role === "admin" && (
           <>
-            <Link href="/dashboard/robots" className="hover:text-cyan-300 text-emerald-400">
-              <LocalizedText id="navBots" fallback="Robot Studio" />
+            <Link href="/dashboard/signals" className="hover:text-cyan-300 text-emerald-400">
+              <LocalizedText id="navSignalsPage" fallback="Signal & Robot Studio" />
             </Link>
             <Link href="/dashboard/users" className="hover:text-cyan-300 text-purple-400">
               <LocalizedText id="navUsers" fallback="Users" />

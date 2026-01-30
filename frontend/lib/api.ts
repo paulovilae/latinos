@@ -41,18 +41,18 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 }
 
 export function fetchDashboardSummary(): Promise<DashboardSummary> {
-  return apiFetch<DashboardSummary>("/dashboard/summary");
+  return apiFetch<DashboardSummary>("/api/dashboard/summary");
 }
 
 export function fetchBotFormulas(botId: number): Promise<Formula[]> {
-  return apiFetch<Formula[]>(`/bots/${botId}/formulas`);
+  return apiFetch<Formula[]>(`/api/bots/${botId}/formulas`);
 }
 
 
 // Stripe functions moved to actions.ts for Server Actions support
 
 export function fetchUsers(): Promise<User[]> {
-  return apiFetch<User[]>("/users");
+  return apiFetch<User[]>("/api/users");
 }
 
 export interface MarketDataResponse {
@@ -61,5 +61,5 @@ export interface MarketDataResponse {
 }
 
 export function fetchMarketData(symbol: string): Promise<MarketDataResponse> {
-  return apiFetch<MarketDataResponse>(`/market/series/${symbol}?range=1y&interval=1d`);
+  return apiFetch<MarketDataResponse>(`/api/market/series/${symbol}?range=1y&interval=1d`);
 }

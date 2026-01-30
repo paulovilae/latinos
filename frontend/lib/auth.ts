@@ -21,7 +21,7 @@ export const authOptions: NextAuthOptions = {
           // Use 127.0.0.1 primarily if local to avoid resolving issues
           // But NEXT_PUBLIC_API_URL is available
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-          const res = await fetch(`${apiUrl}/auth/login`, {
+          const res = await fetch(`${apiUrl}/api/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -45,7 +45,7 @@ export const authOptions: NextAuthOptions = {
           }
           
            // Fetch Me
-           const meRes = await fetch(`${apiUrl}/users/me`, {
+           const meRes = await fetch(`${apiUrl}/api/users/me`, {
             headers: { Authorization: `Bearer ${tokenData.access_token}` },
           });
           
@@ -69,7 +69,7 @@ export const authOptions: NextAuthOptions = {
            // Exchange for Backend Token
            try {
              const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-             const res = await fetch(`${apiUrl}/auth/google`, {
+             const res = await fetch(`${apiUrl}/api/auth/google`, {
                  method: "POST",
                  headers: { "Content-Type": "application/json" },
                  body: JSON.stringify({
@@ -84,7 +84,7 @@ export const authOptions: NextAuthOptions = {
                  token.accessToken = data.access_token;
                  token.role = data.role; // Use role from backend (could be admin)
                  // Fetch me to get plan
-                 const meRes = await fetch(`${apiUrl}/users/me`, {
+                 const meRes = await fetch(`${apiUrl}/api/users/me`, {
                     headers: { Authorization: `Bearer ${data.access_token}` },
                  });
                  if (meRes.ok) {

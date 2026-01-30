@@ -36,15 +36,15 @@ class Bot(Base):
     tags = Column(JSON, default=list)
 
     owner = relationship("User", back_populates="bots")
-    formulas = relationship("FormulaVersion", back_populates="bot")
+    formulas = relationship("FormulaVersion", back_populates="bot", cascade="all, delete-orphan")
     signals = relationship("Signal", back_populates="bot")
-    backtests = relationship("Backtest", back_populates="bot")
+    backtests = relationship("Backtest", back_populates="bot", cascade="all, delete-orphan")
 
 class FormulaVersion(Base):
     __tablename__ = "formulas"
 
     id = Column(Integer, primary_key=True, index=True)
-    bot_id = Column(Integer, ForeignKey("bots.id"))
+    bot_id = Column(Integer, ForeignKey("bots.id", ondelete="CASCADE"))
     version = Column(Integer)
     payload = Column(JSON)
     created_by = Column(Integer, ForeignKey("users.id"))
@@ -55,17 +55,17 @@ class FormulaVersion(Base):
 
     bot = relationship("Bot", back_populates="formulas")
     creator = relationship("User", back_populates="formulas")
-    backtests = relationship("Backtest", back_populates="formula")
+    backtests = relationship("Backtest", back_populates="formula", cascade="all, delete-orphan")
 
 class Signal(Base):
     __tablename__ = "signals"
 
     id = Column(Integer, primary_key=True, index=True)
-    bot_id = Column(Integer, ForeignKey("bots.id"))
+    bot_id = Column(Integer, ForeignKey("bots.id", ondelete="SET NULL"))
     type = Column(String) # buy, sell
     payload = Column(JSON)
     emitted_at = Column(DateTime, default=datetime.utcnow)
-    mode = Column(String) # paper, live
+    mode = Column(String) # simulation, live
     delivery_status = Column(String, default="pending")
 
     bot = relationship("Bot", back_populates="signals")
@@ -74,8 +74,8 @@ class Backtest(Base):
     __tablename__ = "backtests"
 
     id = Column(Integer, primary_key=True, index=True)
-    bot_id = Column(Integer, ForeignKey("bots.id"))
-    formula_version_id = Column(Integer, ForeignKey("formulas.id"))
+    bot_id = Column(Integer, ForeignKey("bots.id", ondelete="CASCADE"))
+    formula_version_id = Column(Integer, ForeignKey("formulas.id", ondelete="CASCADE"))
     range = Column(String)
     market = Column(String)
     status = Column(String, default="queued")
@@ -95,3 +95,34 @@ class Subscription(Base):
     limits = Column(JSON)
 
     user = relationship("User", back_populates="subscriptions")
+
+class MarketData(Base):
+    __tablename__ = "market_data"
+
+    id = Column(Integer, primary_key=True, index=True)
+    symbol = Column(String, index=True)
+    interval = Column(String, index=True)  # 1d, 1h, 15m
+    timestamp = Column(DateTime, index=True)
+    open = Column(Float)
+    high = Column(Float)
+    low = Column(Float)
+    close = Column(Float)
+    volume = Column(Float)
+
+class Trade(Base):
+    __tablename__ = "trades"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    bot_id = Column(Integer, ForeignKey("bots.id"), nullable=True)
+    signal_id = Column(Integer, ForeignKey("signals.id"), nullable=True)
+    symbol = Column(String)
+    side = Column(String) # buy, sell
+    price = Column(Float)
+    amount = Column(Float, default=1.0)
+    status = Column(String, default="simulated")
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+    bot = relationship("Bot")
+    signal = relationship("Signal")

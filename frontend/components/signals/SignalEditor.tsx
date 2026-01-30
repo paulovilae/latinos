@@ -1,0 +1,157 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { clientApiFetch } from "@/lib/clientApi";
+
+interface Signal {
+  id: number;
+  type: "FORMULA" | "PYTHON";
+  payload: { code: string; name?: string; description?: string };
+  mode: string;
+}
+
+export function SignalEditor() {
+  const [signals, setSignals] = useState<Signal[]>([]);
+  const [selectedSignal, setSelectedSignal] = useState<Signal | null>(null);
+  
+  // Form State
+  const [name, setName] = useState("");
+  const [type, setType] = useState<"FORMULA" | "PYTHON">("FORMULA");
+  const [code, setCode] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    refreshSignals();
+  }, []);
+
+  const refreshSignals = async () => {
+    try {
+      const data = await clientApiFetch<Signal[]>("/api/signals/");
+      setSignals(data);
+    } catch (e) {
+      console.error("Failed to load signals", e);
+    }
+  };
+
+  const handleCreate = async () => {
+    setIsSubmitting(true);
+    try {
+      await clientApiFetch("/api/signals/", {
+        method: "POST",
+        body: JSON.stringify({
+          type,
+          payload: { name, code },
+          mode: "simulation"
+        })
+      });
+      await refreshSignals();
+      // Reset form
+      setName("");
+      setCode("");
+    } catch (e) {
+      alert("Failed to create signal");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[500px]">
+      {/* List */}
+      <div className="md:col-span-1 border-r border-slate-700 pr-4 overflow-y-auto">
+        <h3 className="text-sm font-semibold text-slate-400 mb-3">Your Signals</h3>
+        <div className="space-y-2">
+            {signals.map(sig => (
+                <div 
+                    key={sig.id} 
+                    className="p-3 bg-slate-800 rounded-lg cursor-pointer hover:bg-slate-700 transition flex justify-between items-center group"
+                    onClick={() => {
+                        setSelectedSignal(sig);
+                        setName(sig.payload.name || "");
+                        setType(sig.type);
+                        setCode(sig.payload.code);
+                    }}
+                >
+                    <div>
+                        <div className="font-medium text-white">{sig.payload.name || `Signal #${sig.id}`}</div>
+                        <div className="text-xs text-slate-500">{sig.type}</div>
+                    </div>
+                    <button
+                        className="p-1 hover:bg-red-500/20 rounded text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={async (e) => {
+                            e.stopPropagation();
+                            if(!confirm("Delete this signal?")) return;
+                            try {
+                                await clientApiFetch(`/api/signals/${sig.id}`, { method: "DELETE" });
+                                refreshSignals();
+                                if(selectedSignal?.id === sig.id) {
+                                    setSelectedSignal(null);
+                                    setName("");
+                                    setCode("");
+                                }
+                            } catch(err) {
+                                alert("Failed to delete signal");
+                            }
+                        }}
+                    >
+                        🗑️
+                    </button>
+                </div>
+            ))}
+             {signals.length === 0 && (
+                <div className="text-sm text-slate-500 italic">No signals yet.</div>
+            )}
+        </div>
+        <button 
+            className="mt-4 w-full py-2 bg-indigo-600/20 text-indigo-300 rounded-lg text-sm hover:bg-indigo-600/30"
+            onClick={() => {
+                setSelectedSignal(null);
+                setName("");
+                setCode("");
+            }}
+        >
+            + New Signal
+        </button>
+      </div>
+
+      {/* Editor */}
+      <div className="md:col-span-2 flex flex-col gap-4">
+        <div className="flex gap-4">
+            <input 
+                className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 flex-1 text-white"
+                placeholder="Signal Name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+            />
+            <select 
+                className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white"
+                value={type}
+                onChange={e => setType(e.target.value as any)}
+            >
+                <option value="FORMULA">Math Formula</option>
+                <option value="PYTHON">Python Script</option>
+            </select>
+        </div>
+
+        <div className="flex-1 relative">
+            <textarea 
+                className="w-full h-full bg-slate-950 border border-slate-700 rounded-lg p-4 font-mono text-sm text-green-400 resize-none focus:outline-none focus:border-indigo-500"
+                placeholder={type === 'FORMULA' ? "close > open" : "if data.close > data.open:\n    result = True"}
+                value={code}
+                onChange={e => setCode(e.target.value)}
+            />
+        </div>
+        
+        <div className="flex justify-end gap-3">
+             <button 
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 disabled:opacity-50"
+                onClick={handleCreate}
+                disabled={isSubmitting || !code}
+             >
+                {selectedSignal ? "Update Signal" : "Create Signal"}
+             </button>
+        </div>
+      </div>
+    </div>
+  );
+}

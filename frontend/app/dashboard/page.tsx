@@ -8,6 +8,7 @@ import { TagPill } from "@/components/TagPill";
 import { LocalizedText } from "@/components/LocalizedText";
 import { BillingPlans } from "@/components/BillingPlans";
 import { DashboardChartWrapper } from "./DashboardChartWrapper";
+import { SignalFeed } from "@/components/signals/SignalFeed";
 
 function SectionGrid({ children }: { children: ReactNode }) {
   return <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>;
@@ -72,23 +73,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
             />
           }
         >
-          <ul className="space-y-3">
-            {signals.map((signal) => (
-              <li key={signal.id} className="border border-slate-800 rounded-xl p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold">{botNameMap.get(signal.bot_id) ?? `Bot #${signal.bot_id}`}</p>
-                    <p className="text-xs text-muted">{JSON.stringify(signal.payload)}</p>
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <TagPill label={signal.type.toUpperCase()} tone={signal.type === "buy" ? "success" : "warning"} />
-                    <TagPill label={signal.mode} />
-                    <span className="text-xs text-muted">{formatDate(signal.emitted_at)}</span>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <SignalFeed initialSignals={signals} botNameMap={botNameMap} />
         </SectionCard>
 
          <SectionCard
