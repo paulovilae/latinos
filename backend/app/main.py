@@ -13,7 +13,10 @@ app = FastAPI(title="Investment Bot Platform - Latinos Trading")
 # Middlewares
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:3003,http://localhost:3306,https://latinos.paulovila.org").split(","),
+    allow_origins=os.getenv(
+        "ALLOWED_ORIGINS", 
+        "http://localhost:3003,http://localhost:3306,https://latinos.paulovila.org,https://back-latinos.paulovila.org,https://api.latinos.paulovila.org,https://engine.latinos.paulovila.org"
+    ).split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
