@@ -2,7 +2,7 @@ from __future__ import annotations
 import os
 from typing import Dict, List, Optional
 from jose import jwt, JWTError
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
@@ -18,6 +18,15 @@ ALGORITHM = "HS256"
 
 # Keep the demo token for "Legacy" API access if needed, or mapping
 DEMO_TOKEN = "demo-admin-token"
+TEST_API_KEY = os.getenv("TEST_API_KEY", "prueba123%")
+
+async def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key")):
+    if not x_api_key or x_api_key != TEST_API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Valid API Key required in X-API-Key header"
+        )
+    return x_api_key
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),

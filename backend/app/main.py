@@ -1,6 +1,6 @@
 from __future__ import annotations
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import auth, users, bots, signals, dashboard, billing, trades
 
@@ -8,7 +8,12 @@ from .routers import auth, users, bots, signals, dashboard, billing, trades
 from dotenv import load_dotenv
 load_dotenv()
 
-app = FastAPI(title="Investment Bot Platform - Latinos Trading")
+from .dependencies import verify_api_key
+
+app = FastAPI(
+    title="Investment Bot Platform - Latinos Trading",
+    dependencies=[Depends(verify_api_key)]
+)
 
 # Middlewares
 app.add_middleware(
