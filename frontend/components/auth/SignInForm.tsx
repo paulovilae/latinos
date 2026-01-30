@@ -117,6 +117,27 @@ export function SignInForm() {
         </svg>
         Google
       </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          setEmail("demo@latinos.trade");
+          setPassword("demo123");
+          // Auto-submit
+          const form = document.querySelector('form');
+          if (form) form.requestSubmit();
+        }}
+        className="w-full bg-cyan-600 hover:bg-cyan-500 border border-cyan-500/30 text-white font-medium py-2.5 rounded-lg transition-all flex items-center justify-center gap-2"
+      >
+        🚀 Demo Login (No Google Required)
+      </button>
+
+      <div className="text-center text-sm text-slate-400 pt-2">
+        Don&apos;t have an account?{" "}
+        <a href="/auth/signup" className="text-emerald-400 hover:text-emerald-300 font-medium">
+          Create account
+        </a>
+      </div>
     </div>
   );
 }
