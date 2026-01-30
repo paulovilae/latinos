@@ -4,7 +4,6 @@ const PRIMARY_API = process.env.NEXT_PUBLIC_API_URL_PRIMARY || process.env.NEXT_
 const SECONDARY_API = process.env.NEXT_PUBLIC_API_URL_SECONDARY || "";
 const CF_CLIENT_ID = process.env.NEXT_PUBLIC_CF_ACCESS_CLIENT_ID || "";
 const CF_CLIENT_SECRET = process.env.NEXT_PUBLIC_CF_ACCESS_CLIENT_SECRET || "";
-const TEST_API_KEY = process.env.NEXT_PUBLIC_TEST_API_KEY || "prueba123%";
 const DEMO_TOKEN = process.env.NEXT_PUBLIC_DEMO_TOKEN ?? "demo-admin-token";
 
 export async function clientApiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -14,7 +13,6 @@ export async function clientApiFetch<T>(path: string, init?: RequestInit): Promi
       headers: {
         Authorization: `Bearer ${DEMO_TOKEN}`,
         "Content-Type": "application/json",
-        "X-API-Key": TEST_API_KEY,
         ...(CF_CLIENT_ID ? { "CF-Access-Client-Id": CF_CLIENT_ID } : {}),
         ...(CF_CLIENT_SECRET ? { "CF-Access-Client-Secret": CF_CLIENT_SECRET } : {}),
         ...(init?.headers || {}),

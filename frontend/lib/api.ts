@@ -7,9 +7,8 @@ import { DashboardSummary, Formula, User } from "./types";
 const PRIMARY_API = process.env.NEXT_PUBLIC_API_URL_PRIMARY || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 const SECONDARY_API = process.env.NEXT_PUBLIC_API_URL_SECONDARY || "";
 
-const CF_CLIENT_ID = process.env.CF_ACCESS_CLIENT_ID || "";
-const CF_CLIENT_SECRET = process.env.CF_ACCESS_CLIENT_SECRET || "";
-const TEST_API_KEY = process.env.TEST_API_KEY || "prueba123%";
+const CF_CLIENT_ID = process.env.NEXT_PUBLIC_CF_ACCESS_CLIENT_ID || "";
+const CF_CLIENT_SECRET = process.env.NEXT_PUBLIC_CF_ACCESS_CLIENT_SECRET || "";
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const session = await getServerSession(authOptions);
@@ -19,7 +18,6 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     // Headers setup
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "X-API-Key": TEST_API_KEY,
       ...(CF_CLIENT_ID ? { "CF-Access-Client-Id": CF_CLIENT_ID } : {}),
       ...(CF_CLIENT_SECRET ? { "CF-Access-Client-Secret": CF_CLIENT_SECRET } : {}),
       ...(init?.headers as Record<string, string> || {}),

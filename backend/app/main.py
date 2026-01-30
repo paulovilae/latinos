@@ -8,11 +8,8 @@ from .routers import auth, users, bots, signals, dashboard, billing, trades
 from dotenv import load_dotenv
 load_dotenv()
 
-from .dependencies import verify_api_key
-
 app = FastAPI(
-    title="Investment Bot Platform - Latinos Trading",
-    dependencies=[Depends(verify_api_key)]
+    title="Investment Bot Platform - Latinos Trading"
 )
 
 # Middlewares

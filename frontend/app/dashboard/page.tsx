@@ -1,4 +1,5 @@
 import { Suspense, type ReactNode } from "react";
+export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import { fetchDashboardSummary } from "@/lib/api";
 import type { DashboardSummary } from "@/lib/types";
