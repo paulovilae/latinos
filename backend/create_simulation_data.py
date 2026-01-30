@@ -42,16 +42,15 @@ def create_simulation_data():
             print(f"✅ Created Signal: {s_data['name']}")
             created_signals.append(sig)
 
-        # 2. Create Robots
-        robots_data = [
+        # 2. Ensure Default Robots Exist (Optional - just to make sure the standard ones are there)
+        default_robots = [
             {"name": "Eagle Eye Alpha", "desc": "High-frequency trend follower", "strategy": "Momentum"},
             {"name": "Quantum Solace", "desc": "Mean reversion strategy", "strategy": "Mean Reversion"},
             {"name": "Vetra Sentinel", "desc": "Conservative long-term accumulator", "strategy": "Trend Following"},
             {"name": "Titan Scalper", "desc": "Aggressive short-term scalping", "strategy": "Scalping"},
         ]
 
-        created_bots = []
-        for i, r_data in enumerate(robots_data):
+        for r_data in default_robots:
             bot = db.query(models.Bot).filter(models.Bot.name == r_data["name"]).first()
             if not bot:
                 bot = models.Bot(
@@ -62,13 +61,15 @@ def create_simulation_data():
                 )
                 db.add(bot)
                 db.commit()
-                db.refresh(bot)
-                print(f"🤖 Created Robot: {bot.name}")
-            created_bots.append(bot)
+                print(f"🤖 Created Default Robot: {bot.name}")
 
-        # 3. Emit Recent Signals (to show in Feed/Cards)
+        # 3. Emit Recent Signals for ALL Running Bots (including user-created ones like GANDUL)
         print("📡 Emitting recent signals...")
         
+        # KEY CHANGE: Query all running bots, don't just use the created_bots list
+        active_bots = db.query(models.Bot).filter(models.Bot.status == "running").all()
+        print(f"📋 Found {len(active_bots)} active bots to simulate (Including: {[b.name for b in active_bots]})")
+
         signal_definitions = [
             {"name": "RSI Overbought", "code": "rsi > 70", "type": "sell"},
             {"name": "RSI Oversold", "code": "rsi < 30", "type": "buy"},
@@ -76,7 +77,7 @@ def create_simulation_data():
             {"name": "Bollinger Breakout", "code": "price > upper", "type": "buy"},
         ]
 
-        for bot in created_bots:
+        for bot in active_bots:
             # Create a "latest" signal for recommendation
             latest_def = random.choice(signal_definitions)
             
