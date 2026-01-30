@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+export const dynamic = "force-dynamic";
 import { getServerSession } from "next-auth";
 import { fetchDashboardSummary } from "@/lib/api";
 import { SectionCard } from "@/components/SectionCard";
