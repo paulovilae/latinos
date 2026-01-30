@@ -9,17 +9,23 @@ description = "FastAPI backend for Latinos app"
 dependencies = [
     "fastapi",
     "uvicorn",
-    "pydantic",
+    "pydantic[email]",
+    "sqlalchemy",
+    "psycopg2-binary",
     "python-multipart",
     "python-jose[cryptography]",
+    "python-dotenv",
     "passlib[bcrypt]",
     "httpx",
     "yfinance",
-    "redis"
+    "redis",
+    "stripe",
+    "cachetools",
+    "argon2-cffi"
 ]
 
 [tool.setuptools]
-packages = ["app", "fastapi", "pydantic"]
+packages = ["app"]
 
 [project.optional-dependencies]
 dev = [

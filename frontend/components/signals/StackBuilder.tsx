@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { clientApiFetch } from "@/lib/clientApi";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+// Using Next.js API routes (no direct backend calls)
 
 interface Signal {
   id: number;
@@ -30,18 +31,22 @@ export function StackBuilder() {
   // Selection for backtest
   const [selectedSymbol, setSelectedSymbol] = useState("AAPL");
   const [selectedPeriod, setSelectedPeriod] = useState("1y");
+  const [initialCapital, setInitialCapital] = useState(10000);
+  const [takeProfit, setTakeProfit] = useState(5.0);
+  const [stopLoss, setStopLoss] = useState(3.0);
 
   useEffect(() => {
     // Load signals to choose from
-    clientApiFetch<Signal[]>("/api/signals/").then(setAvailableSignals).catch(console.error);
+    fetch("/api/signals").then(res => res.json()).then(setAvailableSignals).catch(console.error);
     // Load saved robots
     loadRobots();
   }, []);
 
   const loadRobots = async () => {
     try {
-      const bots = await clientApiFetch<any[]>("/api/bots/");
-      setSavedRobots(bots.map(b => ({
+      const res = await fetch("/api/bots");
+      const bots = await res.json();
+      setSavedRobots(bots.map((b: any) => ({
         id: b.id,
         name: b.name,
         signal_ids: b.signals?.map((s: any) => s.id) || [],
@@ -56,7 +61,7 @@ export function StackBuilder() {
     e.stopPropagation();
     const newStatus = robot.status === "running" ? "pause" : "deploy";
     try {
-      await clientApiFetch(`/api/bots/${robot.id}/${newStatus}`, { method: "POST" });
+      await fetch(`/api/bots/${robot.id}/${newStatus}`, { method: "POST" });
       loadRobots();
     } catch (err) {
       alert("Failed to update status");
@@ -67,7 +72,7 @@ export function StackBuilder() {
     e.stopPropagation();
     if (!confirm(`Are you sure you want to delete robot "${robot.name}"?`)) return;
     try {
-      await clientApiFetch(`/api/bots/${robot.id}`, { method: "DELETE" });
+      await fetch(`/api/bots/${robot.id}`, { method: "DELETE" });
       loadRobots();
     } catch (err) {
       alert("Failed to delete robot");
@@ -83,18 +88,26 @@ export function StackBuilder() {
   };
 
   const runBacktest = async () => {
-    if (stack.length === 0) return;
+    if (stack.length === 0) {
+      alert("Please add at least one signal to the stack to run a simulation.");
+      return;
+    }
     setIsRunning(true);
     setBacktestResult(null);
     try {
-      const result = await clientApiFetch("/api/signals/backtest", {
+      const res = await fetch("/api/signals/backtest", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           range: selectedPeriod,
           market: selectedSymbol,
-          stack: stack.map(s => s.id) // Pass IDs
+          stack: stack.map(s => s.id), // Pass IDs
+          initial_capital: Number(initialCapital),
+          take_profit: Number(takeProfit),
+          stop_loss: Number(stopLoss)
         })
       });
+      const result = await res.json();
       setBacktestResult(result);
     } catch (e) {
       console.error(e);
@@ -111,8 +124,9 @@ export function StackBuilder() {
     }
     setIsSaving(true);
     try {
-      await clientApiFetch("/api/bots/", {
+      await fetch("/api/bots", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: robotName,
           signal_ids: stack.map(s => s.id)
@@ -249,6 +263,8 @@ export function StackBuilder() {
                         >
                             <option value="AAPL">AAPL</option>
                             <option value="BTC-USD">BTC-USD</option>
+                            <option value="NVDA">NVDA</option>
+                            <option value="SPY">SPY</option>
                         </select>
                     </div>
                     <div>
@@ -259,8 +275,42 @@ export function StackBuilder() {
                             className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-white"
                         >
                             <option value="1y">1 Year</option>
+                            <option value="6mo">6 Months</option>
+                            <option value="3mo">3 Months</option>
                             <option value="30d">30 Days</option>
                         </select>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                    <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 uppercase">Capital ($)</label>
+                        <input
+                            type="number"
+                            value={initialCapital}
+                            onChange={(e) => setInitialCapital(Number(e.target.value))}
+                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-emerald-400 font-mono"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 uppercase">Take Profit %</label>
+                        <input
+                            type="number"
+                            step="0.1"
+                            value={takeProfit}
+                            onChange={(e) => setTakeProfit(Number(e.target.value))}
+                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-emerald-300 font-mono"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 uppercase">Stop Loss %</label>
+                        <input
+                            type="number"
+                            step="0.1"
+                            value={stopLoss}
+                            onChange={(e) => setStopLoss(Number(e.target.value))}
+                            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-sm text-rose-300 font-mono"
+                        />
                     </div>
                 </div>
                 <button 
@@ -275,26 +325,121 @@ export function StackBuilder() {
             {backtestResult && (
                  <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 animate-in fade-in slide-in-from-bottom-4">
                     <h4 className="font-semibold text-white mb-4 border-b border-slate-800 pb-2">Results</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
                         <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
                             <div className="text-xs text-slate-400 uppercase tracking-wider">Total PnL</div>
-                            <div className={`text-xl font-mono font-bold ${backtestResult.results.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                ${backtestResult.results.pnl.toFixed(2)}
+                            <div className={`text-xl font-mono font-bold ${(backtestResult.results?.pnl || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                ${(backtestResult.results?.pnl || 0).toFixed(2)}
                             </div>
                         </div>
                         <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
                             <div className="text-xs text-slate-400 uppercase tracking-wider">Win Rate</div>
                             <div className="text-xl font-mono font-bold text-white">
-                                {(backtestResult.results.win_rate * 100).toFixed(1)}%
+                                {(backtestResult.results?.win_rate || 0).toFixed(1)}%
                             </div>
                         </div>
-                         <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center col-span-2">
-                            <div className="text-xs text-slate-400 uppercase tracking-wider">Total Trades</div>
-                            <div className="text-xl font-mono font-bold text-white">
-                                {backtestResult.results.total_trades}
+                        <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
+                            <div className="text-xs text-slate-400 uppercase tracking-wider">Total Return</div>
+                            <div className={`text-xl font-mono font-bold ${(backtestResult.results?.total_return_pct || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                {(backtestResult.results?.total_return_pct || 0).toFixed(2)}%
+                            </div>
+                        </div>
+                        <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
+                            <div className="text-xs text-slate-400 uppercase tracking-wider">Max Drawdown</div>
+                            <div className="text-xl font-mono font-bold text-rose-400">
+                                -{(backtestResult.results?.max_drawdown || 0).toFixed(2)}%
                             </div>
                         </div>
                     </div>
+
+                    {/* Equity Curve Chart */}
+                    {backtestResult.results?.equity_curve?.length > 0 && (
+                        <div className="h-64 mb-6 bg-slate-950 p-4 rounded-lg border border-slate-800">
+                             <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={backtestResult.results.equity_curve}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                                    <XAxis 
+                                        dataKey="timestamp" 
+                                        tickFormatter={(t) => new Date(t).toLocaleDateString()} 
+                                        stroke="#475569" 
+                                        fontSize={10} 
+                                        tick={{fill: '#64748b'}}
+                                    />
+                                    <YAxis 
+                                        stroke="#475569" 
+                                        fontSize={10} 
+                                        domain={['auto', 'auto']}
+                                        tickFormatter={(val) => `$${val.toLocaleString()}`}
+                                        tick={{fill: '#64748b'}}
+                                    />
+                                    <Tooltip 
+                                        labelFormatter={(t) => new Date(t).toLocaleDateString()}
+                                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#f8fafc' }}
+                                        formatter={(val: any) => [`$${(val || 0).toFixed(2)}`, 'Equity']}
+                                    />
+                                    <Line 
+                                        type="monotone" 
+                                        dataKey="equity" 
+                                        stroke="#10b981" 
+                                        strokeWidth={2} 
+                                        dot={false} 
+                                        activeDot={{ r: 4, fill: '#10b981' }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
+
+                     {/* Trade History Table */}
+                    {backtestResult.results?.history?.length > 0 && (
+                        <div className="mt-4 border border-slate-800 rounded-lg overflow-hidden">
+                            <div className="max-h-60 overflow-y-auto">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold sticky top-0 z-10">
+                                        <tr>
+                                            <th className="px-3 py-2 bg-slate-950">Date</th>
+                                            <th className="px-3 py-2 bg-slate-950">Type</th>
+                                            <th className="px-3 py-2 text-right bg-slate-950">Price</th>
+                                            <th className="px-3 py-2 text-right bg-slate-950">PnL</th>
+                                            <th className="px-3 py-2 text-right bg-slate-950">Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-800 bg-slate-900/50">
+                                        {backtestResult.results.history.map((trade: any, i: number) => (
+                                            <tr key={i} className="hover:bg-slate-800/50 transition-colors">
+                                                <td className="px-3 py-2 text-slate-300 text-xs whitespace-nowrap">
+                                                    {new Date(trade.time).toLocaleDateString()}
+                                                </td>
+                                                <td className="px-3 py-2">
+                                                    <div className="flex flex-col">
+                                                        <span className={`w-fit px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${
+                                                            trade.type === 'buy' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+                                                        }`}>
+                                                            {trade.type}
+                                                        </span>
+                                                        {trade.reason && <span className="text-[9px] text-slate-500 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px]">
+                                                            {trade.reason}
+                                                        </span>}
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-2 text-right text-slate-300 font-mono text-xs">
+                                                    ${trade.price.toFixed(2)}
+                                                </td>
+                                                <td className={`px-3 py-2 text-right font-mono font-bold text-xs ${
+                                                    (trade.pnl || 0) > 0 ? 'text-emerald-400' : (trade.pnl || 0) < 0 ? 'text-rose-400' : 'text-slate-500'
+                                                }`}>
+                                                    {trade.pnl ? `$${trade.pnl.toFixed(2)}` : '-'}
+                                                </td>
+                                                <td className="px-3 py-2 text-right text-slate-400 font-mono text-xs">
+                                                    {trade.balance ? `$${trade.balance.toFixed(0)}` : '-'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 

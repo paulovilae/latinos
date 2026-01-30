@@ -8,9 +8,18 @@ from .routers import auth, users, bots, signals, dashboard, billing, trades
 from dotenv import load_dotenv
 load_dotenv()
 
+# Initialize database tables
+from .db import Base, engine
+from . import models  # Import models to register them with Base
+
 app = FastAPI(
     title="Investment Bot Platform - Latinos Trading"
 )
+
+# Create all tables on startup
+@app.on_event("startup")
+def startup_event():
+    Base.metadata.create_all(bind=engine)
 
 # Middlewares
 app.add_middleware(

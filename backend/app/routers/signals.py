@@ -48,7 +48,10 @@ def run_backtest_endpoint(
     result = engine.run(
         stack_ids=stack_ids,
         symbol=request.market,
-        days=365 
+        days=365,
+        take_profit=request.take_profit,
+        stop_loss=request.stop_loss,
+        initial_capital=request.initial_capital
     )
     
     # 5. Store Result (Optional)
@@ -89,6 +92,18 @@ def list_signals(
     Returns all signals the current user has access to.
     """
     return db.query(models.Signal).all()
+
+@router.put("/{signal_id}", response_model=schemas.SignalOut)
+def update_signal(
+    signal_id: int,
+    payload: schemas.SignalCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    db_sig = crud.update_signal(db, signal_id, payload)
+    if not db_sig:
+        raise HTTPException(status_code=404, detail="Signal not found")
+    return db_sig
 
 @router.delete("/{signal_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_signal(

@@ -5,13 +5,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Use localhost for local dev if DATABASE_URL refers to 'db' host
-database_url = os.getenv("DATABASE_URL", "postgresql://app:secret@localhost:5432/app")
-if "db" in database_url and not os.getenv("DOCKER_ENV"):
-    # Fallback to localhost if running locally outside docker network
-    database_url = "postgresql://app:secret@localhost:5432/app"
+# Use SQLite for local dev (matches docker-compose volume mount)
+database_url = os.getenv("DATABASE_URL", "sqlite:///./users.db")
 
-engine = create_engine(database_url)
+engine = create_engine(database_url, connect_args={"check_same_thread": False} if "sqlite" in database_url else {})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

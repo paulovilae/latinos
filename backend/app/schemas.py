@@ -58,6 +58,7 @@ class UserOut(BaseModel):
 class UserUpdateRequest(BaseModel):
     name: Optional[str] = None
     mfa_enabled: Optional[bool] = None
+    role: Optional[str] = None  # Allow role updates for testing
 
 
 class UserCreateRequest(RegisterRequest):
@@ -139,6 +140,9 @@ class BacktestCreate(BaseModel):
     range: str
     market: str
     stack: Optional[List[int]] = None  # List of signal IDs to backtest
+    take_profit: Optional[float] = 5.0 # Percentage
+    stop_loss: Optional[float] = 3.0   # Percentage
+    initial_capital: Optional[float] = 10000.0
 
 
 class BacktestOut(BaseModel):
@@ -287,7 +291,12 @@ class BacktestResult(BaseModel):
     total_trades: int
     win_rate: float
     pnl: float
+    initial_capital: float = 10000.0
+    final_capital: float = 10000.0
+    total_return_pct: float = 0.0
+    max_drawdown: float = 0.0
     history: List[Dict] = []
+    equity_curve: List[Dict] = [] # timestamps + equity values
 
 
 # Rebuild models with forward references

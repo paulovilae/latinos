@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
-import { clientApiFetch } from "@/lib/clientApi";
+// Using Next.js API routes (no direct backend calls)
 import { useLocale } from "@/components/LocalizationProvider";
 import type { Bot } from "@/lib/types";
 
@@ -49,8 +49,9 @@ export function BotManager({ initialBots, userPlan, isPro }: { initialBots: Bot[
         description: form.description,
         tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
       };
-      await clientApiFetch<Bot>("/bots", {
+      await fetch("/api/bots", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       setForm({ name: "", description: "", tags: "" });
@@ -67,9 +68,9 @@ export function BotManager({ initialBots, userPlan, isPro }: { initialBots: Bot[
     setError(null);
     try {
       if (action === "delete") {
-        await clientApiFetch(`/bots/${bot.id}`, { method: "DELETE" });
+        await fetch(`/api/bots/${bot.id}`, { method: "DELETE" });
       } else {
-        await clientApiFetch<Bot>(`/bots/${bot.id}/${action}`, { method: "POST" });
+        await fetch(`/api/bots/${bot.id}/${action}`, { method: "POST" });
       }
       await refreshBots();
     } catch (err) {
@@ -80,7 +81,8 @@ export function BotManager({ initialBots, userPlan, isPro }: { initialBots: Bot[
   };
 
   const refreshBots = async () => {
-    const latest = await clientApiFetch<Bot[]>("/bots");
+    const res = await fetch("/api/bots");
+    const latest = await res.json();
     setBots(latest);
   };
 

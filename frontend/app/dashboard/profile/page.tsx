@@ -5,6 +5,7 @@ import { fetchDashboardSummary } from "@/lib/api";
 import { SectionCard } from "@/components/SectionCard";
 import { LocalizedText } from "@/components/LocalizedText";
 import { authOptions } from "@/lib/auth";
+import { RoleEditor } from "@/components/RoleEditor";
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
@@ -44,12 +45,7 @@ export default async function ProfilePage() {
                       <p className="text-sm text-slate-500 mb-1">Email Address</p>
                       <p className="font-medium text-white">{session.user?.email}</p>
                   </div>
-                  <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
-                      <div>
-                          <p className="text-sm text-slate-500 mb-1">Role</p>
-                          <p className="font-medium text-emerald-400 capitalize">{(session.user as any).role || "User"}</p>
-                      </div>
-                  </div>
+                  <RoleEditor />
               </div>
           </SectionCard>
 

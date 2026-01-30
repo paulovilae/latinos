@@ -11,5 +11,17 @@ export default async function RobotsPage() {
   }
 
   // Redirect to new unified studio
-  redirect("/dashboard/signals");
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-bold text-white">Robot Studio</h1>
+        <p className="text-slate-400">
+          Assemble signals into trading bots and backtest strategies.
+        </p>
+      </div>
+      <StackBuilder />
+    </div>
+  );
 }
+
+import { StackBuilder } from "@/components/signals/StackBuilder";

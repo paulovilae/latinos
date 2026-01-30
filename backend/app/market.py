@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import json
-import math
-from datetime import datetime, timedelta, timezone
+import logging
+import yfinance as yf
+from datetime import datetime, timezone
 from typing import List, Tuple
-from urllib import error, parse, request
+import pandas as pd
+import random
 
-YAHOO_ENDPOINT = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
+# Cache for market data (30 seconds TTL)
+from cachetools import TTLCache
+_market_cache = TTLCache(maxsize=50, ttl=30)
 
 MARKET_UNIVERSE = [
     {"symbol": "AAPL", "name": "Apple Inc.", "sector": "Technology"},
@@ -18,75 +22,93 @@ MARKET_UNIVERSE = [
     {"symbol": "META", "name": "Meta Platforms Inc.", "sector": "Communication Services"},
 ]
 
-
 class MarketDataError(Exception):
-    """Raised when a remote market data provider fails."""
-
-
-# Cache for market data (30 seconds TTL - fresh enough for dashboard, reduces API load)
-from cachetools import TTLCache
-_market_cache = TTLCache(maxsize=50, ttl=30)
-
+    pass
 
 def fetch_market_series(symbol: str, interval: str, range_: str) -> Tuple[str | None, List[dict]]:
-    """Attempt Yahoo! Finance first, fall back to deterministic synthetic data.
-    
-    Results are cached for 30 seconds to reduce API load while maintaining freshness.
-    """
+    """Attempt Yahoo! Finance via yfinance library first, fall back to synthetic data."""
     cache_key = f"{symbol}:{interval}:{range_}"
     
     if cache_key in _market_cache:
         return _market_cache[cache_key]
     
     try:
-        result = _fetch_from_yahoo(symbol, interval, range_)
-    except MarketDataError:
-        result = ("USD", _synthetic_series(symbol))
+        currency, points = _fetch_from_yahoo(symbol, interval, range_)
+        result = (currency, points)
+    except MarketDataError as e:
+        print(f"Market fetch failed: {e}. Using synthetic data.")
+        result = ("USD", _synthetic_series(symbol, length=365))
     
     _market_cache[cache_key] = result
     return result
 
-
 def _fetch_from_yahoo(symbol: str, interval: str, range_: str) -> Tuple[str | None, List[dict]]:
-    params = parse.urlencode({"interval": interval, "range": range_})
-    encoded_symbol = parse.quote(symbol.upper())
-    url = f"{YAHOO_ENDPOINT.format(symbol=encoded_symbol)}?{params}"
+    """
+    Fetches real market data using yfinance library.
+    """
     try:
-        with request.urlopen(url, timeout=3) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
-    except error.URLError as exc:
-        raise MarketDataError(str(exc)) from exc
+        print(f"DEBUG: Downloading {symbol} from yfinance (period={range_}, interval={interval})...")
+        ticker = yf.Ticker(symbol)
+        
+        # Determine period based on range_ string (e.g. "1y", "1mo")
+        # yfinance supports: 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
+        history = ticker.history(period=range_, interval='1d') # Force 1d for daily simulation
+        
+        if history.empty:
+            raise MarketDataError(f"No data found for {symbol}")
+            
+        currency = ticker.info.get("currency", "USD")
+        
+        # Convert to list of dicts
+        points = []
+        for index, row in history.iterrows():
+            # index is DatetimeIndex usually
+            ts = index.to_pydatetime()
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            
+            points.append({
+                "timestamp": ts,
+                "open": float(row["Open"]),
+                "high": float(row["High"]),
+                "low": float(row["Low"]),
+                "close": float(row["Close"]),
+                "volume": int(row["Volume"])
+            })
+            
+        print(f"DEBUG: Successfully fetched {len(points)} points from yfinance")
+        return currency, points
+        
+    except Exception as e:
+        print(f"DEBUG: yfinance Error: {e}")
+        raise MarketDataError(str(e)) from e
 
-    try:
-        result = payload["chart"]["result"][0]
-        timestamps = result.get("timestamp") or []
-        closes = result["indicators"]["quote"][0]["close"]
-    except (KeyError, IndexError, TypeError) as exc:
-        raise MarketDataError("Malformed response") from exc
-
-    points: List[dict] = []
-    for ts, close in zip(timestamps, closes):
-        if close is None:
-            continue
-        dt = datetime.fromtimestamp(ts, tz=timezone.utc)
-        points.append({"timestamp": dt, "close": float(close)})
-
-    if not points:
-        raise MarketDataError("Empty price series")
-
-    currency = result.get("meta", {}).get("currency")
-    return currency, points
-
-
-def _synthetic_series(symbol: str, length: int = 30) -> List[dict]:
-    """Deterministic pseudo-random walk for offline/test mode."""
-    now = datetime.now(tz=timezone.utc)
-    baseline = (abs(hash(symbol.upper())) % 5000) / 50 + 20
-    points: List[dict] = []
-    for idx in range(length):
-        ts = now - timedelta(days=length - idx)
-        drift = idx * 0.4
-        seasonal = math.sin(idx / 3) * 2.5
-        price = round(baseline + drift + seasonal, 2)
-        points.append({"timestamp": ts, "close": price})
-    return points
+def _synthetic_series(symbol: str, length: int = 365) -> List[dict]:
+    """Generates synthetic price data with OHLCV structure."""
+    base_price = 150.0
+    prices = []
+    current = base_price
+    
+    # Start from now backwards
+    now = datetime.now(timezone.utc)
+    
+    for i in range(length):
+        # Go backwards from today
+        ts = now - pd.Timedelta(days=(length - i))
+        
+        change = random.uniform(-0.02, 0.02)
+        current = current * (1 + change)
+        
+        high_change = random.uniform(0, 0.01)
+        low_change = random.uniform(0, 0.01)
+        
+        prices.append({
+            "timestamp": ts,
+            "open": round(current * (1 - random.uniform(0, 0.005)), 2),
+            "high": round(current * (1 + high_change), 2),
+            "low": round(current * (1 - low_change), 2),
+            "close": round(current, 2),
+            "volume": int(random.uniform(1000000, 5000000))
+        })
+    
+    return prices

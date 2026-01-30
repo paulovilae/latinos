@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 
-import { clientApiFetch } from "@/lib/clientApi";
+// Using Next.js API routes (no direct backend calls)
 import { useLocale } from "@/components/LocalizationProvider";
 import type { User } from "@/lib/types";
 
@@ -22,7 +22,8 @@ export function UserManager({ initialUsers }: UserManagerProps) {
   }, [initialUsers]);
 
   const refresh = async () => {
-    const latest = await clientApiFetch<User[]>("/users");
+    const res = await fetch("/api/users");
+    const latest = await res.json();
     setUsers(latest);
   };
 
@@ -31,8 +32,9 @@ export function UserManager({ initialUsers }: UserManagerProps) {
     setLoading(true);
     setError(null);
     try {
-      await clientApiFetch<User>("/users", {
+      await fetch("/api/users", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       setForm({ email: "", name: "", password: "", role: "user" });
@@ -46,8 +48,9 @@ export function UserManager({ initialUsers }: UserManagerProps) {
 
   const toggleMfa = async (user: User) => {
     setError(null);
-    await clientApiFetch<User>(`/users/${user.id}`, {
+    await fetch(`/api/users/${user.id}`, {
       method: "PUT",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mfa_enabled: !user.mfa_enabled }),
     });
     await refresh();
@@ -58,7 +61,7 @@ export function UserManager({ initialUsers }: UserManagerProps) {
       return;
     }
     setError(null);
-    await clientApiFetch(`/users/${user.id}`, { method: "DELETE" });
+    await fetch(`/api/users/${user.id}`, { method: "DELETE" });
     await refresh();
   };
 

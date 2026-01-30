@@ -48,11 +48,11 @@ def sync_market_data(db: Session, symbol: str, interval: str = "1d", range_: str
                 symbol=symbol,
                 interval=interval,
                 timestamp=ts,
-                open=p["close"], # Yahoo basic chart only gives close usually unless configured
-                high=p["close"],
-                low=p["close"],
+                open=p.get("open", p["close"]),
+                high=p.get("high", p["close"]),
+                low=p.get("low", p["close"]),
                 close=p["close"],
-                volume=0 # Not provided in basic fetch
+                volume=p.get("volume", 0)
             )
             new_records.append(record)
     

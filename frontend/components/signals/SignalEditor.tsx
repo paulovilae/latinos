@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { clientApiFetch } from "@/lib/clientApi";
+// Using Next.js API routes (no direct backend calls)
 
 interface Signal {
   id: number;
@@ -26,30 +26,56 @@ export function SignalEditor() {
 
   const refreshSignals = async () => {
     try {
-      const data = await clientApiFetch<Signal[]>("/api/signals/");
-      setSignals(data);
+      const res = await fetch("/api/signals");
+      if (!res.ok) throw new Error(`API Error: ${res.status}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setSignals(data);
+      } else {
+        console.error("Signals data is not array:", data);
+        setSignals([]);
+      }
     } catch (e) {
       console.error("Failed to load signals", e);
+      setSignals([]); // Fallback to empty
     }
   };
 
-  const handleCreate = async () => {
+  const handleSave = async () => {
     setIsSubmitting(true);
     try {
-      await clientApiFetch("/api/signals/", {
-        method: "POST",
-        body: JSON.stringify({
-          type,
-          payload: { name, code },
-          mode: "simulation"
-        })
-      });
+      if (selectedSignal) {
+        await fetch(`/api/signals/${selectedSignal.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                type,
+                payload: { name, code },
+                mode: selectedSignal.mode || "simulation"
+            })
+        });
+      } else {
+        await fetch("/api/signals", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                type,
+                payload: { name, code },
+                mode: "simulation"
+            })
+        });
+      }
       await refreshSignals();
-      // Reset form
-      setName("");
-      setCode("");
+      // Show success message
+      if (selectedSignal) {
+        alert("✅ Signal updated successfully!");
+      } else {
+        alert("✅ Signal created successfully!");
+        setName("");
+        setCode("");
+      }
     } catch (e) {
-      alert("Failed to create signal");
+      alert("Failed to save signal");
     } finally {
       setIsSubmitting(false);
     }
@@ -82,7 +108,7 @@ export function SignalEditor() {
                             e.stopPropagation();
                             if(!confirm("Delete this signal?")) return;
                             try {
-                                await clientApiFetch(`/api/signals/${sig.id}`, { method: "DELETE" });
+                                await fetch(`/api/signals/${sig.id}`, { method: "DELETE" });
                                 refreshSignals();
                                 if(selectedSignal?.id === sig.id) {
                                     setSelectedSignal(null);
@@ -145,7 +171,7 @@ export function SignalEditor() {
         <div className="flex justify-end gap-3">
              <button 
                 className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 disabled:opacity-50"
-                onClick={handleCreate}
+                onClick={handleSave}
                 disabled={isSubmitting || !code}
              >
                 {selectedSignal ? "Update Signal" : "Create Signal"}

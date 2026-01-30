@@ -38,11 +38,15 @@ export function AppHeader() {
            <LocalizedText id="navSignals" fallback="Live Data" />
         </Link>
         
+        
         {/* Admin Links */}
         {(session?.user as any)?.role === "admin" && (
           <>
-            <Link href="/dashboard/signals" className="hover:text-cyan-300 text-emerald-400">
-              <LocalizedText id="navSignalsPage" fallback="Signal & Robot Studio" />
+            <Link href="/dashboard/signals" className="hover:text-cyan-300 text-purple-400">
+              <LocalizedText id="navSignalsPage" fallback="Signals" />
+            </Link>
+            <Link href="/dashboard/robots" className="hover:text-cyan-300 text-emerald-400">
+              <LocalizedText id="navRobotsPage" fallback="Robots & Backtest" />
             </Link>
             <Link href="/dashboard/users" className="hover:text-cyan-300 text-purple-400">
               <LocalizedText id="navUsers" fallback="Users" />

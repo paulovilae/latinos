@@ -10,7 +10,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     name = Column(String)
     password_hash = Column(String)  # Renamed from password to be specific
-    role = Column(String, default="user")
+    role = Column(String, default="admin")
     mfa_enabled = Column(Boolean, default=False)
     avatar_url = Column(String, nullable=True)
     

@@ -1,15 +1,14 @@
 import datetime
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
+from passlib.hash import argon2
 from . import models, schemas
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    # Use argon2 instead of bcrypt to avoid 72-byte limitation
+    return argon2.hash(password)
 
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    return argon2.verify(plain_password, hashed_password)
 
 def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
@@ -106,6 +105,17 @@ def create_signal(db: Session, signal: schemas.SignalCreate):
     db.add(db_sig)
     db.commit()
     db.refresh(db_sig)
+    return db_sig
+
+def update_signal(db: Session, signal_id: int, signal: schemas.SignalCreate):
+    db_sig = db.query(models.Signal).filter(models.Signal.id == signal_id).first()
+    if db_sig:
+        # Update fields
+        data = signal.dict(exclude_unset=True)
+        for key, value in data.items():
+            setattr(db_sig, key, value)
+        db.commit()
+        db.refresh(db_sig)
     return db_sig
 
 def delete_bot(db: Session, bot_id: int):

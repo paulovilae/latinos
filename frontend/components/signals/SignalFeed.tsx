@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Signal, Bot } from "@/lib/types";
 import { TagPill } from "@/components/TagPill";
-import { clientApiFetch } from "@/lib/clientApi";
+// Using Next.js API routes (no direct backend calls)
 
 interface SignalFeedProps {
   initialSignals: Signal[];
@@ -18,8 +18,9 @@ export function SignalFeed({ initialSignals, botNameMap }: SignalFeedProps) {
     setBusySignalId(signal.id);
     try {
       // Record a trade in the new trades table
-      await clientApiFetch("/api/trades/", {
+      await fetch("/api/trades", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bot_id: signal.bot_id,
           signal_id: signal.id,

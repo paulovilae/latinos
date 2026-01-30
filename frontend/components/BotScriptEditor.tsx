@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { clientApiFetch } from "@/lib/clientApi";
+// Using Next.js API routes (no direct backend calls)
 import { Bot } from "@/lib/types";
 
 interface BotScriptEditorProps {
@@ -67,8 +67,9 @@ export function BotScriptEditor({ bots }: BotScriptEditorProps) {
         // Or do we have a specific endpoint for test run?
         // The instructions said "wire create_backtest".
         // So we create a backtest.
-        await clientApiFetch("/backtests", {
+        await fetch("/api/backtests", {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 bot_id: selectedBotId,
                 range: "3mo", // Default for quick test
@@ -89,8 +90,9 @@ export function BotScriptEditor({ bots }: BotScriptEditorProps) {
       setSaving(true);
       setStatus(null);
       try {
-          await clientApiFetch(`/bots/${selectedBotId}`, {
+          await fetch(`/api/bots/${selectedBotId}`, {
               method: "PUT",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ script }),
           });
           setStatus("Saved!");

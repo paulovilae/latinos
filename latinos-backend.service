@@ -1,0 +1,16 @@
+[Unit]
+Description=Latinos Backend Docker Service
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/paulo/Programs/apps/latinos
+ExecStart=/usr/bin/docker-compose up -d backend
+ExecStop=/usr/bin/docker-compose down
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

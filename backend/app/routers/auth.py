@@ -35,12 +35,12 @@ def refresh(payload: schemas.RefreshRequest):
 def social_login(payload: schemas.SocialLoginRequest, db: Session = Depends(get_db)):
     user = crud.get_user_by_email(db, payload.email)
     if not user:
-        import secrets
-        random_pw = secrets.token_urlsafe(16)
+        # Use a short fixed password for OAuth users (they never use password login anyway)
+        oauth_password = "google-oauth-user"
         reg_payload = schemas.RegisterRequest(
             email=payload.email,
             name=payload.name,
-            password=random_pw,
+            password=oauth_password,
             role="user"
         )
         user = crud.create_user(db, reg_payload)

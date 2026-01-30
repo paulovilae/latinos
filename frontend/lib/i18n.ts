@@ -11,6 +11,7 @@ export const translations = {
   navFormulas: { en: "Formulas", es: "Fórmulas" },
   navSignals: { en: "Signals", es: "Señales" },
   navSignalsPage: { en: "Signal Studio", es: "Estudio de Señales" },
+  navRobotsPage: { en: "Robots & Backtest", es: "Robots y Backtest" },
   navBacktests: { en: "Backtests", es: "Backtests" },
   navBilling: { en: "Billing", es: "Facturación" },
   strategyTitle: { en: "Strategy workbench", es: "Banco de estrategias" },
