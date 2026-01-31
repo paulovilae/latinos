@@ -9,12 +9,13 @@ interface Signal {
   id: number;
   type: string;
   payload: { name?: string; code?: string };
+  invert?: boolean;
 }
 
 interface SavedRobot {
   id: number;
   name: string;
-  signal_ids: number[];
+  signal_ids: (number | { id: number, invert?: boolean })[];
   status: "running" | "paused" | "draft" | "stopped";
 }
 
@@ -95,16 +96,7 @@ export function StackBuilder() {
     }
   };
 
-  const deleteBot = async (robot: SavedRobot, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm(t("confirmDelete", `Are you sure you want to delete robot "${robot.name}"?`))) return;
-    try {
-      await fetch(`/api/bots/${robot.id}`, { method: "DELETE" });
-      loadRobots();
-    } catch (err) {
-      alert("Failed to delete robot");
-    }
-  };
+
 
   const addToStack = (signal: Signal) => {
     setStack(prev => [...prev, signal]);
@@ -122,13 +114,23 @@ export function StackBuilder() {
     setIsRunning(true);
     setBacktestResult(null);
     try {
+      // Prepare payload: Map stack items to either ID string or Config object
+      const stackPayload = stack.map(s => {
+          // If it's already a config object (from the inverter button)
+          if ('invert' in s) {
+              return { id: String(s.id), invert: !!(s as any).invert };
+          }
+          // If it's a raw Signal object
+          return String(s.id);
+      });
+
       const res = await fetch("/api/signals/backtest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           range: selectedPeriod,
           market: selectedSymbol,
-          stack: stack.map(s => s.id), // Pass IDs
+          stack_ids: stackPayload, // Use correctly named field
           initial_capital: Number(initialCapital),
           take_profit: Number(takeProfit),
           stop_loss: Number(stopLoss)
@@ -144,6 +146,26 @@ export function StackBuilder() {
     }
   };
 
+  const [currentRobotId, setCurrentRobotId] = useState<number | null>(null);
+
+  const deleteBot = async (robot: SavedRobot, e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!confirm(t("confirmDelete", "Are you sure you want to delete this robot?"))) return;
+      
+      try {
+          await fetch(`/api/bots/${robot.id}`, { method: "DELETE" });
+          if (currentRobotId === robot.id) {
+              setStack([]);
+              setRobotName("");
+              setCurrentRobotId(null);
+          }
+          loadRobots();
+      } catch (e) {
+          console.error(e);
+          alert(t("error", "Failed to delete robot"));
+      }
+  };
+
   const saveRobot = async () => {
     if (!robotName.trim() || stack.length === 0) {
       alert(t("enterRobotName", "Please enter a robot name and add at least one signal."));
@@ -151,17 +173,35 @@ export function StackBuilder() {
     }
     setIsSaving(true);
     try {
-      await fetch("/api/bots", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const payload = {
           name: robotName,
-          signal_ids: stack.map(s => s.id)
-        })
-      });
-      alert(`${t("success", "Success")}: ${t("robotSaved", "Robot saved!")}`);
-      setRobotName("");
+          signal_ids: stack.map(s => {
+             if ('invert' in s && s.invert) {
+                 return { id: s.id, invert: true };
+             }
+             return s.id;
+          })
+      };
+
+      if (currentRobotId) {
+          // Update existing
+          await fetch(`/api/bots/${currentRobotId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+      } else {
+          // Create new
+          await fetch("/api/bots", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+      }
+      
+      alert(t("success", "Robot saved!"));
       loadRobots();
+      // Don't clear name/stack after save, just keep editing
     } catch (e) {
       console.error(e);
       alert(t("error", "Failed to save robot"));
@@ -171,19 +211,28 @@ export function StackBuilder() {
   };
 
   const loadRobot = (robot: SavedRobot) => {
-    // Load signals into current stack
     console.log("Loading robot:", robot.name, "IDs:", robot.signal_ids);
+    
+    // Handle mixed types (int | {id, invert})
     const signalsToLoad = robot.signal_ids
-      .map(id => availableSignals.find(s => Number(s.id) === Number(id)))
+      .map(item => {
+          const id = typeof item === 'object' ? item.id : item;
+          const invert = typeof item === 'object' ? item.invert : false;
+          
+          const sig = availableSignals.find(s => Number(s.id) === Number(id));
+          if (!sig) return null;
+          
+          return { ...sig, invert }; // Apply inversion state
+      })
       .filter(Boolean) as Signal[];
     
-    console.log("Matched signals:", signalsToLoad.length);
     if (signalsToLoad.length === 0 && robot.signal_ids.length > 0) {
-        console.warn("Mismatch! Available IDs:", availableSignals.map(s => s.id));
+        console.warn("Mismatch/Empty load!");
     }
 
     setStack(signalsToLoad);
     setRobotName(robot.name);
+    setCurrentRobotId(robot.id);
   };
 
   const filteredSignals = availableSignals.filter(s => 
@@ -294,14 +343,34 @@ export function StackBuilder() {
                                 </button>
                              </div>
 
-                             <span className="font-semibold text-white flex-1 text-center truncate px-2">{sig.payload?.name || `Signal ${sig.id}`}</span>
+                             <div className="flex-1 flex items-center justify-between px-2">
+                                <span className={`font-semibold text-center truncate px-2 ${(sig as any).invert ? 'text-rose-400 line-through decoration-rose-500' : 'text-white'}`}>
+                                    {(sig as any).invert && <span className="text-[10px] font-black mr-1 no-underline text-rose-500">NOT</span>}
+                                    {sig.payload?.name || `Signal ${sig.id}`}
+                                </span>
+                                
+                                <button 
+                                    onClick={() => {
+                                        const newStack = [...stack];
+                                        newStack[idx] = { ...newStack[idx], invert: !(newStack[idx] as any).invert };
+                                        setStack(newStack);
+                                    }}
+                                    className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border transition-colors ${
+                                        (sig as any).invert 
+                                          ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 hover:bg-rose-500/30' 
+                                          : 'bg-slate-800 text-slate-500 border-slate-700 hover:text-white hover:border-slate-500'
+                                    }`}
+                                >
+                                    {(sig as any).invert ? 'Inverted' : 'Invert'}
+                                </button>
+                             </div>
                              
                              <button onClick={() => removeFromStack(idx)} className="text-slate-500 hover:text-red-400 ml-2 p-1">×</button>
                              
                              {/* Traffic Light Logic Visualization */}
                              <div className="absolute -right-3 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 bg-slate-950 p-1.5 rounded-full border border-slate-800">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                                <div className="w-2 h-2 rounded-full bg-rose-900/50"></div>
+                                <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)] ${(sig as any).invert ? 'bg-rose-900/50' : 'bg-emerald-500'}`}></div>
+                                <div className={`w-2 h-2 rounded-full ${(sig as any).invert ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 'bg-rose-900/50'}`}></div>
                              </div>
                         </div>
                         
@@ -459,36 +528,76 @@ export function StackBuilder() {
 
                     {/* Equity Curve Chart */}
                     {backtestResult.results?.equity_curve?.length > 0 && (
-                        <div className="h-64 mb-6 bg-slate-950 p-4 rounded-lg border border-slate-800 w-full">
+                        <div className="h-64 mb-6 bg-slate-950 p-4 rounded-lg border border-slate-800 w-full relative">
+                             <div className="absolute top-2 left-4 z-10 flex gap-4 text-[10px] font-bold">
+                                 <span className="text-emerald-500 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Equity</span>
+                                 <span className="text-indigo-400 flex items-center gap-1"><span className="w-2 h-0.5 bg-indigo-400"></span> Price</span>
+                             </div>
                              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                                 <LineChart data={backtestResult.results.equity_curve}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                                     <XAxis 
                                         dataKey="timestamp" 
-                                        tickFormatter={(t) => new Date(t).toLocaleDateString()} 
+                                        tickFormatter={(t) => new Date(t).toLocaleDateString(undefined, {month:'short', day:'numeric'})} 
                                         stroke="#475569" 
                                         fontSize={10} 
                                         tick={{fill: '#64748b'}}
                                     />
                                     <YAxis 
-                                        stroke="#475569" 
+                                        yAxisId="equity"
+                                        stroke="#10b981" 
                                         fontSize={10} 
                                         domain={['auto', 'auto']}
-                                        tickFormatter={(val) => `$${val.toLocaleString()}`}
-                                        tick={{fill: '#64748b'}}
+                                        tickFormatter={(val) => `$${(val/1000).toFixed(1)}k`}
+                                        tick={{fill: '#059669'}}
+                                    />
+                                    <YAxis 
+                                        yAxisId="price"
+                                        orientation="right"
+                                        stroke="#22d3ee" // Cyan-400
+                                        fontSize={10} 
+                                        domain={['auto', 'auto']}
+                                        tickFormatter={(val) => `$${val}`}
+                                        tick={{fill: '#06b6d4'}} // Cyan-500
                                     />
                                     <Tooltip 
                                         labelFormatter={(t) => new Date(t).toLocaleDateString()}
                                         contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#f8fafc' }}
-                                        formatter={(val: any) => [`$${(val || 0).toFixed(2)}`, 'Equity']}
+                                        formatter={(value, name) => [
+                                            `$${Number(Array.isArray(value) ? value[0] : value || 0).toFixed(2)}`, 
+                                            name === 'equity' ? 'Equity' : 'Price'
+                                        ]}
                                     />
                                     <Line 
-                                        type="monotone" 
+                                        yAxisId="equity"
+                                        type="stepAfter" 
                                         dataKey="equity" 
                                         stroke="#10b981" 
                                         strokeWidth={2} 
                                         dot={false} 
-                                        activeDot={{ r: 4, fill: '#10b981' }}
+                                    />
+                                    <Line 
+                                        yAxisId="price"
+                                        type="monotone" 
+                                        dataKey="price" 
+                                        stroke="#22d3ee" // Cyan-400 High Contrast
+                                        strokeWidth={2} 
+                                        dot={(props: any) => {
+                                            const { cx, cy, payload } = props;
+                                            // Check if a trade occurred at this timestamp
+                                            const trade = backtestResult.results?.history?.find(
+                                                (t: any) => new Date(t.time).getTime() === new Date(payload.timestamp).getTime()
+                                            );
+                                            
+                                            if (trade) {
+                                                const color = trade.type === 'buy' ? '#10b981' : '#f43f5e';
+                                                return (
+                                                    <circle cx={cx} cy={cy} r={4} fill={color} stroke="#fff" strokeWidth={1} />
+                                                );
+                                            }
+                                            return <></>;
+                                        }} 
+                                        strokeOpacity={0.5}
                                     />
                                 </LineChart>
                             </ResponsiveContainer>
@@ -533,7 +642,7 @@ export function StackBuilder() {
                                                 <td className={`px-3 py-2 text-right font-mono font-bold text-xs ${
                                                     (trade.pnl || 0) > 0 ? 'text-emerald-400' : (trade.pnl || 0) < 0 ? 'text-rose-400' : 'text-slate-500'
                                                 }`}>
-                                                    {trade.pnl ? `$${trade.pnl.toFixed(2)}` : '-'}
+                                                    {trade.pnl !== undefined && trade.pnl !== null ? `$${trade.pnl.toFixed(2)}` : '-'}
                                                 </td>
                                                 <td className="px-3 py-2 text-right text-slate-400 font-mono text-xs">
                                                     {trade.balance ? `$${trade.balance.toFixed(0)}` : '-'}
@@ -545,6 +654,41 @@ export function StackBuilder() {
                             </div>
                         </div>
                     )}
+
+                    {/* Execution Logs */}
+                    {/* Execution Logs - Always Render for Visibility */}
+                    <div className="mt-8 p-0 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden shadow-2xl">
+                            <div className="flex justify-between items-center p-3 border-b border-slate-800 bg-slate-900/50">
+                                <h5 className="uppercase font-bold text-slate-400 flex items-center gap-2 text-xs">
+                                <span>📜 Execution Logs</span>
+                                <span className="bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded text-[10px] border border-slate-700">
+                                    {backtestResult?.results?.logs?.length || 0} events
+                                </span>
+                                </h5>
+                                <button
+                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 shadow-lg shadow-indigo-500/20"
+                                onClick={() => navigator.clipboard.writeText(backtestResult?.results?.logs?.join('\n') || '')}
+                                >
+                                📋 COPY LOGS
+                                </button>
+                            </div>
+                            <div className="h-64 overflow-y-auto p-4 custom-scrollbar bg-slate-950">
+                            {backtestResult?.results?.logs && backtestResult.results.logs.length > 0 ? (
+                                <pre className="whitespace-pre-wrap font-mono text-[10px] text-emerald-500/80 leading-relaxed selection:bg-indigo-500/30 selection:text-white">
+                                    {backtestResult.results.logs.join('\n')}
+                                </pre>
+                            ) : (
+                                <div className="text-slate-600 text-xs font-mono italic p-4 text-center">
+                                    No execution logs returned from simulation. <br/>
+                                    Check inputs or try a different time range.
+                                    {/* Debug Info */}
+                                    <div className="mt-4 text-[10px] text-slate-700 text-left bg-black p-2 rounded">
+                                        DEBUG RAW: {JSON.stringify(backtestResult, null, 2)}
+                                    </div>
+                                </div>
+                            )}
+                            </div>
+                    </div>
                 </div>
             )}
 
@@ -573,6 +717,7 @@ export function StackBuilder() {
                             setBacktestResult(null);
                             setIsRunning(false);
                             setSignalSearch("");
+                            setCurrentRobotId(null);
                         }}
                         className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium border border-slate-700 transition-all whitespace-nowrap"
                         title="Clear workspace to create a new robot"

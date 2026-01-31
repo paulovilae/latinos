@@ -42,6 +42,7 @@ def update_bot(
     if payload.tags is not None: bot.tags = payload.tags
     if payload.status: bot.status = payload.status
     if payload.script is not None: bot.script = payload.script
+    if payload.signal_ids is not None: bot.signal_manifest = payload.signal_ids
     
     db.commit()
     db.refresh(bot)

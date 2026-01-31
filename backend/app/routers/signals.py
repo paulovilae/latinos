@@ -24,7 +24,7 @@ def run_backtest_endpoint(
     Executes a backtest for a given stack/bot configuration.
     """
     # 1. Verify Bot/Stack ownership if bot_id is provided
-    stack_ids = request.stack
+    stack_ids = request.stack_ids
     bot_id = None
     
     if request.bot_id:

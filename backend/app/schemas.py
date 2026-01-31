@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -73,8 +73,7 @@ class BotBase(BaseModel):
 
 
 class BotCreate(BotBase):
-    signal_ids: Optional[List[int]] = None  # IDs of signals to associate with this bot
-
+    signal_ids: Optional[List[Union[int, str, Dict]]] = None  # IDs or Config objects
 
 class BotUpdate(BaseModel):
     name: Optional[str] = None
@@ -82,13 +81,13 @@ class BotUpdate(BaseModel):
     script: Optional[str] = None
     tags: Optional[List[str]] = None
     status: Optional[str] = None
-
+    signal_ids: Optional[List[Union[int, str, Dict]]] = None # Allow updating stack
 
 class BotOut(BotBase):
     id: int
     status: str
     owner_id: int
-    signal_manifest: Optional[List[int]] = []
+    signal_manifest: Optional[List[Union[int, str, Dict]]] = []
     signals: Optional[List["SignalOut"]] = None
 
     class Config:
@@ -140,7 +139,7 @@ class BacktestCreate(BaseModel):
     formula_version_id: Optional[int] = None
     range: str
     market: str
-    stack: Optional[List[int]] = None  # List of signal IDs to backtest
+    stack_ids: Optional[List[Union[int, str, SignalConfig]]] = None  # List of signal IDs or Configs
     take_profit: Optional[float] = 5.0 # Percentage
     stop_loss: Optional[float] = 3.0   # Percentage
     initial_capital: Optional[float] = 10000.0
@@ -288,6 +287,23 @@ class StackBacktestRequest(BaseModel):
     symbol: str
     period: int = 365 # days
 
+class SignalConfig(BaseModel):
+    id: str
+    invert: bool = False
+
+class BacktestRequest(BaseModel):
+    stack_ids: List[Union[str, SignalConfig]]  # Support both for backward compatibility
+    symbol: str
+    interval: str = "1d"
+    range: str = "1y"
+    take_profit: float = 5.0
+    stop_loss: float = 3.0
+    initial_capital: float = 10000.0
+    final_capital: float = 10000.0
+    total_return_pct: float = 0.0
+    max_drawdown: float = 0.0
+    history: List[Dict] = []
+
 class BacktestResult(BaseModel):
     total_trades: int
     win_rate: float
@@ -298,6 +314,7 @@ class BacktestResult(BaseModel):
     max_drawdown: float = 0.0
     history: List[Dict] = []
     equity_curve: List[Dict] = [] # timestamps + equity values
+    logs: List[str] = [] # Execution logs for debugging
 
 
 # Rebuild models with forward references

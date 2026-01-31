@@ -41,7 +41,7 @@ export async function proxyToBackend(
     if (CF_CLIENT_ID) headers["CF-Access-Client-Id"] = CF_CLIENT_ID;
     if (CF_CLIENT_SECRET) headers["CF-Access-Client-Secret"] = CF_CLIENT_SECRET;
     
-    // Add Bearer token if authenticated
+    // Add Bearer token if authenticated (or using demo fallback)
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     // Get request body if present

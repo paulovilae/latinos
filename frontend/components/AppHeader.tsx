@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { LanguageToggle } from "./LanguageToggle";
 import { LocalizedText } from "./LocalizedText";
 import { ThemeToggle } from "./ThemeToggle";
+import { ServerStatus } from "./layout/ServerStatus";
 
 export function AppHeader() {
   const { data: session } = useSession();
@@ -16,6 +17,7 @@ export function AppHeader() {
         <LocalizedText id="dashboardSubtitle" fallback="Orchestrate bots..." as="p" className="text-muted" />
       </div>
       <div className="flex items-center gap-4">
+        <ServerStatus />
         <LanguageToggle />
         <ThemeToggle />
         {session?.user && (

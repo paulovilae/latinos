@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from .routers import auth, users, bots, signals, dashboard, billing, trades
 
 # Load environment variables
@@ -49,8 +50,16 @@ def startup_event():
         print(f"❌ Migration check failed: {e}")
 
 # Middlewares
-origins_raw = os.getenv("ALLOWED_ORIGINS", "http://localhost:3306")
-origins = [origin.strip() for origin in origins_raw.split(",") if origin.strip()]
+origins = [
+    "http://localhost:3306",
+    "https://latinos.paulovila.org",
+    "https://apilatinos.paulovila.org",
+    "https://api-latinos.paulovila.org",
+    "https://back-latinos.paulovila.org",
+    "https://api.latinos.paulovila.org",
+    "https://latinos-liard.vercel.app",
+    "http://localhost:3000"
+]
 
 print(f"🌍 Allowed Origins: {origins}")
 
@@ -77,4 +86,10 @@ def openapi_spec():
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "service": "latinos-trading-backend"}
+    try:
+        # Check database connectivity
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        return {"status": "ok", "service": "latinos-trading-backend", "db": "connected"}
+    except Exception as e:
+        return {"status": "error", "service": "latinos-trading-backend", "db": "disconnected", "error": str(e)}
