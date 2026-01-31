@@ -10,8 +10,8 @@ export const translations = {
   navUsers: { en: "Users", es: "Usuarios" },
   navFormulas: { en: "Formulas", es: "Fórmulas" },
   navSignals: { en: "Live Trading", es: "Trading en Vivo" },
-  navSignalsPage: { en: "Signal Studio", es: "Estudio de Señales" },
-  navRobotsPage: { en: "Robots & Backtest", es: "Robots y Backtest" },
+  navSignalsPage: { en: "Signals", es: "Señales" },
+  navRobotsPage: { en: "Robots", es: "Robots" },
   navBacktests: { en: "Backtests", es: "Backtests" },
   navBilling: { en: "Billing", es: "Facturación" },
   strategyTitle: { en: "Strategy workbench", es: "Banco de estrategias" },
@@ -238,8 +238,8 @@ export const translations = {
   
   // Navigation
   navLiveTrading: { en: "Live Trading", es: "Trading en Vivo" },
-  navSignalStudio: { en: "Signal Studio", es: "Estudio de Señales" },
-  navRobotStudio: { en: "Robot Studio", es: "Estudio de Robots" },
+  navSignalStudio: { en: "Signals", es: "Señales" },
+  navRobotStudio: { en: "Robots", es: "Robots" },
   
   // Editor
   editorTitle: { en: "Signal Library", es: "Biblioteca de Señales" },
