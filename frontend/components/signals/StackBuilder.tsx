@@ -372,30 +372,45 @@ export function StackBuilder() {
             {backtestResult && (
                  <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 animate-in fade-in slide-in-from-bottom-4">
                     <h4 className="font-semibold text-white mb-4 border-b border-slate-800 pb-2">{t("success", "Results")}</h4>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
-                            <div className="text-xs text-slate-400 uppercase tracking-wider">{t("totalPnL", "Total PnL")}</div>
-                            <div className={`text-xl font-mono font-bold ${(backtestResult.results?.pnl || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                ${(backtestResult.results?.pnl || 0).toFixed(2)}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 relative overflow-hidden group hover:border-emerald-500/50 transition-colors">
+                            <div className="relative z-10 text-center">
+                                <div className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{t("totalPnL", "Total PnL")}</div>
+                                <div className={`text-xl md:text-2xl font-mono font-bold ${(backtestResult.results?.pnl || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                    ${(backtestResult.results?.pnl || 0).toFixed(2)}
+                                </div>
                             </div>
+                            <div className="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-emerald-500/10 to-transparent"></div>
                         </div>
-                        <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
-                            <div className="text-xs text-slate-400 uppercase tracking-wider">{t("winRate", "Win Rate")}</div>
-                            <div className="text-xl font-mono font-bold text-white">
-                                {(backtestResult.results?.win_rate || 0).toFixed(1)}%
+
+                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 relative overflow-hidden group hover:border-indigo-500/50 transition-colors">
+                            <div className="relative z-10 text-center">
+                                <div className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{t("winRate", "Win Rate")}</div>
+                                <div className="text-xl md:text-2xl font-mono font-bold text-white">
+                                    {(backtestResult.results?.win_rate || 0).toFixed(1)}%
+                                </div>
                             </div>
+                            <div className="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-indigo-500/10 to-transparent"></div>
                         </div>
-                        <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
-                            <div className="text-xs text-slate-400 uppercase tracking-wider">{t("totalReturn", "Total Return")}</div>
-                            <div className={`text-xl font-mono font-bold ${(backtestResult.results?.total_return_pct || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                {(backtestResult.results?.total_return_pct || 0).toFixed(2)}%
+
+                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 relative overflow-hidden group hover:border-violet-500/50 transition-colors">
+                            <div className="relative z-10 text-center">
+                                <div className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{t("totalReturn", "Total Return")}</div>
+                                <div className={`text-xl md:text-2xl font-mono font-bold ${(backtestResult.results?.total_return_pct || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                    {(backtestResult.results?.total_return_pct || 0).toFixed(2)}%
+                                </div>
                             </div>
+                             <div className="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-violet-500/10 to-transparent"></div>
                         </div>
-                        <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center">
-                            <div className="text-xs text-slate-400 uppercase tracking-wider">{t("maxDrawdown", "Max Drawdown")}</div>
-                            <div className="text-xl font-mono font-bold text-rose-400">
-                                -{(backtestResult.results?.max_drawdown || 0).toFixed(2)}%
+
+                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 relative overflow-hidden group hover:border-rose-500/50 transition-colors">
+                            <div className="relative z-10 text-center">
+                                <div className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{t("maxDrawdown", "Max Drawdown")}</div>
+                                <div className="text-xl md:text-2xl font-mono font-bold text-rose-400">
+                                    -{(backtestResult.results?.max_drawdown || 0).toFixed(2)}%
+                                </div>
                             </div>
+                            <div className="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-rose-500/10 to-transparent"></div>
                         </div>
                     </div>
 
