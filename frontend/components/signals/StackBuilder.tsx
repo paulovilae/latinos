@@ -36,6 +36,9 @@ export function StackBuilder() {
   const [initialCapital, setInitialCapital] = useState(10000);
   const [takeProfit, setTakeProfit] = useState(5.0);
   const [stopLoss, setStopLoss] = useState(3.0);
+  
+  // Signal Search
+  const [signalSearch, setSignalSearch] = useState("");
 
   useEffect(() => {
     // Load signals to choose from
@@ -166,12 +169,6 @@ export function StackBuilder() {
     setStack(signalsToLoad);
     setRobotName(robot.name);
   };
-
-  return (
-    <div className="space-y-8">
-      
-  // Signal Search
-  const [signalSearch, setSignalSearch] = useState("");
 
   const filteredSignals = availableSignals.filter(s => 
     (s.payload?.name || "").toLowerCase().includes(signalSearch.toLowerCase())
