@@ -13,7 +13,7 @@ type LocalizationContextValue = {
 const LocalizationContext = createContext<LocalizationContextValue | undefined>(undefined);
 
 export function LocalizationProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("en");
+  const [language, setLanguageState] = useState<Language>("es");
 
   useEffect(() => {
     const stored = typeof window !== "undefined" ? (localStorage.getItem("latinos-lang") as Language | null) : null;
