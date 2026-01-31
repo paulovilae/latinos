@@ -39,6 +39,7 @@ class Bot(Base):
     formulas = relationship("FormulaVersion", back_populates="bot", cascade="all, delete-orphan")
     signals = relationship("Signal", back_populates="bot")
     backtests = relationship("Backtest", back_populates="bot", cascade="all, delete-orphan")
+    signal_manifest = Column(JSON, default=list) # Stores list of signal IDs for the stack
 
 class FormulaVersion(Base):
     __tablename__ = "formulas"

@@ -88,6 +88,7 @@ class BotOut(BotBase):
     id: int
     status: str
     owner_id: int
+    signal_manifest: Optional[List[int]] = []
     signals: Optional[List["SignalOut"]] = None
 
     class Config:

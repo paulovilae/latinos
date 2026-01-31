@@ -42,20 +42,19 @@ def update_user_subscription(db: Session, user_id: int, tier: str, status: str, 
     return user
 
 def create_bot(db: Session, bot: schemas.BotCreate, owner_id: int):
-    # Exclude signal_ids from the bot model creation
+    # Determine the manifest (signal IDs)
+    signal_manifest = bot.signal_ids if bot.signal_ids else []
+    
+    # Create bot with the manifest
     bot_data = bot.model_dump(exclude={"signal_ids"})
-    db_bot = models.Bot(**bot_data, owner_id=owner_id, status="draft")
+    db_bot = models.Bot(**bot_data, owner_id=owner_id, status="draft", signal_manifest=signal_manifest)
+    
     db.add(db_bot)
     db.commit()
     db.refresh(db_bot)
     
-    # Associate signals with this bot
-    if bot.signal_ids:
-        signals = db.query(models.Signal).filter(models.Signal.id.in_(bot.signal_ids)).all()
-        for sig in signals:
-            sig.bot_id = db_bot.id
-        db.commit()
-        db.refresh(db_bot)
+    # WE DO NOT CHANGE Signal.bot_id anymore! 
+    # Signals are now shared definitions referenced by ID in signal_manifest.
     
     return db_bot
 

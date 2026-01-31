@@ -31,6 +31,22 @@ app = FastAPI(
 @app.on_event("startup")
 def startup_event():
     Base.metadata.create_all(bind=engine)
+    
+    # Auto-migration: Check if signal_manifest column exists in bots table
+    # This is a crude but effective way to handle schema evolution in dev/sqlite
+    try:
+        with engine.connect() as conn:
+            from sqlalchemy import text
+            # Try to select the column
+            try:
+                conn.execute(text("SELECT signal_manifest FROM bots LIMIT 1"))
+            except Exception:
+                print("⚠️ Column 'signal_manifest' missing in 'bots'. Adding it...")
+                conn.execute(text("ALTER TABLE bots ADD COLUMN signal_manifest JSON DEFAULT '[]'"))
+                conn.commit()
+                print("✅ Column 'signal_manifest' added.")
+    except Exception as e:
+        print(f"❌ Migration check failed: {e}")
 
 # Middlewares
 origins_raw = os.getenv("ALLOWED_ORIGINS", "http://localhost:3306")

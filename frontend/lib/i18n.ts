@@ -208,6 +208,7 @@ export const translations = {
   robotStudioDesc: { en: "Assemble signals into trading bots and backtest strategies.", es: "Ensambla señales en bots de trading y prueba estrategias." },
   availableSignals: { en: "Available Signals (Click to Add)", es: "Señales Disponibles (Clic para agregar)" },
   emptyStack: { en: "Empty stack. Add signals from top bar.", es: "Pila vacía. Agrega señales de la barra superior." },
+  tapToAddSignals: { en: "Tap to add to your strategy stack", es: "Toca para agregar a tu estrategia" },
   actionBuyShort: { en: "ACTION: BUY / SHORT", es: "ACCIÓN: COMPRAR / CORTO" },
   simulationTitle: { en: "Simulation & Training", es: "Simulación y Entrenamiento" },
   runSimulationBtn: { en: "▶️ Run Simulation", es: "▶️ Ejecutar Simulación" },
@@ -300,6 +301,8 @@ export const translations = {
   stopLossLabel: { en: "STOP LOSS %", es: "STOP LOSS %" },
   historyBadge: { en: "History", es: "Historial" },
   resultsTitle: { en: "Results", es: "Resultados" },
+  noRobotsYet: { en: "No robots saved yet. Create one above!", es: "Aún no hay robots guardados. ¡Crea uno arriba!" },
+  newRobot: { en: "New Strategy", es: "Nueva Estrategia" },
   
   // Backtest Results Table
   tableHeaderDate: { en: "Date", es: "Fecha" },

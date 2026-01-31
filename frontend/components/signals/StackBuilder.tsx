@@ -45,15 +45,7 @@ export function StackBuilder() {
     fetch("/api/signals")
       .then(res => res.json())
       .then((data: Signal[]) => {
-        // Deduplicate by name on client side to be safe
-        const unique = Object.values(
-          data.reduce((acc, sig) => {
-            const name = sig.payload?.name || `Sig ${sig.id}`;
-            if (!acc[name]) acc[name] = sig;
-            return acc;
-          }, {} as Record<string, Signal>)
-        );
-        setAvailableSignals(unique);
+        setAvailableSignals(data);
       })
       .catch(console.error);
     // Load saved robots
@@ -64,12 +56,29 @@ export function StackBuilder() {
     try {
       const res = await fetch("/api/bots");
       const bots = await res.json();
-      setSavedRobots(bots.map((b: any) => ({
-        id: b.id,
-        name: b.name,
-        signal_ids: b.signals?.map((s: any) => s.id) || [],
-        status: b.status || "draft"
-      })));
+      setSavedRobots(bots.map((b: any) => {
+        if (b.name === "prueba") console.log("🔍 DEBUG PRUEBA RAW:", b);
+
+        let manifest = [];
+        if (b.signal_manifest) {
+            try {
+                manifest = typeof b.signal_manifest === 'string' ? JSON.parse(b.signal_manifest) : b.signal_manifest;
+            } catch (e) {
+                console.error("Failed to parse manifest", b.signal_manifest);
+                manifest = [];
+            }
+        }
+        
+        return {
+            id: b.id,
+            name: b.name,
+            // Prefer signal_manifest (new way), fallback to legacy relationship mapping
+            signal_ids: (manifest && manifest.length > 0) 
+                ? manifest 
+                : (b.signals?.map((s: any) => s.id) || []),
+            status: b.status || "draft"
+        };
+      }));
     } catch (e) {
       console.error("Failed to load robots", e);
     }
@@ -163,9 +172,16 @@ export function StackBuilder() {
 
   const loadRobot = (robot: SavedRobot) => {
     // Load signals into current stack
+    console.log("Loading robot:", robot.name, "IDs:", robot.signal_ids);
     const signalsToLoad = robot.signal_ids
-      .map(id => availableSignals.find(s => s.id === id))
+      .map(id => availableSignals.find(s => Number(s.id) === Number(id)))
       .filter(Boolean) as Signal[];
+    
+    console.log("Matched signals:", signalsToLoad.length);
+    if (signalsToLoad.length === 0 && robot.signal_ids.length > 0) {
+        console.warn("Mismatch! Available IDs:", availableSignals.map(s => s.id));
+    }
+
     setStack(signalsToLoad);
     setRobotName(robot.name);
   };
@@ -209,17 +225,18 @@ export function StackBuilder() {
                     filteredSignals.map(sig => (
                         <button
                             key={sig.id}
-                            className="flex-shrink-0 px-3 py-1.5 bg-slate-800 hover:bg-indigo-600 hover:text-white text-xs text-slate-300 rounded-lg border border-slate-700 transition-all active:scale-95 flex items-center gap-2 group"
+                            type="button"
+                            className="flex-shrink-0 px-4 py-3 bg-slate-800 md:hover:bg-indigo-600 md:hover:text-white active:bg-indigo-600 active:text-white text-xs text-slate-300 rounded-lg border border-slate-700 transition-none active:scale-95 flex items-center gap-2 touch-manipulation"
                             onClick={() => addToStack(sig)}
                         >
-                            <span>+</span>
-                            <span className="font-medium">{sig.payload?.name || `Sig ${sig.id}`}</span>
+                            <span className="text-lg leading-none pointer-events-none">+</span>
+                            <span className="font-medium text-sm pointer-events-none">{sig.payload?.name || `Sig ${sig.id}`}</span>
                         </button>
                     ))
                 )}
              </div>
              <div className="mt-2 text-[10px] text-slate-600 text-center border-t border-slate-800/50 pt-2">
-                {t("availableSignals", "Tap to add to your strategy stack")}
+                {t("tapToAddSignals", "Tap to add to your strategy stack")}
             </div>
           </div>
       </div>
@@ -549,14 +566,32 @@ export function StackBuilder() {
                     >
                         {isSaving ? t("saving", "Saving...") : t("saveBtn", "💾 Save")}
                     </button>
+                    <button
+                        onClick={() => {
+                            setStack([]);
+                            setRobotName("");
+                            setBacktestResult(null);
+                            setIsRunning(false);
+                            setSignalSearch("");
+                        }}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium border border-slate-700 transition-all whitespace-nowrap"
+                        title="Clear workspace to create a new robot"
+                    >
+                        ✨ {t("newRobot", "New")}
+                    </button>
                 </div>
             </div>
 
             {/* Saved Robots */}
-            {savedRobots.length > 0 && (
-                <div className="p-4 bg-slate-900 rounded-xl border border-slate-800">
-                    <h4 className="font-semibold text-white mb-4">{t("myRobotsTitle", "My Robots")}</h4>
-                    <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
+            <div className="p-4 bg-slate-900 rounded-xl border border-slate-800">
+                <h4 className="font-semibold text-white mb-4">{t("myRobotsTitle", "My Robots")}</h4>
+                
+                {savedRobots.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500 text-sm italic">
+                        {t("noRobotsYet", "No robots saved yet. Create one above!")}
+                    </div>
+                ) : (
+                    <div className="space-y-4 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                         {/* 1. New Signal Stacks */}
                         <div>
                              <h5 className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">{t("signalStacks", "Signal Stacks")}</h5>
@@ -564,10 +599,18 @@ export function StackBuilder() {
                                 {savedRobots.filter(r => r.signal_ids.length > 0).map(robot => (
                                     <div 
                                         key={robot.id} 
-                                        className="flex justify-between items-center p-2 bg-slate-950 rounded-lg border border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all"
+                                        role="button"
+                                        tabIndex={0}
+                                        className="flex justify-between items-center p-3 bg-slate-950 rounded-lg border border-slate-800 md:hover:border-indigo-500/50 cursor-pointer transition-all active:bg-slate-900 touch-manipulation tap-highlight-transparent"
                                         onClick={() => loadRobot(robot)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                loadRobot(robot);
+                                            }
+                                        }}
                                     >
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-3 pointer-events-none">
                                             <span className="text-white font-medium">{robot.name}</span>
                                             {robot.status === "running" ? (
                                                 <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{t("activeStatus", "Active")}</span>
@@ -575,18 +618,18 @@ export function StackBuilder() {
                                                 <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-400 border border-slate-700">{t("pausedStatus", "Paused")}</span>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[10px] text-slate-500">{robot.signal_ids.length} sigs</span>
+                                        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                            <span className="text-[10px] text-slate-500 hidden sm:block pointer-events-none">{robot.signal_ids.length} sigs</span>
                                             <button
                                                onClick={(e) => toggleBotStatus(robot, e)}
-                                               className={`p-1 rounded transition-colors ${robot.status === "running" ? "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20" : "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"}`}
+                                               className={`p-3 rounded-lg transition-colors ${robot.status === "running" ? "bg-amber-500/10 text-amber-500 active:bg-amber-500/30" : "bg-emerald-500/10 text-emerald-500 active:bg-emerald-500/30"}`}
                                                title={robot.status === "running" ? "Pause" : "Deploy"}
                                             >
                                                 {robot.status === "running" ? "⏸" : "▶"}
                                             </button>
                                             <button
                                                 onClick={(e) => deleteBot(robot, e)}
-                                                className="p-1 rounded bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                                                className="p-3 rounded-lg bg-red-500/10 text-red-500 active:bg-red-500/30 transition-colors"
                                                 title="Delete"
                                             >
                                                 🗑️
@@ -594,6 +637,9 @@ export function StackBuilder() {
                                         </div>
                                     </div>
                                 ))}
+                                {savedRobots.filter(r => r.signal_ids.length > 0).length === 0 && (
+                                    <div className="text-xs text-slate-600 italic px-2">No signal stacks found.</div>
+                                )}
                              </div>
                         </div>
 
@@ -605,15 +651,18 @@ export function StackBuilder() {
                                     {savedRobots.filter(r => r.signal_ids.length === 0).map(robot => (
                                         <div 
                                             key={robot.id} 
-                                            className="flex justify-between items-center p-2 bg-slate-950/50 rounded-lg border border-slate-800 hover:border-red-500/30 cursor-pointer transition-all"
+                                            className="flex justify-between items-center p-3 bg-slate-950/50 rounded-lg border border-slate-800 hover:border-red-500/30 cursor-pointer transition-all"
                                         >
                                             <div className="flex items-center gap-3">
                                                 <span className="text-slate-300 text-sm font-medium">{robot.name}</span>
+                                                <span className="text-xs text-red-400 font-bold bg-red-900/20 px-1 rounded">
+                                                    RAW MANIFEST: {JSON.stringify(robot.signal_ids)}
+                                                </span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     onClick={(e) => deleteBot(robot, e)}
-                                                    className="p-1 rounded bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                                                    className="p-2 rounded bg-red-500/10 text-red-500 active:bg-red-500/30 transition-colors"
                                                     title="Delete Legacy"
                                                 >
                                                     🗑️
@@ -625,8 +674,8 @@ export function StackBuilder() {
                             </div>
                         )}
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
 
       </div>
