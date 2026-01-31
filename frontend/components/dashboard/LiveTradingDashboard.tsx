@@ -67,32 +67,44 @@ export function LiveTradingDashboard() {
     <div className="space-y-8">
       
       {/* Portfolio Overview Graph */}
-      <div className="p-6 bg-slate-950 rounded-2xl border border-slate-800 shadow-xl">
-        <div className="flex justify-between items-end mb-6">
-            <div>
-                <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                    {t("totalEquity", "Total Equity & Cash")}
-                </h2>
-                <div className="text-3xl font-bold text-white font-mono">$14,250.00</div>
-            </div>
-            <div className="flex gap-4 text-xs font-mono">
-                <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                    <span className="text-slate-400">{t("equity", "Equity")}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
-                    <span className="text-slate-400">{t("cash", "Cash")}</span>
-                </div>
-            </div>
-        </div>
-        
-        <div className="h-48 w-full">
+      {/* Key Metrics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl relative overflow-hidden group hover:border-indigo-500/50 transition-colors">
+              <div className="relative z-10">
+                  <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">{t("totalEquity", "Total Balance")}</div>
+                  <div className="text-3xl font-mono font-bold text-white">$14,250.00</div>
+              </div>
+              <div className="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-indigo-500/10 to-transparent"></div>
+          </div>
+
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl group hover:border-emerald-500/50 transition-colors">
+              <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">{t("equity", "Invested")}</div>
+              <div className="text-3xl font-mono font-bold text-emerald-400">$9,250.00</div>
+              <div className="text-xs text-emerald-500/50 mt-1 font-mono">65% of portfolio</div>
+          </div>
+
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl group hover:border-blue-500/50 transition-colors">
+              <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">{t("cash", "Available")}</div>
+              <div className="text-3xl font-mono font-bold text-blue-400">$5,000.00</div>
+              <div className="text-xs text-blue-500/50 mt-1 font-mono">Ready to deploy</div>
+          </div>
+
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl group hover:border-violet-500/50 transition-colors">
+              <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">P&L ({t("totalReturn", "Total Return")})</div>
+              <div className="text-3xl font-mono font-bold text-emerald-400">+$1,250.00</div>
+              <div className="text-xs text-emerald-500/50 mt-1 font-mono">▲ 9.6% all time</div>
+          </div>
+      </div>
+
+      {/* Compact Chart Section (Collapsible or just smaller) */}
+      <div className="p-6 bg-slate-950 rounded-xl border border-slate-800/50">
+        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Performance History</h3>
+        <div className="h-32 w-full opacity-80 hover:opacity-100 transition-opacity">
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={mockEquityData}>
                     <defs>
                         <linearGradient id="colorEquity" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
                             <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                         </linearGradient>
                     </defs>
@@ -103,7 +115,6 @@ export function LiveTradingDashboard() {
                         labelStyle={{ display: 'none' }}
                     />
                     <Area type="monotone" dataKey="equity" stroke="#10b981" fillOpacity={1} fill="url(#colorEquity)" strokeWidth={2} />
-                    <Line type="monotone" dataKey="cash" stroke="#6366f1" strokeWidth={2} dot={false} strokeDasharray="5 5" />
                 </AreaChart>
             </ResponsiveContainer>
         </div>
