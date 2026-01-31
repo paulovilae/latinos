@@ -100,7 +100,7 @@ export function LiveTradingDashboard() {
       <div className="p-6 bg-slate-950 rounded-xl border border-slate-800/50">
         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Performance History</h3>
         <div className="h-32 w-full opacity-80 hover:opacity-100 transition-opacity">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <AreaChart data={mockEquityData}>
                     <defs>
                         <linearGradient id="colorEquity" x1="0" y1="0" x2="0" y2="1">

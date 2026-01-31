@@ -442,8 +442,8 @@ export function StackBuilder() {
 
                     {/* Equity Curve Chart */}
                     {backtestResult.results?.equity_curve?.length > 0 && (
-                        <div className="h-64 mb-6 bg-slate-950 p-4 rounded-lg border border-slate-800">
-                             <ResponsiveContainer width="100%" height="100%">
+                        <div className="h-64 mb-6 bg-slate-950 p-4 rounded-lg border border-slate-800 w-full">
+                             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                                 <LineChart data={backtestResult.results.equity_curve}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                                     <XAxis 
