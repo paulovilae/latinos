@@ -90,8 +90,12 @@ def list_signals(
 ):
     """
     Returns all signals the current user has access to.
+    Only returns 'template' signals (seeded or active in library), 
+    filtering out emitted/delivered signals from simulation or live trading.
     """
-    return db.query(models.Signal).all()
+    return db.query(models.Signal).filter(
+        models.Signal.delivery_status.in_(["seeded", "active", "template"])
+    ).all()
 
 @router.put("/{signal_id}", response_model=schemas.SignalOut)
 def update_signal(

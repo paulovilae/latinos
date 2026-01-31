@@ -24,11 +24,27 @@ def create_simulation_data():
             {"name": "Moving Avg Cross", "code": "ma_50 > ma_200", "type": "buy"},
         ]
         
-        created_signals = []
         for s_data in signals_data:
             # Check if a signal with this name exists in payload
-            # This is tricky with JSON, so we might just create new ones or check crudely
-            # For simulation, just create them if DB is empty-ish
+            # CAST(payload->>'name' AS TEXT) would be ideal but JSON querying varies by DB (SQLite vs PG)
+            # Since this is a simulation/seed script, we can fetch all seeded signals and filter in Python
+            # causing less dialect friction.
+            
+            existing_signals = db.query(models.Signal).filter(
+                models.Signal.mode == "simulation",
+                models.Signal.delivery_status == "seeded"
+            ).all()
+
+            already_exists = False
+            for es in existing_signals:
+                if es.payload and es.payload.get("name") == s_data["name"]:
+                    already_exists = True
+                    break
+            
+            if already_exists:
+                print(f"🔹 Skipping {s_data['name']} (Already seeded)")
+                continue
+
             sig = models.Signal(
                 type=s_data["type"],
                 payload={"name": s_data["name"], "code": s_data["code"]},
