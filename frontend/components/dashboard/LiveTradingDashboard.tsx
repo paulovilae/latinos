@@ -68,31 +68,31 @@ export function LiveTradingDashboard() {
       
       {/* Portfolio Overview Graph */}
       {/* Key Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl relative overflow-hidden group hover:border-indigo-500/50 transition-colors">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+          <div className="p-4 md:p-6 bg-slate-900 border border-slate-800 rounded-xl relative overflow-hidden group hover:border-indigo-500/50 transition-colors">
               <div className="relative z-10">
-                  <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">{t("totalEquity", "Total Balance")}</div>
-                  <div className="text-3xl font-mono font-bold text-white">$14,250.00</div>
+                  <div className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1 md:mb-2">{t("totalEquity", "Total Balance")}</div>
+                  <div className="text-xl md:text-3xl font-mono font-bold text-white">$14,250</div>
               </div>
               <div className="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-indigo-500/10 to-transparent"></div>
           </div>
 
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl group hover:border-emerald-500/50 transition-colors">
-              <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">{t("equity", "Invested")}</div>
-              <div className="text-3xl font-mono font-bold text-emerald-400">$9,250.00</div>
-              <div className="text-xs text-emerald-500/50 mt-1 font-mono">65% of portfolio</div>
+          <div className="p-4 md:p-6 bg-slate-900 border border-slate-800 rounded-xl group hover:border-emerald-500/50 transition-colors">
+              <div className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1 md:mb-2">{t("equity", "Invested")}</div>
+              <div className="text-xl md:text-3xl font-mono font-bold text-emerald-400">$9,250</div>
+              <div className="text-[10px] md:text-xs text-emerald-500/50 mt-1 font-mono">65% of portfolio</div>
           </div>
 
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl group hover:border-blue-500/50 transition-colors">
-              <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">{t("cash", "Available")}</div>
-              <div className="text-3xl font-mono font-bold text-blue-400">$5,000.00</div>
-              <div className="text-xs text-blue-500/50 mt-1 font-mono">Ready to deploy</div>
+          <div className="p-4 md:p-6 bg-slate-900 border border-slate-800 rounded-xl group hover:border-blue-500/50 transition-colors">
+              <div className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1 md:mb-2">{t("cash", "Available")}</div>
+              <div className="text-xl md:text-3xl font-mono font-bold text-blue-400">$5,000</div>
+              <div className="text-[10px] md:text-xs text-blue-500/50 mt-1 font-mono">Ready to deploy</div>
           </div>
 
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl group hover:border-violet-500/50 transition-colors">
-              <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">P&L ({t("totalReturn", "Total Return")})</div>
-              <div className="text-3xl font-mono font-bold text-emerald-400">+$1,250.00</div>
-              <div className="text-xs text-emerald-500/50 mt-1 font-mono">▲ 9.6% all time</div>
+          <div className="p-4 md:p-6 bg-slate-900 border border-slate-800 rounded-xl group hover:border-violet-500/50 transition-colors">
+              <div className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1 md:mb-2">P&L</div>
+              <div className="text-xl md:text-3xl font-mono font-bold text-emerald-400">+$1,250</div>
+              <div className="text-[10px] md:text-xs text-emerald-500/50 mt-1 font-mono">▲ 9.6% all time</div>
           </div>
       </div>
 
