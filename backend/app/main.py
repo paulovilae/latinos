@@ -6,7 +6,18 @@ from .routers import auth, users, bots, signals, dashboard, billing, trades
 
 # Load environment variables
 from dotenv import load_dotenv
+from pathlib import Path
+
+# Load backend .env (if exists)
 load_dotenv()
+
+# Load root .env.local (explicitly requested by user)
+root_env_path = Path(__file__).resolve().parent.parent.parent / ".env.local"
+if root_env_path.exists():
+    print(f"📖 Loading config from: {root_env_path}")
+    load_dotenv(dotenv_path=root_env_path)
+else:
+    print(f"⚠️ Config not found at: {root_env_path}")
 
 # Initialize database tables
 from .db import Base, engine
@@ -22,12 +33,14 @@ def startup_event():
     Base.metadata.create_all(bind=engine)
 
 # Middlewares
+origins_raw = os.getenv("ALLOWED_ORIGINS", "http://localhost:3306")
+origins = [origin.strip() for origin in origins_raw.split(",") if origin.strip()]
+
+print(f"🌍 Allowed Origins: {origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv(
-        "ALLOWED_ORIGINS", 
-        "http://localhost:3003,http://localhost:3306,https://latinos.paulovila.org,https://apilatinos.paulovila.org,https://api-latinos.paulovila.org,https://back-latinos.paulovila.org,https://api.latinos.paulovila.org,https://latinos-liard.vercel.app,https://latinosenlabosa.vercel.app"
-    ).split(","),
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
