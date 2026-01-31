@@ -88,7 +88,7 @@ export function SignalEditor() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:h-[500px] h-auto">
       {/* List */}
-      <div className="md:col-span-1 border-r border-slate-700 pr-4 overflow-y-auto">
+      <div className="md:col-span-1 border-r border-slate-700 pr-4 overflow-y-auto h-[300px] md:h-full">
         <h3 className="text-sm font-semibold text-slate-400 mb-3">{t("yourSignals", "Your Signals")}</h3>
         <div className="space-y-2">
             {signals.map(sig => (
