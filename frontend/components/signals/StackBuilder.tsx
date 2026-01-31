@@ -170,30 +170,59 @@ export function StackBuilder() {
   return (
     <div className="space-y-8">
       
+  // Signal Search
+  const [signalSearch, setSignalSearch] = useState("");
+
+  const filteredSignals = availableSignals.filter(s => 
+    (s.payload?.name || "").toLowerCase().includes(signalSearch.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-8">
+      
       {/* Step 1: Add Signals */}
       <div className="space-y-3">
-          <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-indigo-500/50">1</div>
-              <h3 className="text-sm font-semibold text-indigo-300 uppercase tracking-wider">{t("step1Guide", "Step 1: Add a Signal")}</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-indigo-500/50">1</div>
+                <h3 className="text-sm font-semibold text-indigo-300 uppercase tracking-wider">{t("step1Guide", "Step 1: Add a Signal")}</h3>
+            </div>
+            <div className="text-xs text-slate-500">
+                {availableSignals.length} available
+            </div>
           </div>
           
-          <div className="flex flex-wrap gap-2 p-4 bg-slate-900/50 rounded-xl border border-slate-800">
-            {availableSignals.length === 0 ? (
-                 <div className="text-slate-500 text-sm italic py-2">{t("noSignalsYet", "No signals available. Create one in Signal Studio.")}</div>
-            ) : (
-                availableSignals.map(sig => (
-                    <button
-                        key={sig.id}
-                        className="flex-shrink-0 px-3 py-1.5 bg-slate-800 hover:bg-indigo-600 hover:text-white text-xs text-slate-300 rounded-lg border border-slate-700 transition-all active:scale-95 flex items-center gap-2 group"
-                        onClick={() => addToStack(sig)}
-                    >
-                        <span>+</span>
-                        <span className="font-medium">{sig.payload?.name || `Sig ${sig.id}`}</span>
-                    </button>
-                ))
-            )}
-            <div className="ml-auto text-xs text-slate-500 self-center hidden sm:block">
-                {t("availableSignals", "Click to add to stack")}
+          <div className="p-3 bg-slate-900/50 rounded-xl border border-slate-800">
+             {/* Search Input */}
+             <input 
+                type="text" 
+                placeholder="Search signals..." 
+                value={signalSearch}
+                onChange={(e) => setSignalSearch(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:border-indigo-500 outline-none mb-3"
+             />
+
+             {/* Scrollable Signal List */}
+             <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
+                {filteredSignals.length === 0 ? (
+                    <div className="text-slate-500 text-xs italic py-2 w-full text-center">
+                        {availableSignals.length === 0 ? t("noSignalsYet", "No signals available.") : "No matching signals."}
+                    </div>
+                ) : (
+                    filteredSignals.map(sig => (
+                        <button
+                            key={sig.id}
+                            className="flex-shrink-0 px-3 py-1.5 bg-slate-800 hover:bg-indigo-600 hover:text-white text-xs text-slate-300 rounded-lg border border-slate-700 transition-all active:scale-95 flex items-center gap-2 group"
+                            onClick={() => addToStack(sig)}
+                        >
+                            <span>+</span>
+                            <span className="font-medium">{sig.payload?.name || `Sig ${sig.id}`}</span>
+                        </button>
+                    ))
+                )}
+             </div>
+             <div className="mt-2 text-[10px] text-slate-600 text-center border-t border-slate-800/50 pt-2">
+                {t("availableSignals", "Tap to add to your strategy stack")}
             </div>
           </div>
       </div>
