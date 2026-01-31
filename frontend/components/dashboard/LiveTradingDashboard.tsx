@@ -80,25 +80,25 @@ export function LiveTradingDashboard() {
           <div className="p-4 md:p-6 bg-slate-900 border border-slate-800 rounded-xl group hover:border-emerald-500/50 transition-colors">
               <div className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1 md:mb-2">{t("equity", "Invested")}</div>
               <div className="text-xl md:text-3xl font-mono font-bold text-emerald-400">$9,250</div>
-              <div className="text-[10px] md:text-xs text-emerald-500/50 mt-1 font-mono">65% of portfolio</div>
+              <div className="text-[10px] md:text-xs text-emerald-500/50 mt-1 font-mono">65% {t("portfolioAllocation", "of portfolio")}</div>
           </div>
 
           <div className="p-4 md:p-6 bg-slate-900 border border-slate-800 rounded-xl group hover:border-blue-500/50 transition-colors">
               <div className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1 md:mb-2">{t("cash", "Available")}</div>
               <div className="text-xl md:text-3xl font-mono font-bold text-blue-400">$5,000</div>
-              <div className="text-[10px] md:text-xs text-blue-500/50 mt-1 font-mono">Ready to deploy</div>
+              <div className="text-[10px] md:text-xs text-blue-500/50 mt-1 font-mono">{t("readyToDeploy", "Ready to deploy")}</div>
           </div>
 
           <div className="p-4 md:p-6 bg-slate-900 border border-slate-800 rounded-xl group hover:border-violet-500/50 transition-colors">
-              <div className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1 md:mb-2">P&L</div>
+              <div className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-1 md:mb-2">{t("pnl", "P&L")}</div>
               <div className="text-xl md:text-3xl font-mono font-bold text-emerald-400">+$1,250</div>
-              <div className="text-[10px] md:text-xs text-emerald-500/50 mt-1 font-mono">▲ 9.6% all time</div>
+              <div className="text-[10px] md:text-xs text-emerald-500/50 mt-1 font-mono">▲ 9.6% {t("pnlAllTime", "all time")}</div>
           </div>
       </div>
 
       {/* Compact Chart Section (Collapsible or just smaller) */}
       <div className="p-6 bg-slate-950 rounded-xl border border-slate-800/50">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Performance History</h3>
+        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">{t("performanceHistory", "Performance History")}</h3>
         <div className="h-32 w-full opacity-80 hover:opacity-100 transition-opacity">
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <AreaChart data={mockEquityData}>
@@ -155,7 +155,7 @@ export function LiveTradingDashboard() {
 
                                 {/* Main Recommendation */}
                                 <div className="flex-1 flex flex-col items-center justify-center py-6 border-y border-slate-800/50 bg-slate-950/30 rounded-lg mb-4">
-                                    <span className="text-xs text-slate-500 uppercase tracking-widest mb-2 font-semibold">Recommendation</span>
+                                    <span className="text-xs text-slate-500 uppercase tracking-widest mb-2 font-semibold">{t("recommendation", "Recommendation")}</span>
                                     {latestSignal ? (
                                         <div className={`flex flex-col items-center gap-1 ${isBuy ? 'text-emerald-400' : 'text-rose-400'}`}>
                                             <span className="text-4xl font-black tracking-tighter shadow-glow">{latestSignal.type.toUpperCase()}</span>
@@ -164,14 +164,14 @@ export function LiveTradingDashboard() {
                                             </span>
                                         </div>
                                     ) : (
-                                        <div className="text-slate-600 font-mono text-sm">WAITING_FOR_SIGNAL...</div>
+                                        <div className="text-slate-600 font-mono text-sm">{t("waitingForSignal", "WAITING_FOR_SIGNAL...")}</div>
                                     )}
                                 </div>
 
                                 {/* Last Signal Details */}
                                 {latestSignal && (
                                     <div className="text-xs text-slate-400 font-mono p-2 bg-black/20 rounded border border-white/5 truncate">
-                                        {latestSignal.payload?.name || "Signal Event"} • {latestSignal.payload?.code?.substring(0, 20)}...
+                                        {latestSignal.payload?.name || t("signalEvent", "Signal Event")} • {latestSignal.payload?.code?.substring(0, 20)}...
                                     </div>
                                 )}
                             </div>
@@ -203,11 +203,11 @@ export function LiveTradingDashboard() {
                      <table className="w-full text-left text-sm text-slate-400">
                          <thead className="bg-slate-950 text-xs uppercase font-medium text-slate-500">
                              <tr>
-                                 <th className="px-6 py-3">Time</th>
-                                 <th className="px-6 py-3">Robot</th>
-                                 <th className="px-6 py-3">Signal</th>
-                                 <th className="px-6 py-3">Action</th>
-                                 <th className="px-6 py-3 text-right">Price</th>
+                                 <th className="px-6 py-3">{t("tableTime", "Time")}</th>
+                                 <th className="px-6 py-3">{t("tableRobot", "Robot")}</th>
+                                 <th className="px-6 py-3">{t("tableSignal", "Signal")}</th>
+                                 <th className="px-6 py-3">{t("tableAction", "Action")}</th>
+                                 <th className="px-6 py-3 text-right">{t("tablePrice", "Price")}</th>
                              </tr>
                          </thead>
                          <tbody className="divide-y divide-slate-800">
@@ -217,8 +217,8 @@ export function LiveTradingDashboard() {
                                  return (
                                      <tr key={sig.id} className="hover:bg-slate-800/50 transition-colors">
                                          <td className="px-6 py-4 font-mono text-xs">{new Date(sig.emitted_at).toLocaleTimeString()}</td>
-                                         <td className="px-6 py-4 font-medium text-white">{bot?.name || "Unknown Bot"}</td>
-                                         <td className="px-6 py-4 text-xs font-mono">{sig.payload?.name || "Signal"}</td>
+                                         <td className="px-6 py-4 font-medium text-white">{bot?.name || t("unknownBot", "Unknown Bot")}</td>
+                                         <td className="px-6 py-4 text-xs font-mono">{sig.payload?.name || t("unknownSignal", "Signal")}</td>
                                          <td className="px-6 py-4">
                                              <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
                                                  isBuy ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'

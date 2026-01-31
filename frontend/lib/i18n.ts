@@ -268,6 +268,52 @@ export const translations = {
   success: { en: "Success", es: "Éxito" },
   error: { en: "Error", es: "Error" },
   confirmDelete: { en: "Are you sure you want to delete this?", es: "¿Estás seguro de que quieres eliminar esto?" },
+  
+  // Dashboard Metrics & Charts
+  performanceHistory: { en: "Performance History", es: "Historial de Rendimiento" },
+  pnl: { en: "P&L", es: "P&L" },
+  pnlAllTime: { en: "all time", es: "histórico" },
+  readyToDeploy: { en: "Ready to deploy", es: "Listo para operar" },
+  portfolioAllocation: { en: "of portfolio", es: "del portafolio" },
+  
+  // Dashboard Robot Cards
+  recommendation: { en: "Recommendation", es: "Recomendación" },
+  waitingForSignal: { en: "WAITING_FOR_SIGNAL...", es: "ESPERANDO_SEÑAL..." },
+  signalEvent: { en: "Signal Event", es: "Evento de Señal" },
+  unknownBot: { en: "Unknown Bot", es: "Bot Desconocido" },
+  unknownSignal: { en: "Signal", es: "Señal" },
+
+  // Transaction Log
+  tableTime: { en: "Time", es: "Hora" },
+  tableRobot: { en: "Robot", es: "Robot" },
+  tableSignal: { en: "Signal", es: "Señal" },
+  tableAction: { en: "Action", es: "Acción" },
+  tablePrice: { en: "Price", es: "Precio" },
+  
+  // Stack Builder / Signal Studio
+  searchSignalsPlaceholder: { en: "Search signals...", es: "Buscar señales..." },
+  noMatchingSignals: { en: "No matching signals.", es: "No hay señales coincidentes." },
+  flowSequential: { en: "FLOW: SEQUENTIAL (AND)", es: "FLUJO: SECUENCIAL (Y)" },
+  marketData1D: { en: "MARKET DATA (1D)", es: "DATOS DE MERCADO (1D)" },
+  capitalLabel: { en: "CAPITAL ($)", es: "CAPITAL ($)" },
+  takeProfitLabel: { en: "TAKE PROFIT %", es: "TOMA DE GANANCIAS %" },
+  stopLossLabel: { en: "STOP LOSS %", es: "STOP LOSS %" },
+  historyBadge: { en: "History", es: "Historial" },
+  resultsTitle: { en: "Results", es: "Resultados" },
+  
+  // Backtest Results Table
+  tableHeaderDate: { en: "Date", es: "Fecha" },
+  tableHeaderType: { en: "Type", es: "Tipo" },
+  tableHeaderPrice: { en: "Price", es: "Precio" },
+  tableHeaderPnL: { en: "PnL", es: "PnL" },
+  tableHeaderBalance: { en: "Balance", es: "Balance" },
+  
+  // Stack Builder Validation
+  enterRobotName: { en: "Please enter a robot name and add at least one signal.", es: "Ingresa un nombre para el robot y agrega al menos una señal." },
+  robotSaved: { en: "Robot saved!", es: "¡Robot guardado!" },
+  addSignalsParams: { en: "Add signals before running simulation.", es: "Agrega señales antes de simular." },
+  addSignalStack: { en: "Please add at least one signal to the stack.", es: "Agrega al menos una señal a la pila." },
+  backtestFailed: { en: "Backtest failed", es: "Falló el backtest" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

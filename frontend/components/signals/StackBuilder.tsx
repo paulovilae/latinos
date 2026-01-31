@@ -107,7 +107,7 @@ export function StackBuilder() {
 
   const runBacktest = async () => {
     if (stack.length === 0) {
-      alert(t("emptyStack", "Please add at least one signal to the stack."));
+      alert(t("addSignalStack", "Please add at least one signal to the stack."));
       return;
     }
     setIsRunning(true);
@@ -129,7 +129,7 @@ export function StackBuilder() {
       setBacktestResult(result);
     } catch (e) {
       console.error(e);
-      alert(t("error", "Backtest failed"));
+      alert(t("backtestFailed", "Backtest failed"));
     } finally {
       setIsRunning(false);
     }
@@ -137,7 +137,7 @@ export function StackBuilder() {
 
   const saveRobot = async () => {
     if (!robotName.trim() || stack.length === 0) {
-      alert(t("error", "Please enter a robot name and add at least one signal."));
+      alert(t("enterRobotName", "Please enter a robot name and add at least one signal."));
       return;
     }
     setIsSaving(true);
@@ -150,7 +150,7 @@ export function StackBuilder() {
           signal_ids: stack.map(s => s.id)
         })
       });
-      alert(`${t("success", "Success")}: Robot "${robotName}" saved!`);
+      alert(`${t("success", "Success")}: ${t("robotSaved", "Robot saved!")}`);
       setRobotName("");
       loadRobots();
     } catch (e) {
@@ -193,7 +193,7 @@ export function StackBuilder() {
              {/* Search Input */}
              <input 
                 type="text" 
-                placeholder="Search signals..." 
+                placeholder={t("searchSignalsPlaceholder", "Search signals...")} 
                 value={signalSearch}
                 onChange={(e) => setSignalSearch(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:border-indigo-500 outline-none mb-3"
@@ -203,7 +203,7 @@ export function StackBuilder() {
              <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
                 {filteredSignals.length === 0 ? (
                     <div className="text-slate-500 text-xs italic py-2 w-full text-center">
-                        {availableSignals.length === 0 ? t("noSignalsYet", "No signals available.") : "No matching signals."}
+                        {availableSignals.length === 0 ? t("noSignalsYet", "No signals available.") : t("noMatchingSignals", "No matching signals.")}
                     </div>
                 ) : (
                     filteredSignals.map(sig => (
@@ -228,13 +228,13 @@ export function StackBuilder() {
         
         {/* The Stack Visualization */}
         <div className="relative border border-slate-700 rounded-xl bg-slate-950/50 p-6 min-h-[400px] flex flex-col">
-            <div className="absolute top-4 right-4 text-xs text-slate-500 font-mono hidden sm:block">FLOW: SEQUENTIAL (AND)</div>
+            <div className="absolute top-4 right-4 text-xs text-slate-500 font-mono hidden sm:block">{t("flowSequential", "FLOW: SEQUENTIAL (AND)")}</div>
             
             <div className="flex flex-col items-center space-y-2 flex-1">
                 
                 {/* Market Input Node */}
                  <div className="w-48 py-2 text-center bg-slate-800 rounded border border-slate-600 text-slate-400 text-xs font-mono mb-2">
-                    MARKET DATA (1D)
+                    {t("marketData1D", "MARKET DATA (1D)")}
                  </div>
                  <div className="h-6 w-0.5 bg-slate-600"></div>
 
@@ -317,7 +317,7 @@ export function StackBuilder() {
                 <div className="p-5 bg-slate-900 rounded-xl border border-slate-800 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all shadow-xl">
                     <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
                     <span>📊 {t("simulationTitle", "Simulation & Training")}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-widest font-black">History</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-widest font-black">{t("historyBadge", "History")}</span>
                     </h4>
                     
                     <div className="grid grid-cols-2 gap-4 mb-4">
@@ -351,7 +351,7 @@ export function StackBuilder() {
 
                     <div className="grid grid-cols-3 gap-2 mb-6">
                         <div>
-                            <label className="block text-[10px] text-slate-400 mb-1 uppercase">Capital ($)</label>
+                            <label className="block text-[10px] text-slate-400 mb-1 uppercase">{t("capitalLabel", "CAPITAL ($)")}</label>
                             <input
                                 type="number"
                                 value={initialCapital}
@@ -360,7 +360,7 @@ export function StackBuilder() {
                             />
                         </div>
                         <div>
-                            <label className="block text-[10px] text-slate-400 mb-1 uppercase">Take Profit %</label>
+                            <label className="block text-[10px] text-slate-400 mb-1 uppercase">{t("takeProfitLabel", "TAKE PROFIT %")}</label>
                             <input
                                 type="number"
                                 step="0.1"
@@ -370,7 +370,7 @@ export function StackBuilder() {
                             />
                         </div>
                         <div>
-                            <label className="block text-[10px] text-slate-400 mb-1 uppercase">Stop Loss %</label>
+                            <label className="block text-[10px] text-slate-400 mb-1 uppercase">{t("stopLossLabel", "STOP LOSS %")}</label>
                             <input
                                 type="number"
                                 step="0.1"
@@ -390,14 +390,14 @@ export function StackBuilder() {
                     </button>
                     
                     {stack.length === 0 && (
-                        <p className="text-center text-xs text-rose-400 mt-2 animate-pulse">{t("emptyStack", "Add signals before running simulation.")}</p>
+                        <p className="text-center text-xs text-rose-400 mt-2 animate-pulse">{t("addSignalsParams", "Add signals before running simulation.")}</p>
                     )}
                 </div>
             </div>
 
             {backtestResult && (
                  <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 animate-in fade-in slide-in-from-bottom-4">
-                    <h4 className="font-semibold text-white mb-4 border-b border-slate-800 pb-2">{t("success", "Results")}</h4>
+                    <h4 className="font-semibold text-white mb-4 border-b border-slate-800 pb-2">{t("resultsTitle", "Results")}</h4>
                     <div className="grid grid-cols-2 gap-3 mb-4">
                         <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 relative overflow-hidden group hover:border-emerald-500/50 transition-colors">
                             <div className="relative z-10 text-center">
@@ -485,11 +485,11 @@ export function StackBuilder() {
                                 <table className="w-full text-left text-sm">
                                     <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold sticky top-0 z-10">
                                         <tr>
-                                            <th className="px-3 py-2 bg-slate-950">Date</th>
-                                            <th className="px-3 py-2 bg-slate-950">Type</th>
-                                            <th className="px-3 py-2 text-right bg-slate-950">Price</th>
-                                            <th className="px-3 py-2 text-right bg-slate-950">PnL</th>
-                                            <th className="px-3 py-2 text-right bg-slate-950">Balance</th>
+                                            <th className="px-3 py-2 bg-slate-950">{t("tableHeaderDate", "Date")}</th>
+                                            <th className="px-3 py-2 bg-slate-950">{t("tableHeaderType", "Type")}</th>
+                                            <th className="px-3 py-2 text-right bg-slate-950">{t("tableHeaderPrice", "Price")}</th>
+                                            <th className="px-3 py-2 text-right bg-slate-950">{t("tableHeaderPnL", "PnL")}</th>
+                                            <th className="px-3 py-2 text-right bg-slate-950">{t("tableHeaderBalance", "Balance")}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-800 bg-slate-900/50">
