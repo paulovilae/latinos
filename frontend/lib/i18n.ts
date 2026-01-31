@@ -256,9 +256,9 @@ export const translations = {
   
   // Dashboard / Live Trading
   activeRobots: { en: "Active Robots", es: "Robots Activos" },
-  totalEquity: { en: "Total Equity & Cash", es: "Patrimonio Total y Efectivo" },
-  equity: { en: "Equity", es: "Patrimonio" },
-  cash: { en: "Cash", es: "Efectivo" },
+  totalEquity: { en: "Total Balance", es: "Balance Total" },
+  equity: { en: "Invested", es: "Invertido" },
+  cash: { en: "Available", es: "Disponible" },
   viewDetails: { en: "View Details", es: "Ver Detalles" },
   recentActivity: { en: "Recent Activity", es: "Actividad Reciente" },
   noRecentTrades: { en: "No recent trades recorded.", es: "No hay operaciones recientes registradas." },
