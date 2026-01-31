@@ -39,7 +39,20 @@ export function StackBuilder() {
 
   useEffect(() => {
     // Load signals to choose from
-    fetch("/api/signals").then(res => res.json()).then(setAvailableSignals).catch(console.error);
+    fetch("/api/signals")
+      .then(res => res.json())
+      .then((data: Signal[]) => {
+        // Deduplicate by name on client side to be safe
+        const unique = Object.values(
+          data.reduce((acc, sig) => {
+            const name = sig.payload?.name || `Sig ${sig.id}`;
+            if (!acc[name]) acc[name] = sig;
+            return acc;
+          }, {} as Record<string, Signal>)
+        );
+        setAvailableSignals(unique);
+      })
+      .catch(console.error);
     // Load saved robots
     loadRobots();
   }, []);
