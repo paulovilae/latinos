@@ -264,6 +264,12 @@ export const translations = {
   recentActivity: { en: "Recent Activity", es: "Actividad Reciente" },
   noRecentTrades: { en: "No recent trades recorded.", es: "No hay operaciones recientes registradas." },
   
+  // Stitch Dashboard Keys
+  connectionStatus: { en: "Live Connection", es: "Conexión en Vivo" },
+  totalValue: { en: "Total Portfolio Value", es: "Valor Total del Portafolio" },
+  viewAll: { en: "View All", es: "Ver Todo" },
+  liveActivity: { en: "Live Activity", es: "Actividad en Vivo" },
+  
   // Common
   loading: { en: "Loading...", es: "Cargando..." },
   success: { en: "Success", es: "Éxito" },

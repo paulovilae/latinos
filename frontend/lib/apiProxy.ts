@@ -26,7 +26,10 @@ export async function proxyToBackend(
     // Get session for authentication
     const session = requireAuth ? await getServerSession(authOptions) : null;
     
+    console.log(`[API Proxy] ${request.method} ${backendPath} | requireAuth=${requireAuth} | session=${!!session}`);
+    
     if (requireAuth && !session) {
+      console.log(`[API Proxy] Returning 401 - No session for ${backendPath}`);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

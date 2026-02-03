@@ -20,3 +20,4 @@ __pycache__/
 # Untracked/Deprecated
 deprecated/
 docs/general/
+*.db
