@@ -1,11 +1,6 @@
-import dynamic from "next/dynamic";
 import { fetchMarketData } from "@/lib/api";
 import { Signal } from "@/lib/types";
-
-const InteractiveChart = dynamic(() => import("@/components/InteractiveChart").then(mod => mod.InteractiveChart), { 
-  ssr: false,
-  loading: () => <div className="h-96 w-full bg-slate-900/50 animate-pulse rounded-xl" />
-});
+import { InteractiveChart } from "@/components/InteractiveChart";
 
 export async function DashboardChartWrapper({ signals }: { signals?: Signal[] }) {
   // Default to BTC-USD for dashboard overview

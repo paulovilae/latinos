@@ -4,15 +4,17 @@ import { proxyToBackend } from "@/lib/apiProxy";
 // PUT /api/users/:id - Update user
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  return proxyToBackend(request, `/users/${params.id}`);
+  const { id } = await params;
+  return proxyToBackend(request, `/users/${id}`);
 }
 
 // DELETE /api/users/:id - Delete user
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  return proxyToBackend(request, `/users/${params.id}`);
+  const { id } = await params;
+  return proxyToBackend(request, `/users/${id}`);
 }

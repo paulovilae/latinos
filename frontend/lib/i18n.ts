@@ -9,8 +9,8 @@ export const translations = {
   navBots: { en: "Bots", es: "Bots" },
   navUsers: { en: "Users", es: "Usuarios" },
   navFormulas: { en: "Formulas", es: "Fórmulas" },
-  navSignals: { en: "Live Trading", es: "Trading en Vivo" },
-  navSignalsPage: { en: "Signals", es: "Señales" },
+  navStrategies: { en: "Live Trading", es: "Trading en Vivo" },
+  navStrategiesPage: { en: "Strategies", es: "Estrategias" },
   navRobotsPage: { en: "Robots", es: "Robots" },
   navBacktests: { en: "Backtests", es: "Backtests" },
   navBilling: { en: "Billing", es: "Facturación" },
@@ -153,7 +153,7 @@ export const translations = {
   landingCtaSecondary: { en: "View Demo", es: "Ver Demo" },
   feature1Title: { en: "Visual Strategy Builder", es: "Constructor Visual" },
   feature1Desc: { en: "Create complex algorithms without writing code properly.", es: "Crea algoritmos complejos sin escribir código." },
-  feature2Title: { en: "Real-time Signals", es: "Señales en Tiempo Real" },
+  feature2Title: { en: "Real-time Strategies", es: "Estrategias en Tiempo Real" },
   feature2Desc: { en: "Get instant alerts via WebSocket or Webhook when your strategy triggers.", es: "Recibe alertas instantáneas vía WebSocket o Webhook cuando tu estrategia se active." },
   feature3Title: { en: "Robust Backtesting", es: "Backtesting Robusto" },
   feature3Desc: { en: "Test your ideas against historical data with millisecond precision.", es: "Prueba tus ideas contra datos históricos con precisión de milisegundos." },
@@ -186,6 +186,7 @@ export const translations = {
   minChars: { en: "Minimum 6 characters", es: "Mínimo 6 caracteres" },
   authError: { en: "Something went wrong", es: "Algo salió mal" },
   invalidCredentials: { en: "Invalid email or password", es: "Email o contraseña inválidos" },
+  passwordRequirements: { en: "Min 8 chars, one uppercase, one number", es: "Mín. 8 caracteres, una mayúscula, un número" },
   
   // Signal Studio
   signalNamePlaceholder: { en: "Signal Name", es: "Nombre de la Señal" },
@@ -198,17 +199,17 @@ export const translations = {
   signalSuccessUpdate: { en: "✅ Signal updated successfully!", es: "✅ ¡Señal actualizada con éxito!" },
   signalSuccessCreate: { en: "✅ Signal created successfully!", es: "✅ ¡Señal creada con éxito!" },
   signalError: { en: "Failed to save signal", es: "Error al guardar señal" },
-  yourSignals: { en: "Your Signals", es: "Tus Señales" },
-  signalLibrary: { en: "Signal Library", es: "Biblioteca de Señales" },
-  manageSignalsDesc: { en: "Manage your trading signals.", es: "Administra tus señales de trading." },
-  noSignalsYet: { en: "No signals yet.", es: "Aún no hay señales." },
+  yourStrategies: { en: "Your Strategies", es: "Tus Estrategias" },
+  signalLibrary: { en: "Signal Library", es: "Biblioteca de Estrategias" },
+  manageStrategiesDesc: { en: "Manage your trading signals.", es: "Administra tus señales de trading." },
+  noStrategiesYet: { en: "No signals yet.", es: "Aún no hay señales." },
   
   // Robot Studio
   robotStudioTitle: { en: "Robot Studio", es: "Estudio de Robots" },
   robotStudioDesc: { en: "Assemble signals into trading bots and backtest strategies.", es: "Ensambla señales en bots de trading y prueba estrategias." },
-  availableSignals: { en: "Available Signals (Click to Add)", es: "Señales Disponibles (Clic para agregar)" },
+  availableStrategies: { en: "Available Strategies (Click to Add)", es: "Estrategias Disponibles (Clic para agregar)" },
   emptyStack: { en: "Empty stack. Add signals from top bar.", es: "Pila vacía. Agrega señales de la barra superior." },
-  tapToAddSignals: { en: "Tap to add to your strategy stack", es: "Toca para agregar a tu estrategia" },
+  tapToAddStrategies: { en: "Tap to add to your strategy stack", es: "Toca para agregar a tu estrategia" },
   actionBuyShort: { en: "ACTION: BUY / SHORT", es: "ACCIÓN: COMPRAR / CORTO" },
   simulationTitle: { en: "Simulation & Training", es: "Simulación y Entrenamiento" },
   runSimulationBtn: { en: "▶️ Run Simulation", es: "▶️ Ejecutar Simulación" },
@@ -223,7 +224,7 @@ export const translations = {
   step1Guide: { en: "Step 1: Add a Signal", es: "Paso 1: Agrega una Señal" },
   step2Guide: { en: "Step 2: Run Simulation", es: "Paso 2: Ejecuta Simulación" },
   robotNamePlaceholder: { en: "Enter robot name...", es: "Ingresa nombre del robot..." },
-  signalStacks: { en: "Signal Stacks", es: "Pilas de Señales" },
+  signalStacks: { en: "Signal Stacks", es: "Pilas de Estrategias" },
   totalPnL: { en: "Total PnL", es: "PnL Total" },
   winRate: { en: "Win Rate", es: "Tasa de Acierto" },
   totalReturn: { en: "Total Return", es: "Retorno Total" },
@@ -235,15 +236,15 @@ export const translations = {
   sellBtn: { en: "💰 Sell", es: "💰 Vender" },
   simulatedOrderPlaced: { en: "Simulated order placed successfully!", es: "¡Orden simulada colocada con éxito!" },
   simulatedOrderFailed: { en: "Failed to place simulated trade.", es: "Falló la orden simulada." },
-  noSignalsFound: { en: "No signals found yet.", es: "Aún no se encontraron señales." },
+  noStrategiesFound: { en: "No signals found yet.", es: "Aún no se encontraron señales." },
   
   // Navigation
   navLiveTrading: { en: "Live Trading", es: "Trading en Vivo" },
-  navSignalStudio: { en: "Signals", es: "Señales" },
+  navSignalStudio: { en: "Strategies", es: "Estrategias" },
   navRobotStudio: { en: "Robots", es: "Robots" },
   
   // Editor
-  editorTitle: { en: "Signal Library", es: "Biblioteca de Señales" },
+  editorTitle: { en: "Signal Library", es: "Biblioteca de Estrategias" },
   editorDescription: { en: "Manage your trading signals.", es: "Gestiona tus señales de trading." },
   askAI: { en: "Ask AI", es: "Preguntar a IA" },
   aiTitle: { en: "AI Assistant", es: "Asistente IA" },
@@ -274,6 +275,7 @@ export const translations = {
   loading: { en: "Loading...", es: "Cargando..." },
   success: { en: "Success", es: "Éxito" },
   error: { en: "Error", es: "Error" },
+  testError: { en: "Test Error", es: "Error de Prueba" },
   confirmDelete: { en: "Are you sure you want to delete this?", es: "¿Estás seguro de que quieres eliminar esto?" },
   
   // Dashboard Metrics & Charts
@@ -286,6 +288,8 @@ export const translations = {
   // Dashboard Robot Cards
   recommendation: { en: "Recommendation", es: "Recomendación" },
   waitingForSignal: { en: "WAITING_FOR_SIGNAL...", es: "ESPERANDO_SEÑAL..." },
+  simulate: { en: "Simulate", es: "Simular" },
+  simulating: { en: "Simulating...", es: "Simulando..." },
   signalEvent: { en: "Signal Event", es: "Evento de Señal" },
   unknownBot: { en: "Unknown Bot", es: "Bot Desconocido" },
   unknownSignal: { en: "Signal", es: "Señal" },
@@ -298,8 +302,8 @@ export const translations = {
   tablePrice: { en: "Price", es: "Precio" },
   
   // Stack Builder / Signal Studio
-  searchSignalsPlaceholder: { en: "Search signals...", es: "Buscar señales..." },
-  noMatchingSignals: { en: "No matching signals.", es: "No hay señales coincidentes." },
+  searchStrategiesPlaceholder: { en: "Search signals...", es: "Buscar señales..." },
+  noMatchingStrategies: { en: "No matching signals.", es: "No hay señales coincidentes." },
   flowSequential: { en: "FLOW: SEQUENTIAL (AND)", es: "FLUJO: SECUENCIAL (Y)" },
   marketData1D: { en: "MARKET DATA (1D)", es: "DATOS DE MERCADO (1D)" },
   capitalLabel: { en: "CAPITAL ($)", es: "CAPITAL ($)" },
@@ -320,7 +324,7 @@ export const translations = {
   // Stack Builder Validation
   enterRobotName: { en: "Please enter a robot name and add at least one signal.", es: "Ingresa un nombre para el robot y agrega al menos una señal." },
   robotSaved: { en: "Robot saved!", es: "¡Robot guardado!" },
-  addSignalsParams: { en: "Add signals before running simulation.", es: "Agrega señales antes de simular." },
+  addStrategiesParams: { en: "Add signals before running simulation.", es: "Agrega señales antes de simular." },
   addSignalStack: { en: "Please add at least one signal to the stack.", es: "Agrega al menos una señal a la pila." },
   backtestFailed: { en: "Backtest failed", es: "Falló el backtest" },
 } as const;

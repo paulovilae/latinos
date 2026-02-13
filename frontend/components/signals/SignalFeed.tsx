@@ -7,13 +7,13 @@ import { useLocale } from "@/components/LocalizationProvider";
 // Using Next.js API routes (no direct backend calls)
 
 interface SignalFeedProps {
-  initialSignals: Signal[];
+  initialStrategies: Signal[];
   botNameMap: Map<number, string>;
 }
 
-export function SignalFeed({ initialSignals, botNameMap }: SignalFeedProps) {
+export function SignalFeed({ initialStrategies, botNameMap }: SignalFeedProps) {
   const { t } = useLocale();
-  const [signals, setSignals] = useState<Signal[]>(initialSignals);
+  const [signals, setStrategies] = useState<Signal[]>(initialStrategies);
   const [busySignalId, setBusySignalId] = useState<number | null>(null);
 
   const handleTrade = async (signal: Signal, side: "buy" | "sell") => {
@@ -117,7 +117,7 @@ export function SignalFeed({ initialSignals, botNameMap }: SignalFeedProps) {
       {signals.length === 0 && (
         <div className="py-12 flex flex-col items-center justify-center text-slate-500 border border-dashed border-slate-800 rounded-xl bg-slate-950/30">
            <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center mb-3 text-2xl opacity-50">📡</div>
-           <p className="text-sm">{t("noSignalsFound", "No signals found yet.")}</p>
+           <p className="text-sm">{t("noStrategiesFound", "No signals found yet.")}</p>
         </div>
       )}
     </ul>

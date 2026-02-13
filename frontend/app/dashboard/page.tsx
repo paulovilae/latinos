@@ -24,7 +24,10 @@ function formatDate(value: string) {
   return date.toISOString().split("T")[0];
 }
 
-export default async function DashboardPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
+export default async function DashboardPage(props: { 
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+}) {
+  const searchParams = await props.searchParams;
   let summary: DashboardSummary;
 
   try {
@@ -40,7 +43,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
   return (
     <main className="space-y-6">
       <SectionGrid>
-        <MetricCard label="Active Signals" value={metrics.signals} helper="last 24h" />
+        <MetricCard label="Active Strategies" value={metrics.signals} helper="last 24h" />
         <MetricCard label="Market Data" value={summary.market_universe.length} helper="tracked symbols" />
         <MetricCard label="Formulas" value={metrics.formulas} helper="available strategies" />
         <MetricCard label="Backtests" value={metrics.backtests} helper="completed runs" />
@@ -76,9 +79,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         }
       >
           <div className="mt-4">
-             {/* Dynamic Import to avoid hydration issues since it uses random mock data */}
+             {/* Pass real data to the client component */}
              <Suspense fallback={<div className="h-64 animate-pulse bg-slate-900 rounded-xl"></div>}>
-                <LiveTradingDashboardWrapper />
+                <LiveTradingDashboardWrapper initialSummary={summary} />
              </Suspense>
           </div>
       </SectionCard>

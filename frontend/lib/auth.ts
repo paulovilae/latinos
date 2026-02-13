@@ -15,6 +15,7 @@ const getHeaders = (extra: Record<string, string> = {}) => ({
 });
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
       GoogleProvider({
@@ -119,7 +120,8 @@ export const authOptions: NextAuthOptions = {
       
       // Self-healing: if accessToken is missing (stale session) and it's the demo admin, restore it.
       // This prevents 401 errors after server restarts or code changes.
-      if (!token.accessToken && token.email === "demo@latinos.dev") {
+      // SECURITY: This is only enabled if the environment variable allows it.
+      if (!token.accessToken && token.email === "demo@latinos.trade" && process.env.NODE_ENV !== "production") {
           token.accessToken = "demo-admin-token";
           token.role = "admin";
       }

@@ -9,15 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@stripe/stripe-js": "^8.7.0",
-    "next": "14.2.4",
+    "next": "^16.1.6",
     "next-auth": "^4.24.13",
     "prismjs": "^1.30.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "react-hook-form": "^7.71.1",
     "react-simple-code-editor": "^0.14.1",
     "recharts": "^3.7.0",
-    "stripe": "^20.3.0"
+    "stripe": "^20.3.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "22.1.0",

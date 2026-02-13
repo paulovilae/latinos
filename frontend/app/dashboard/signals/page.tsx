@@ -6,7 +6,7 @@ import { LocalizedText } from "@/components/LocalizedText";
 import { SignalEditor } from "@/components/signals/SignalEditor";
 import { SectionCard } from "@/components/SectionCard";
 
-export default async function SignalsPage() {
+export default async function StrategiesPage() {
   const session = await getServerSession(authOptions);
 
   if (!session) {

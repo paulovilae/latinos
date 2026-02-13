@@ -3,28 +3,44 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 import { useLocale } from "@/components/LocalizationProvider";
+
+const signInSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+type SignInValues = z.infer<typeof signInSchema>;
 
 export function SignInForm() {
   const { t } = useLocale();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<SignInValues>({
+    resolver: zodResolver(signInSchema),
+  });
+
+  const onSubmit = async (values: SignInValues) => {
     setIsLoading(true);
     setError(null);
 
     try {
       const res = await signIn("credentials", {
         redirect: false,
-        email,
-        password,
+        email: values.email,
+        password: values.password,
         callbackUrl,
       });
 
@@ -47,28 +63,26 @@ export function SignInForm() {
 
   return (
     <div className="w-full max-w-sm space-y-4">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1">{t("emailLabel", "Email")}</label>
           <input
+            {...register("email")}
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-500"
+            className={`w-full bg-slate-800/50 border ${errors.email ? 'border-red-500' : 'border-slate-700'} rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-500`}
             placeholder="you@example.com"
-            required
           />
+          {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1">{t("passwordLabel", "Password")}</label>
           <input
+            {...register("password")}
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-500"
+            className={`w-full bg-slate-800/50 border ${errors.password ? 'border-red-500' : 'border-slate-700'} rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-500`}
             placeholder="••••••••"
-            required
           />
+          {errors.password && <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>}
         </div>
         
         {error && (
@@ -124,11 +138,9 @@ export function SignInForm() {
       <button
         type="button"
         onClick={() => {
-          setEmail("demo@latinos.trade");
-          setPassword("demo123");
-          // Auto-submit
-          const form = document.querySelector('form');
-          if (form) form.requestSubmit();
+          setValue("email", "demo@latinos.trade");
+          setValue("password", "demo123");
+          handleSubmit(onSubmit)();
         }}
         className="w-full bg-cyan-600 hover:bg-cyan-500 border border-cyan-500/30 text-white font-medium py-2.5 rounded-lg transition-all flex items-center justify-center gap-2"
       >

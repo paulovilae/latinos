@@ -28,7 +28,7 @@ const mockEquityData = Array.from({ length: 20 }, (_, i) => ({
 export function TradingDashboardOne() {
   const { t } = useLocale();
   const [bots, setBots] = useState<Bot[]>([]);
-  const [signals, setSignals] = useState<Signal[]>([]);
+  const [signals, setStrategies] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export function TradingDashboardOne() {
         const botsData = await botsRes.json();
         const signalsData = await signalsRes.json();
         setBots(botsData);
-        setSignals(signalsData);
+        setStrategies(signalsData);
       } catch (e) {
         console.error("Failed to load dashboard data", e);
       } finally {
@@ -52,7 +52,7 @@ export function TradingDashboardOne() {
   }, []);
 
   const activeRobots = bots.filter(b => b.status === 'running');
-  const recentSignals = signals.slice(0, 3); // Top 3 signals
+  const recentStrategies = signals.slice(0, 3); // Top 3 signals
 
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark transition-colors duration-200 font-display">
@@ -159,8 +159,8 @@ export function TradingDashboardOne() {
              <div className="space-y-3">
                 {loading ? (
                    <div className="h-16 bg-slate-800 rounded-xl animate-pulse"></div>
-                ) : recentSignals.length > 0 ? (
-                   recentSignals.map(signal => {
+                ) : recentStrategies.length > 0 ? (
+                   recentStrategies.map(signal => {
                      const isBuy = signal.type === 'buy';
                      const bot = bots.find(b => b.id === signal.bot_id);
                      return (

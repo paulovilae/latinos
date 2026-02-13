@@ -4,18 +4,33 @@ import { useLocale } from "@/components/LocalizationProvider";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const signUpSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters").regex(/[A-Z]/, "Password must contain at least one uppercase letter").regex(/[0-9]/, "Password must contain at least one number"),
+});
+
+type SignUpValues = z.infer<typeof signUpSchema>;
 
 export function SignUpForm() {
   const { t } = useLocale();
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignUpValues>({
+    resolver: zodResolver(signUpSchema),
+  });
+
+  const onSubmit = async (values: SignUpValues) => {
     setIsLoading(true);
     setError(null);
 
@@ -23,7 +38,7 @@ export function SignUpForm() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify(values),
       });
 
       const data = await res.json();
@@ -44,41 +59,37 @@ export function SignUpForm() {
 
   return (
     <div className="w-full max-w-sm space-y-4">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1">{t("nameLabel", "Name")}</label>
           <input
+            {...register("name")}
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-500"
+            className={`w-full bg-slate-800/50 border ${errors.name ? 'border-red-500' : 'border-slate-700'} rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-500`}
             placeholder="Your name"
-            required
           />
+          {errors.name && <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1">{t("emailLabel", "Email")}</label>
           <input
+            {...register("email")}
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-500"
+            className={`w-full bg-slate-800/50 border ${errors.email ? 'border-red-500' : 'border-slate-700'} rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-500`}
             placeholder="you@example.com"
-            required
           />
+          {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-1">{t("passwordLabel", "Password")}</label>
           <input
+            {...register("password")}
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-500"
+            className={`w-full bg-slate-800/50 border ${errors.password ? 'border-red-500' : 'border-slate-700'} rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-500`}
             placeholder="••••••••"
-            required
-            minLength={6}
           />
-          <p className="text-xs text-slate-500 mt-1">{t("minChars", "Minimum 6 characters")}</p>
+          {errors.password && <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>}
+          {!errors.password && <p className="text-xs text-slate-500 mt-1">{t("passwordRequirements", "Min 8 chars, one uppercase, one number")}</p>}
         </div>
         
         {error && (

@@ -72,6 +72,34 @@ export interface MarketUniverseItem {
   sector: string;
 }
 
+export interface AlpacaOrder {
+  id: string;
+  symbol: string;
+  qty: string;
+  filled_qty: string;
+  type: string;
+  side: string;
+  status: string;
+  filled_avg_price: string | null;
+  created_at: string;
+}
+
+export interface AlpacaPosition {
+  symbol: string;
+  qty: string;
+  avg_entry_price: string;
+  market_value: string;
+  unrealized_pl: string;
+  current_price: string;
+}
+
+export interface AlpacaAccount {
+  cash: string;
+  portfolio_value: string;
+  equity: string;
+  buying_power: string;
+}
+
 export interface DashboardSummary {
   metrics: Metrics;
   bots: Bot[];
@@ -81,4 +109,7 @@ export interface DashboardSummary {
   plans: Plan[];
   market_universe: MarketUniverseItem[];
   subscription_tier: string;
+  alpaca_account?: AlpacaAccount | null;
+  alpaca_orders: AlpacaOrder[];
+  alpaca_positions: AlpacaPosition[];
 }

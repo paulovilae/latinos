@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useLocale } from "@/components/LocalizationProvider";
+import { SignalScanner } from "./SignalScanner";
 // Using Next.js API routes (no direct backend calls)
 
 interface Signal {
@@ -21,7 +22,7 @@ interface SavedRobot {
 
 export function StackBuilder() {
   const { t } = useLocale();
-  const [availableSignals, setAvailableSignals] = useState<Signal[]>([]);
+  const [availableStrategies, setAvailableStrategies] = useState<Signal[]>([]);
   const [stack, setStack] = useState<Signal[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [backtestResult, setBacktestResult] = useState<any>(null);
@@ -41,12 +42,38 @@ export function StackBuilder() {
   // Signal Search
   const [signalSearch, setSignalSearch] = useState("");
 
+  // Scanner state
+  const [scanResult, setScanResult] = useState<any>(null);
+  const [isScanning, setIsScanning] = useState(false);
+
+  // Selected stack item for keyboard delete
+  const [selectedStackIdx, setSelectedStackIdx] = useState<number | null>(null);
+
+  // Keyboard Delete/Backspace handler
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Delete" || e.key === "Backspace") {
+        // Don't intercept if user is typing in an input
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+        if (selectedStackIdx !== null && selectedStackIdx < stack.length) {
+          e.preventDefault();
+          removeFromStack(selectedStackIdx);
+          setSelectedStackIdx(null);
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedStackIdx, stack.length]);
+
   useEffect(() => {
     // Load signals to choose from
     fetch("/api/signals")
       .then(res => res.json())
       .then((data: Signal[]) => {
-        setAvailableSignals(data);
+        setAvailableStrategies(data);
       })
       .catch(console.error);
     // Load saved robots
@@ -219,7 +246,7 @@ export function StackBuilder() {
           const id = typeof item === 'object' ? item.id : item;
           const invert = typeof item === 'object' ? item.invert : false;
           
-          const sig = availableSignals.find(s => Number(s.id) === Number(id));
+          const sig = availableStrategies.find(s => Number(s.id) === Number(id));
           if (!sig) return null;
           
           return { ...sig, invert }; // Apply inversion state
@@ -235,14 +262,14 @@ export function StackBuilder() {
     setCurrentRobotId(robot.id);
   };
 
-  const filteredSignals = availableSignals.filter(s => 
+  const filteredStrategies = availableStrategies.filter(s => 
     (s.payload?.name || "").toLowerCase().includes(signalSearch.toLowerCase())
   );
 
   return (
     <div className="space-y-8">
       
-      {/* Step 1: Add Signals */}
+      {/* Step 1: Add Strategies */}
       <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -250,7 +277,7 @@ export function StackBuilder() {
                 <h3 className="text-sm font-semibold text-indigo-300 uppercase tracking-wider">{t("step1Guide", "Step 1: Add a Signal")}</h3>
             </div>
             <div className="text-xs text-slate-500">
-                {availableSignals.length} available
+                {availableStrategies.length} available
             </div>
           </div>
           
@@ -258,7 +285,7 @@ export function StackBuilder() {
              {/* Search Input */}
              <input 
                 type="text" 
-                placeholder={t("searchSignalsPlaceholder", "Search signals...")} 
+                placeholder={t("searchStrategiesPlaceholder", "Search signals...")} 
                 value={signalSearch}
                 onChange={(e) => setSignalSearch(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:border-indigo-500 outline-none mb-3"
@@ -266,12 +293,12 @@ export function StackBuilder() {
 
              {/* Scrollable Signal List */}
              <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
-                {filteredSignals.length === 0 ? (
+                {filteredStrategies.length === 0 ? (
                     <div className="text-slate-500 text-xs italic py-2 w-full text-center">
-                        {availableSignals.length === 0 ? t("noSignalsYet", "No signals available.") : t("noMatchingSignals", "No matching signals.")}
+                        {availableStrategies.length === 0 ? t("noStrategiesYet", "No signals available.") : t("noMatchingStrategies", "No matching signals.")}
                     </div>
                 ) : (
-                    filteredSignals.map(sig => (
+                    filteredStrategies.map(sig => (
                         <button
                             key={sig.id}
                             type="button"
@@ -285,7 +312,7 @@ export function StackBuilder() {
                 )}
              </div>
              <div className="mt-2 text-[10px] text-slate-600 text-center border-t border-slate-800/50 pt-2">
-                {t("tapToAddSignals", "Tap to add to your strategy stack")}
+                {t("tapToAddStrategies", "Tap to add to your strategy stack")}
             </div>
           </div>
       </div>
@@ -317,7 +344,10 @@ export function StackBuilder() {
 
                  {stack.map((sig, idx) => (
                     <div key={idx} className="flex flex-col items-center animate-in slide-in-from-top-2 duration-300">
-                        <div className="relative group w-64 p-3 bg-slate-900 border border-indigo-500/50 rounded-lg shadow-lg shadow-indigo-500/10 flex items-center justify-between hover:border-indigo-400 transition-colors">
+                        <div
+                            className={`relative group w-64 p-3 bg-slate-900 border rounded-lg shadow-lg shadow-indigo-500/10 flex items-center justify-between transition-colors cursor-pointer ${selectedStackIdx === idx ? 'border-amber-400 ring-1 ring-amber-400/30' : 'border-indigo-500/50 hover:border-indigo-400'}`}
+                            onClick={() => setSelectedStackIdx(selectedStackIdx === idx ? null : idx)}
+                        >
                              <div className="flex flex-col gap-1 mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button 
                                     disabled={idx === 0}
@@ -343,19 +373,24 @@ export function StackBuilder() {
                                 </button>
                              </div>
 
-                             <div className="flex-1 flex items-center justify-between px-2">
-                                <span className={`font-semibold text-center truncate px-2 ${(sig as any).invert ? 'text-rose-400 line-through decoration-rose-500' : 'text-white'}`}>
+                             {/* Signal name - truncates to prevent overflow */}
+                             <div className="flex-1 min-w-0 px-2">
+                                <span className={`block font-semibold truncate text-sm ${(sig as any).invert ? 'text-rose-400 line-through decoration-rose-500' : 'text-white'}`}>
                                     {(sig as any).invert && <span className="text-[10px] font-black mr-1 no-underline text-rose-500">NOT</span>}
                                     {sig.payload?.name || `Signal ${sig.id}`}
                                 </span>
-                                
+                             </div>
+
+                             {/* Right controls - fixed position, never pushed by name */}
+                             <div className="flex items-center gap-1.5 flex-shrink-0">
                                 <button 
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                        e.stopPropagation();
                                         const newStack = [...stack];
                                         newStack[idx] = { ...newStack[idx], invert: !(newStack[idx] as any).invert };
                                         setStack(newStack);
                                     }}
-                                    className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border transition-colors ${
+                                    className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border transition-colors whitespace-nowrap ${
                                         (sig as any).invert 
                                           ? 'bg-rose-500/20 text-rose-400 border-rose-500/50 hover:bg-rose-500/30' 
                                           : 'bg-slate-800 text-slate-500 border-slate-700 hover:text-white hover:border-slate-500'
@@ -363,9 +398,8 @@ export function StackBuilder() {
                                 >
                                     {(sig as any).invert ? 'Inverted' : 'Invert'}
                                 </button>
+                                <button onClick={(e) => { e.stopPropagation(); removeFromStack(idx); setSelectedStackIdx(null); }} className="text-white/70 hover:text-red-400 hover:bg-red-500/10 p-1 rounded transition-colors text-base leading-none" title="Remove signal (Del)">×</button>
                              </div>
-                             
-                             <button onClick={() => removeFromStack(idx)} className="text-slate-500 hover:text-red-400 ml-2 p-1">×</button>
                              
                              {/* Traffic Light Logic Visualization */}
                              <div className="absolute -right-3 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 bg-slate-950 p-1.5 rounded-full border border-slate-800">
@@ -467,19 +501,78 @@ export function StackBuilder() {
                         </div>
                     </div>
                     
-                    <button 
-                        onClick={runBacktest}
-                        disabled={isRunning || stack.length === 0}
-                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                    >
-                        {isRunning ? t("runningSimulation", "🚀 Running...") : t("runSimulationBtn", "▶️ Run Simulation")}
-                    </button>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={runBacktest}
+                            disabled={isRunning || isScanning || stack.length === 0}
+                            className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                        >
+                            {isRunning ? t("runningSimulation", "🚀 Running...") : t("runSimulationBtn", "▶️ Run Simulation")}
+                        </button>
+                        <button
+                            onClick={async () => {
+                                if (stack.length === 0) return;
+                                setIsScanning(true);
+                                setScanResult(null);
+                                try {
+                                    const res = await fetch("/api/signals/scan", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                            signal_ids: stack.map(s => s.id),
+                                            symbol: selectedSymbol,
+                                            days: selectedPeriod === "30d" ? 30 : selectedPeriod === "3mo" ? 90 : selectedPeriod === "6mo" ? 180 : 252
+                                        })
+                                    });
+                                    const data = await res.json();
+                                    // Apply invert flags from stack to scan results
+                                    if (data.signals) {
+                                        const invertMap = new Map(stack.map(s => [s.id, !!(s as any).invert]));
+                                        data.signals = data.signals.map((sig: any) => {
+                                            if (invertMap.get(sig.signal_id)) {
+                                                return {
+                                                    ...sig,
+                                                    name: `NOT ${sig.name}`,
+                                                    results: sig.results.map((r: any) => ({
+                                                        ...r,
+                                                        result: r.result === null ? null : !r.result
+                                                    }))
+                                                };
+                                            }
+                                            return sig;
+                                        });
+                                    }
+                                    setScanResult(data);
+                                } catch (e) {
+                                    console.error(e);
+                                    alert("Signal scan failed");
+                                } finally {
+                                    setIsScanning(false);
+                                }
+                            }}
+                            disabled={isScanning || isRunning || stack.length === 0}
+                            className="py-3 px-4 bg-violet-600 hover:bg-violet-500 text-white rounded-lg font-bold shadow-lg shadow-violet-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2 whitespace-nowrap"
+                        >
+                            {isScanning ? "⏳ Scanning..." : "📡 Scan"}
+                        </button>
+                    </div>
                     
                     {stack.length === 0 && (
-                        <p className="text-center text-xs text-rose-400 mt-2 animate-pulse">{t("addSignalsParams", "Add signals before running simulation.")}</p>
+                        <p className="text-center text-xs text-rose-400 mt-2 animate-pulse">{t("addStrategiesParams", "Add signals before running simulation.")}</p>
                     )}
                 </div>
             </div>
+
+            {/* Signal Scanner Heatmap */}
+            {scanResult?.signals && (
+                <div className="animate-in fade-in slide-in-from-bottom-4">
+                    <SignalScanner
+                        signals={scanResult.signals}
+                        timestamps={scanResult.timestamps}
+                        symbol={scanResult.symbol}
+                    />
+                </div>
+            )}
 
             {backtestResult && (
                  <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 animate-in fade-in slide-in-from-bottom-4">

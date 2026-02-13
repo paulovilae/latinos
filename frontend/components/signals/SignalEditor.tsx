@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useLocale } from "@/components/LocalizationProvider";
 import { CodeEditor } from "./CodeEditor";
 import { AIAssistant } from "./AIAssistant";
+import { SignalTester } from "@/components/signals/SignalTester";
 // Using Next.js API routes (no direct backend calls)
 
 interface Signal {
@@ -15,7 +16,7 @@ interface Signal {
 
 export function SignalEditor() {
   const { t } = useLocale();
-  const [signals, setSignals] = useState<Signal[]>([]);
+  const [signals, setStrategies] = useState<Signal[]>([]);
   const [selectedSignal, setSelectedSignal] = useState<Signal | null>(null);
   
   // Form State
@@ -23,25 +24,26 @@ export function SignalEditor() {
   const [type, setType] = useState<"FORMULA" | "PYTHON">("FORMULA");
   const [code, setCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showTester, setShowTester] = useState(false);
 
   useEffect(() => {
-    refreshSignals();
+    refreshStrategies();
   }, []);
 
-  const refreshSignals = async () => {
+  const refreshStrategies = async () => {
     try {
       const res = await fetch("/api/signals");
       if (!res.ok) throw new Error(`API Error: ${res.status}`);
       const data = await res.json();
       if (Array.isArray(data)) {
-        setSignals(data);
+        setStrategies(data);
       } else {
-        console.error("Signals data is not array:", data);
-        setSignals([]);
+        console.error("Strategies data is not array:", data);
+        setStrategies([]);
       }
     } catch (e) {
       console.error("Failed to load signals", e);
-      setSignals([]); // Fallback to empty
+      setStrategies([]); // Fallback to empty
     }
   };
 
@@ -69,7 +71,7 @@ export function SignalEditor() {
             })
         });
       }
-      await refreshSignals();
+      await refreshStrategies();
       // Show success message
       if (selectedSignal) {
         alert(t("signalSuccessUpdate", "✅ Signal updated successfully!"));
@@ -89,7 +91,7 @@ export function SignalEditor() {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:h-[500px] h-auto">
       {/* List */}
       <div className="md:col-span-1 border-r border-slate-700 pr-4 overflow-y-auto h-[150px] md:h-full">
-        <h3 className="text-sm font-semibold text-slate-400 mb-3">{t("yourSignals", "Your Signals")}</h3>
+        <h3 className="text-sm font-semibold text-slate-400 mb-3">{t("yourStrategies", "Your Strategies")}</h3>
         <div className="space-y-2">
             {signals.map(sig => (
                 <div 
@@ -117,7 +119,7 @@ export function SignalEditor() {
                             if(!confirm(t("confirmDelete", "Delete this signal?"))) return;
                             try {
                                 await fetch(`/api/signals/${sig.id}`, { method: "DELETE" });
-                                refreshSignals();
+                                refreshStrategies();
                                 if(selectedSignal?.id === sig.id) {
                                     setSelectedSignal(null);
                                     setName("");
@@ -133,7 +135,7 @@ export function SignalEditor() {
                 </div>
             ))}
              {signals.length === 0 && (
-                <div className="text-sm text-slate-500 italic">{t("noSignalsYet", "No signals yet.")}</div>
+                <div className="text-sm text-slate-500 italic">{t("noStrategiesYet", "No signals yet.")}</div>
             )}
         </div>
         <button 
@@ -182,7 +184,20 @@ export function SignalEditor() {
             />
         </div>
         
+        {/* Signal Tester */}
+        {selectedSignal && showTester && (
+             <SignalTester signalId={selectedSignal.id} />
+        )}
+
         <div className="flex justify-end gap-3">
+             {selectedSignal && (
+                <button
+                    className="px-4 py-2 bg-indigo-600/20 text-indigo-300 rounded-lg font-medium hover:bg-indigo-600/30"
+                    onClick={() => setShowTester(!showTester)}
+                >
+                    {showTester ? "Hide Tester" : "Test Signal"}
+                </button>
+             )}
              <button 
                 className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 disabled:opacity-50"
                 onClick={handleSave}
