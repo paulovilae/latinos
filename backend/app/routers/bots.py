@@ -23,8 +23,9 @@ def create_bot(payload: schemas.BotCreate, user: models.User = Depends(get_curre
 
 @router.get("/", response_model=List[schemas.BotOut])
 def list_bots(user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # For testing: Return all bots for all users
-    return db.query(models.Bot).all()
+    if user.role == "admin":
+        return db.query(models.Bot).all()
+    return db.query(models.Bot).filter(models.Bot.owner_id == user.id).all()
 
 @router.put("/{bot_id}", response_model=schemas.BotOut)
 def update_bot(
@@ -97,7 +98,9 @@ def create_formula(
 def list_formulas_for_bot(
     bot_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
-    # For testing: Return all formulas for bot regardless of owner
+    bot = crud.get_bot(db, bot_id)
+    if not bot or (user.role != "admin" and bot.owner_id != user.id):
+        raise HTTPException(status_code=404, detail="Bot not found")
     return crud.get_formulas(db, bot_id)
 
 @router.put("/formulas/{formula_id}", response_model=schemas.FormulaOut)
@@ -181,3 +184,210 @@ def create_signal(
         raise HTTPException(status_code=404, detail="Bot not found")
     
     return crud.create_signal(db, payload)
+
+# Simulation
+
+@router.post("/simulate", response_model=schemas.BotSimulationResult)
+def simulate_bots(
+    request: schemas.BotSimulationRequest = schemas.BotSimulationRequest(),
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Evaluate all running bots' signal stacks against the latest historical candle.
+    Returns BUY/SELL/HOLD recommendation per bot. Works outside market hours.
+    """
+    import pandas as pd
+    from datetime import datetime
+    from ..signals import SignalEvaluator
+    from ..market_data_loader import sync_market_data
+    from sqlalchemy import func as sqlfunc
+
+    # Get all running bots for the user (admins see all)
+    if user.role == "admin":
+        bots = db.query(models.Bot).filter(models.Bot.status == "running").all()
+    else:
+        bots = db.query(models.Bot).filter(
+            models.Bot.owner_id == user.id,
+            models.Bot.status == "running"
+        ).all()
+
+    if not bots:
+        return schemas.BotSimulationResult(
+            bots=[],
+            evaluated_at=datetime.utcnow().isoformat()
+        )
+
+    results = []
+    for bot in bots:
+        # Determine symbol — use request override or bot's first tag or default
+        symbol = request.symbol or (bot.tags[0] if bot.tags else "AAPL")
+        symbol = symbol.upper()
+
+        # Get signal IDs from manifest
+        manifest = bot.signal_manifest or []
+        if not manifest:
+            results.append(schemas.BotSimulationBotResult(
+                bot_id=bot.id,
+                bot_name=bot.name,
+                symbol=symbol,
+                recommendation="HOLD",
+                confidence=0.0,
+                signals_passed=0,
+                signals_total=0,
+                latest_close=0.0,
+                timestamp=datetime.utcnow().isoformat(),
+                details=[]
+            ))
+            continue
+
+        # Parse manifest entries (support int IDs and dict configs with invert)
+        signal_configs = []
+        for entry in manifest:
+            if isinstance(entry, dict):
+                signal_configs.append({
+                    "id": int(entry.get("id", 0)),
+                    "invert": bool(entry.get("invert", False))
+                })
+            else:
+                signal_configs.append({"id": int(entry), "invert": False})
+
+        signal_ids = [c["id"] for c in signal_configs]
+
+        # Load signal definitions from DB
+        signals = db.query(models.Signal).filter(
+            models.Signal.id.in_(signal_ids)
+        ).all()
+
+        if not signals:
+            results.append(schemas.BotSimulationBotResult(
+                bot_id=bot.id,
+                bot_name=bot.name,
+                symbol=symbol,
+                recommendation="ERROR",
+                confidence=0.0,
+                signals_passed=0,
+                signals_total=0,
+                latest_close=0.0,
+                timestamp=datetime.utcnow().isoformat(),
+                details=[]
+            ))
+            continue
+
+        # Ensure market data exists
+        try:
+            sync_market_data(db, symbol, "1d", range_="1y", use_synthetic=False)
+        except Exception:
+            try:
+                sync_market_data(db, symbol, "1d", range_="30d", use_synthetic=True)
+            except Exception:
+                pass
+
+        # Fetch recent market data
+        subq = db.query(
+            sqlfunc.max(models.MarketData.id).label("id")
+        ).filter(
+            models.MarketData.symbol == symbol,
+            models.MarketData.interval == "1d"
+        ).group_by(models.MarketData.timestamp).subquery()
+
+        query = db.query(models.MarketData).join(
+            subq, models.MarketData.id == subq.c.id
+        ).order_by(models.MarketData.timestamp.desc()).limit(300)
+
+        data = [
+            {"open": d.open, "high": d.high, "low": d.low,
+             "close": d.close, "volume": d.volume, "timestamp": d.timestamp}
+            for d in query.all()
+        ]
+
+        if not data:
+            results.append(schemas.BotSimulationBotResult(
+                bot_id=bot.id,
+                bot_name=bot.name,
+                symbol=symbol,
+                recommendation="ERROR",
+                confidence=0.0,
+                signals_passed=0,
+                signals_total=0,
+                latest_close=0.0,
+                timestamp=datetime.utcnow().isoformat(),
+                details=[]
+            ))
+            continue
+
+        # Chronological order
+        data = data[::-1]
+        df = pd.DataFrame(data)
+        last_idx = len(df) - 1
+        latest_close = float(df.iloc[last_idx]["close"])
+        latest_ts = str(df.iloc[last_idx]["timestamp"])
+
+        # Evaluate each signal at the latest candle
+        sig_map = {s.id: s for s in signals}
+        config_map = {c["id"]: c for c in signal_configs}
+        details = []
+        passed = 0
+
+        for sig_cfg in signal_configs:
+            sig = sig_map.get(sig_cfg["id"])
+            if not sig:
+                details.append(schemas.BotSimulationSignalDetail(
+                    signal_id=sig_cfg["id"],
+                    name=f"Signal {sig_cfg['id']} (missing)",
+                    result=None,
+                    inverted=sig_cfg["invert"]
+                ))
+                continue
+
+            evaluator = SignalEvaluator(sig, logs=[])
+            try:
+                result = evaluator.evaluate(df, last_idx, debug=False)
+                # Apply invert if configured
+                if sig_cfg["invert"] and result is not None:
+                    result = not result
+            except Exception:
+                result = None
+
+            sig_name = sig.payload.get("name", f"Signal {sig.id}") if isinstance(sig.payload, dict) else f"Signal {sig.id}"
+            if sig_cfg["invert"]:
+                sig_name = f"NOT {sig_name}"
+
+            if result is True:
+                passed += 1
+
+            details.append(schemas.BotSimulationSignalDetail(
+                signal_id=sig.id,
+                name=sig_name,
+                result=result,
+                inverted=sig_cfg["invert"]
+            ))
+
+        total = len(details)
+        confidence = (passed / total * 100) if total > 0 else 0.0
+
+        # Recommendation logic: all signals must pass for BUY
+        if total > 0 and passed == total:
+            recommendation = "BUY"
+        elif total > 0 and passed == 0:
+            recommendation = "SELL"
+        else:
+            recommendation = "HOLD"
+
+        results.append(schemas.BotSimulationBotResult(
+            bot_id=bot.id,
+            bot_name=bot.name,
+            symbol=symbol,
+            recommendation=recommendation,
+            confidence=round(confidence, 1),
+            signals_passed=passed,
+            signals_total=total,
+            latest_close=latest_close,
+            timestamp=latest_ts,
+            details=details
+        ))
+
+    return schemas.BotSimulationResult(
+        bots=results,
+        evaluated_at=datetime.utcnow().isoformat()
+    )

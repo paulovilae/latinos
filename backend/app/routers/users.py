@@ -34,8 +34,9 @@ def update_me(payload: schemas.UserUpdateRequest, user: models.User = Depends(ge
         user.name = payload.name
     if payload.mfa_enabled is not None:
         user.mfa_enabled = payload.mfa_enabled
-    if payload.role:
-        user.role = payload.role  # Allow users to change their own role for testing
+    # SECURITY: Users should not be able to change their own role.
+    # if payload.role:
+    #     user.role = payload.role 
     db.commit()
     db.refresh(user)
     return user

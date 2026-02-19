@@ -3,6 +3,10 @@ import os
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
 from .routers import auth, users, bots, signals, dashboard, billing, trades
 
 # Load environment variables
@@ -20,6 +24,9 @@ if root_env_path.exists():
 else:
     print(f"⚠️ Config not found at: {root_env_path}")
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
 # Initialize database tables
 from .db import Base, engine
 from . import models  # Import models to register them with Base
@@ -27,6 +34,8 @@ from . import models  # Import models to register them with Base
 app = FastAPI(
     title="Investment Bot Platform - Latinos Trading"
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Create all tables on startup
 @app.on_event("startup")

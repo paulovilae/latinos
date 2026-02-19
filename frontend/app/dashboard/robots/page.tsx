@@ -10,6 +10,10 @@ export default async function RobotsPage() {
     redirect("/auth/signin");
   }
 
+  if (session.user?.role !== "admin") {
+    redirect("/dashboard");
+  }
+
   // Redirect to new unified studio
   return (
     <div className="space-y-6">

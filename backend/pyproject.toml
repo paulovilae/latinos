@@ -21,7 +21,9 @@ dependencies = [
     "redis",
     "stripe",
     "cachetools",
-    "argon2-cffi"
+    "argon2-cffi",
+    "alpaca-trade-api",
+    "slowapi"
 ]
 
 [tool.setuptools]

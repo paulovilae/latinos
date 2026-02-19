@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 from jose import jwt
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from .. import schemas, models, crud
 from ..db import get_db
@@ -12,8 +14,12 @@ router = APIRouter(
     tags=["auth"],
 )
 
+# Limiter for auth endpoints
+limiter = Limiter(key_func=get_remote_address)
+
 @router.post("/register", response_model=schemas.TokenResponse)
-def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def register(request: Request, payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
     user = crud.get_user_by_email(db, payload.email)
     if user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -21,7 +27,8 @@ def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
     return schemas.TokenResponse(access_token=DEMO_TOKEN, role=new_user.role) 
 
 @router.post("/login", response_model=schemas.TokenResponse)
-def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def login(request: Request, payload: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = crud.get_user_by_email(db, payload.email)
     if not user or not crud.verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -57,11 +64,15 @@ def social_login(payload: schemas.SocialLoginRequest, db: Session = Depends(get_
     return schemas.TokenResponse(access_token=access_token, role=user.role)
 
 @router.post("/mfa/verify", response_model=schemas.HealthResponse)
-def verify_mfa(payload: schemas.MFARequest):
+@limiter.limit("3/minute")
+def verify_mfa(request: Request, payload: schemas.MFARequest):
+    # TODO: Implement real MFA verification (e.g. pyotp)
+    # SECURITY: Hardcoded code "123456" is for demo/dev purposes only.
     if payload.code != "123456":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid MFA code")
     return schemas.HealthResponse(status="verified")
 
 @router.post("/password/reset", response_model=schemas.HealthResponse)
-def reset_password(payload: schemas.PasswordResetRequest):
+@limiter.limit("3/minute")
+def reset_password(request: Request, payload: schemas.PasswordResetRequest):
     return schemas.HealthResponse(status=f"reset-link-sent:{payload.email}")

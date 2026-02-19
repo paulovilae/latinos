@@ -1,0 +1,13 @@
+{
+  "project": "Latinos",
+  "objective": "Trading signals and market analysis platform focused on the Latino community.",
+  "tech_stack": [
+    "Payload CMS",
+    "Next.js",
+    "Python FastAPI",
+    "MongoDB"
+  ],
+  "status": "legacy",
+  "port": 3100,
+  "dna_compliance": false
+}

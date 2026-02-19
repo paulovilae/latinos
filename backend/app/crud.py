@@ -99,8 +99,35 @@ def create_backtest(db: Session, backtest: schemas.BacktestCreate, user_id: int)
 def get_backtest(db: Session, backtest_id: int):
     return db.query(models.Backtest).filter(models.Backtest.id == backtest_id).first()
 
+def _auto_detect_signal_type(signal_data: dict) -> dict:
+    """Auto-detect signal type from code content.
+    Python indicators: ta.*, data[*, multiline, import, if/for statements.
+    Formula indicators: single-line expressions with MA(), RSI(), comparisons.
+    """
+    code = ""
+    if signal_data.get("payload") and isinstance(signal_data["payload"], dict):
+        code = signal_data["payload"].get("code", "")
+    
+    if not code:
+        return signal_data
+    
+    # Python code markers
+    python_markers = ["ta.", "data[", "\n", "import ", "if ", "for ", "def ", "iloc[", ".iloc"]
+    is_python = any(marker in code for marker in python_markers)
+    
+    # Only auto-detect if type is generic/missing
+    current_type = signal_data.get("type", "").lower()
+    if current_type in ["", "formula"] and is_python:
+        signal_data["type"] = "python"
+    elif current_type in ["", "python"] and not is_python:
+        signal_data["type"] = "formula"
+    
+    return signal_data
+
 def create_signal(db: Session, signal: schemas.SignalCreate):
-    db_sig = models.Signal(**signal.dict(), emitted_at=datetime.datetime.utcnow(), delivery_status="pending")
+    data = signal.dict()
+    data = _auto_detect_signal_type(data)
+    db_sig = models.Signal(**data, emitted_at=datetime.datetime.utcnow(), delivery_status="active")
     db.add(db_sig)
     db.commit()
     db.refresh(db_sig)
@@ -109,8 +136,9 @@ def create_signal(db: Session, signal: schemas.SignalCreate):
 def update_signal(db: Session, signal_id: int, signal: schemas.SignalCreate):
     db_sig = db.query(models.Signal).filter(models.Signal.id == signal_id).first()
     if db_sig:
-        # Update fields
+        # Update fields with auto-type-detection
         data = signal.dict(exclude_unset=True)
+        data = _auto_detect_signal_type(data)
         for key, value in data.items():
             setattr(db_sig, key, value)
         db.commit()

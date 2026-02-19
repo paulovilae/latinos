@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocale } from "@/components/LocalizationProvider";
 import { TagPill } from "@/components/TagPill";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid } from 'recharts';
+import { BotMarketplace } from "./BotMarketplace";
 import type { DashboardSummary, Bot, Signal, AlpacaOrder, AlpacaPosition, AlpacaAccount } from "@/lib/types";
 
 // Simulation types
@@ -252,25 +253,65 @@ export function LiveTradingDashboard({ initialSummary }: { initialSummary?: Dash
           </div>
       </div>
 
-      {/* Robots Grid */}
+      {/* Robots/Marketplace Section */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <span>🤖</span> {t("activeRobots", "Active Robots")} 
-              <span className="text-xs bg-slate-800 text-slate-400 px-2 py-1 rounded-full">{activeRobots.length}</span>
-          </h3>
-          <button
-            onClick={runSimulation}
-            disabled={simulating}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-sm font-bold shadow-lg shadow-orange-900/30 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
-          >
-            {simulating ? (
-              <><span className="animate-spin">⏳</span> {t("simulating", "Simulating...")}</>
-            ) : (
-              <><span>⚡</span> {t("simulate", "Simulate")}</>
-            )}
-          </button>
-        </div>
+        {initialSummary?.subscription_tier === "admin" ? (
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <span>🤖</span> {t("activeRobots", "Active Robots")} 
+                  <span className="text-xs bg-slate-800 text-slate-400 px-2 py-1 rounded-full">{activeRobots.length}</span>
+              </h3>
+              <button
+                onClick={runSimulation}
+                disabled={simulating}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-sm font-bold shadow-lg shadow-orange-900/30 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+              >
+                {simulating ? (
+                  <><span className="animate-spin">⏳</span> {t("simulating", "Simulating...")}</>
+                ) : (
+                  <><span>⚡</span> {t("simulate", "Simulate")}</>
+                )}
+              </button>
+            </div>
+        ) : (
+            <div className="flex items-center justify-between mb-4 mt-8">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <span>🛒</span> Bot Marketplace
+              </h3>
+            </div>
+        )}
+
+        {/* Regular users see Marketplace first */}
+        {initialSummary?.subscription_tier !== "admin" && (
+            <div className="mb-12">
+                <BotMarketplace 
+                    bots={initialSummary?.bots || []} 
+                    user={{ id: 0, role: 'user', email: '', name: '', mfa_enabled: false, subscription_tier: 'free' } as any} 
+                    userBots={activeRobots} 
+                />
+            </div>
+        )}
+
+        {initialSummary?.subscription_tier !== "admin" && activeRobots.length > 0 && (
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <span>🤖</span> My Subscribed Bots
+                  <span className="text-xs bg-slate-800 text-slate-400 px-2 py-1 rounded-full">{activeRobots.length}</span>
+              </h3>
+              <button
+                onClick={runSimulation}
+                disabled={simulating}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-sm font-bold shadow-lg shadow-orange-900/30 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+              >
+                {simulating ? (
+                  <><span className="animate-spin">⏳</span> {t("simulating", "Simulating...")}</>
+                ) : (
+                  <><span>⚡</span> {t("simulate", "Simulate")}</>
+                )}
+              </button>
+            </div>
+        )}
+
 
         
         {loading ? (

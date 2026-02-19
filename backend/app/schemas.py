@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+import re
 
 
 class TokenResponse(BaseModel):
@@ -14,9 +15,16 @@ class TokenResponse(BaseModel):
 
 class RegisterRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=6)
-    name: str
+    password: str = Field(min_length=8)
+    name: str = Field(min_length=2)
     role: str = "user"
+
+    @field_validator("password")
+    @classmethod
+    def password_complexity(cls, v: str) -> str:
+        if not re.match(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$", v):
+            raise ValueError("Password must contain at least one lowercase letter, one uppercase letter, and one digit")
+        return v
 
 
 class LoginRequest(BaseModel):
@@ -56,9 +64,9 @@ class UserOut(BaseModel):
 
 
 class UserUpdateRequest(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(None, min_length=2)
     mfa_enabled: Optional[bool] = None
-    role: Optional[str] = None  # Allow role updates for testing
+    # role: Optional[str] = None  # Removed to prevent privilege escalation via schema
 
 
 class UserCreateRequest(RegisterRequest):
@@ -182,10 +190,10 @@ class SignalOut(BaseModel):
 class TradeCreate(BaseModel):
     bot_id: Optional[int] = None
     signal_id: Optional[int] = None
-    symbol: str
-    side: str
-    price: float
-    amount: float = 1.0
+    symbol: str = Field(..., min_length=1, max_length=20)
+    side: str = Field(..., pattern="^(buy|sell)$")
+    price: float = Field(..., gt=0)
+    amount: float = Field(default=1.0, gt=0)
 
 
 class TradeOut(BaseModel):
@@ -256,6 +264,72 @@ class Plan(BaseModel):
     features: List[str]
 
 
+class AlpacaOrderOut(BaseModel):
+    id: str
+    client_order_id: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    submitted_at: Optional[datetime] = None
+    filled_at: Optional[datetime] = None
+    expired_at: Optional[datetime] = None
+    canceled_at: Optional[datetime] = None
+    failed_at: Optional[datetime] = None
+    replaced_at: Optional[datetime] = None
+    replaced_by: Optional[str] = None
+    replaces: Optional[str] = None
+    asset_id: str
+    symbol: str
+    asset_class: str
+    qty: Optional[str] = None
+    filled_qty: str
+    type: str
+    side: str
+    time_in_force: str
+    limit_price: Optional[str] = None
+    stop_price: Optional[str] = None
+    filled_avg_price: Optional[str] = None
+    status: str
+    extended_hours: bool
+
+class AlpacaPositionOut(BaseModel):
+    asset_id: str
+    symbol: str
+    exchange: str
+    asset_class: str
+    avg_entry_price: str
+    qty: str
+    side: str
+    market_value: str
+    cost_basis: str
+    unrealized_pl: str
+    unrealized_plpc: str
+    unrealized_intraday_pl: str
+    unrealized_intraday_plpc: str
+    current_price: str
+    lastday_price: str
+    change_today: str
+
+class AlpacaAccountOut(BaseModel):
+    id: str
+    account_number: str
+    status: str
+    crypto_status: Optional[str] = None
+    currency: str
+    buying_power: str
+    regt_buying_power: str
+    daytrading_buying_power: str
+    cash: str
+    portfolio_value: str
+    equity: str
+    last_equity: str
+    long_market_value: str
+    short_market_value: str
+    initial_margin: str
+    maintenance_margin: str
+    last_maintenance_margin: str
+    daytrade_count: int
+    sma: str
+
 class DashboardSummary(BaseModel):
     metrics: MetricsResponse
     bots: List[BotOut]
@@ -265,6 +339,9 @@ class DashboardSummary(BaseModel):
     plans: List[Plan]
     market_universe: List[MarketUniverseItem]
     subscription_tier: str
+    alpaca_account: Optional[AlpacaAccountOut] = None
+    alpaca_orders: List[AlpacaOrderOut] = []
+    alpaca_positions: List[AlpacaPositionOut] = []
 
 class SignalType(str):
     FORMULA = "FORMULA"
@@ -315,6 +392,62 @@ class BacktestResult(BaseModel):
     history: List[Dict] = []
     equity_curve: List[Dict] = [] # timestamps + equity values
     logs: List[str] = [] # Execution logs for debugging
+
+class SignalTestRequest(BaseModel):
+    symbol: str = "AAPL"
+    days: int = 30
+    
+class SignalTestResult(BaseModel):
+    signal_id: int
+    symbol: str
+    days: int
+    total_candles: int
+    results: List[Dict] # [{timestamp, close, result, logs}]
+    logs: List[str]
+
+class SignalScanRequest(BaseModel):
+    signal_ids: List[int]
+    symbol: str = "AAPL"
+    days: int = 60
+
+class SignalScanSignalResult(BaseModel):
+    signal_id: int
+    name: str
+    results: List[Dict]  # [{timestamp, close, result}]
+
+class SignalScanResult(BaseModel):
+    symbol: str
+    days: int
+    total_candles: int
+    timestamps: List[str]  # shared date axis
+    signals: List[SignalScanSignalResult]
+
+
+class BotSimulationRequest(BaseModel):
+    symbol: Optional[str] = None  # Override default; if None uses bot's configured stock
+    days: int = 5  # How many recent candles to evaluate
+
+class BotSimulationSignalDetail(BaseModel):
+    signal_id: int
+    name: str
+    result: Optional[bool] = None  # True=PASS, False=FAIL, None=ERROR
+    inverted: bool = False
+
+class BotSimulationBotResult(BaseModel):
+    bot_id: int
+    bot_name: str
+    symbol: str
+    recommendation: str  # "BUY", "SELL", "HOLD", "ERROR"
+    confidence: float  # 0-100, percentage of signals that passed
+    signals_passed: int
+    signals_total: int
+    latest_close: float
+    timestamp: str
+    details: List[BotSimulationSignalDetail] = []
+
+class BotSimulationResult(BaseModel):
+    bots: List[BotSimulationBotResult]
+    evaluated_at: str
 
 
 # Rebuild models with forward references

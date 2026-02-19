@@ -29,21 +29,33 @@ def sync_market_data(db: Session, symbol: str, interval: str = "1d", range_: str
     # But for a simple sync, let's just wipe and replace for the period if needed, 
     # or just insert missing.
     
-    # Efficient approach: Fetch existing timestamps
+    # Efficient approach: Fetch existing timestamps (normalize to naive UTC for comparison)
     stmt = select(MarketData.timestamp).where(
         MarketData.symbol == symbol,
         MarketData.interval == interval
     )
-    existing_timestamps = set(db.scalars(stmt).all())
+    raw_timestamps = db.scalars(stmt).all()
+    # Normalize: strip timezone info for consistent comparison
+    existing_timestamps = set()
+    for ts in raw_timestamps:
+        if hasattr(ts, 'replace') and ts.tzinfo is not None:
+            existing_timestamps.add(ts.replace(tzinfo=None))
+        else:
+            existing_timestamps.add(ts)
     
     new_records = []
     for p in points:
         ts = p["timestamp"]
-        # Ensure ts is timezone aware (UTC)
-        if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
+        # Normalize incoming timestamp to naive UTC for comparison
+        if ts.tzinfo is not None:
+            ts_compare = ts.replace(tzinfo=None)
+        else:
+            ts_compare = ts
             
-        if ts not in existing_timestamps:
+        if ts_compare not in existing_timestamps:
+            # Store as timezone-aware UTC
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
             record = MarketData(
                 symbol=symbol,
                 interval=interval,
@@ -55,6 +67,7 @@ def sync_market_data(db: Session, symbol: str, interval: str = "1d", range_: str
                 volume=p.get("volume", 0)
             )
             new_records.append(record)
+            existing_timestamps.add(ts_compare)  # Prevent within-batch dupes
     
     if new_records:
         db.add_all(new_records)

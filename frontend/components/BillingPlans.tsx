@@ -17,10 +17,10 @@ export function BillingPlans({ plans, currentTier = "free", mockPortalActive }: 
     }
   }, [mockPortalActive, router]);
 
-  const handleUpgrade = () => {
+  const handleUpgrade = (tier: string) => {
     startTransition(async () => {
       try {
-        const { checkout_url } = await actionCreateCheckoutSession(billingPeriod);
+        const { checkout_url } = await actionCreateCheckoutSession(tier, billingPeriod);
         if (checkout_url) window.location.href = checkout_url;
       } catch (err) {
         console.error("Checkout failed", err);
@@ -101,17 +101,13 @@ export function BillingPlans({ plans, currentTier = "free", mockPortalActive }: 
                      <button disabled className="w-full bg-slate-800 text-slate-400 rounded-lg py-2 text-sm font-medium cursor-not-allowed border border-transparent">
                          Current Plan
                      </button>
-                 ) : plan.name === "Pro" ? (
+                 ) : (
                      <button
-                        onClick={handleUpgrade}
+                        onClick={() => handleUpgrade(plan.name.toLowerCase())}
                         disabled={isPending}
                         className="w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50"
                      >
-                        {isPending ? "Loading..." : `Upgrade to Pro (${billingPeriod})`}
-                     </button>
-                 ) : (
-                     <button className="w-full border border-slate-700 hover:bg-slate-800 text-slate-300 rounded-lg py-2 text-sm font-medium transition-colors">
-                         Contact Sales
+                        {isPending ? "Loading..." : `Upgrade to ${plan.name} (${billingPeriod})`}
                      </button>
                  )}
               </div>

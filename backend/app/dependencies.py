@@ -14,10 +14,14 @@ load_dotenv()
 security = HTTPBearer(auto_error=False)
 
 SECRET_KEY = os.getenv("NEXTAUTH_SECRET", "supersecret")
+if SECRET_KEY == "supersecret" and os.getenv("LATINOS_ENV") == "production":
+    raise RuntimeError("NEXTAUTH_SECRET must be set in production environment")
+
 ALGORITHM = "HS256"
 
-# Keep the demo token for "Legacy" API access if needed, or mapping
-DEMO_TOKEN = "demo-admin-token"
+# SECURITY: DEMO_TOKEN should only be enabled in development.
+# Set LATINOS_ENV=production to disable it.
+DEMO_TOKEN = os.getenv("DEMO_TOKEN") if os.getenv("LATINOS_ENV") == "production" else "demo-admin-token"
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
@@ -33,7 +37,7 @@ def get_current_user(
     user = None
     
     # 1. Check for legacy demo token (Create admin if not exists, for ease of dev)
-    if token == DEMO_TOKEN:
+    if token == DEMO_TOKEN and DEMO_TOKEN:
         user = crud.get_user_by_email(db, "demo@latinos.dev")
         if not user:
             # Bootstrap Demo Admin

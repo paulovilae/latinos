@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from .models import Signal, MarketData
 from .schemas import SignalDef, SignalStack, BacktestResult, SignalType
 from .market_data_loader import sync_market_data
-
+from .brokers.alpaca_broker import alpaca_client
 
 class TechnicalAnalysis:
     @staticmethod
@@ -192,25 +192,90 @@ class SignalEvaluator:
         if self.logs is not None: self.logs.append(message)
         else: print(message)
 
-    def evaluate(self, context: pd.DataFrame, candle_idx: int = -1, debug: bool = False) -> bool:
+    def evaluate(self, context: pd.DataFrame, candle_idx: int = -1, debug: bool = False) -> Optional[bool]:
         sig_type = self.signal.type.upper()
         if debug:
             self.log(f"   🔎 Eval Sig {self.signal.id} (Type: {sig_type})")
             
+        result = False
         if sig_type == "FORMULA":
-            return self._eval_formula(context, candle_idx, debug)
+            result = self._eval_formula(context, candle_idx, debug)
         elif sig_type in ["PYTHON", "BUY", "SELL"]:
-            return self._eval_python(context, candle_idx, debug)
+            result = self._eval_python(context, candle_idx, debug)
         elif sig_type == "CANDLE_PATTERN":
             # Just a placeholder if we have this type
             if debug: self.log(f"   ⚠️ Type CANDLE_PATTERN not implemented.")
-            return False
-            
-        if debug:
-            self.log(f"   ❌ Unknown Signal Type: {sig_type}")
-        return False
+            result = False
+        else:
+            if debug:
+                self.log(f"   ❌ Unknown Signal Type: {sig_type}")
+            result = False
 
-    def _eval_formula(self, df: pd.DataFrame, idx: int, debug: bool) -> bool:
+        # Integración con Alpaca para ejecución real
+        # Solo se ejecuta si el resultado es True, el modo es 'live' y estamos en el último candle (live evaluation)
+        if result and getattr(self.signal, 'mode', None) == "live" and candle_idx == -1:
+            self._trigger_alpaca_order(context)
+            
+        return result
+
+    def _trigger_alpaca_order(self, df: pd.DataFrame):
+        """
+        Envía la orden a Alpaca si detecta que es una señal real.
+        Implementa manejo de errores robusto para evitar bloqueos.
+        """
+        if not alpaca_client.api:
+            self.log("⚠️ Alpaca API no está configurada. Saltando orden real.")
+            return
+
+        try:
+            # Prevenir spam de órdenes (mínimo 30 segundos entre órdenes del mismo bot/signal)
+            last_order_time = getattr(self.signal, '_last_order_at', None)
+            now = datetime.now()
+            if last_order_time and (now - last_order_time).total_seconds() < 30:
+                self.log("⏳ Orden ignorada para evitar duplicados rápidos (throttling).")
+                return
+
+            # Intentar obtener el símbolo del DataFrame o usar uno por defecto
+            symbol = "AAPL" 
+            if not df.empty and 'symbol' in df.columns:
+                symbol = df['symbol'].iloc[-1]
+            elif hasattr(df, 'attrs') and 'symbol' in df.attrs:
+                symbol = df.attrs['symbol']
+            
+            sig_type = self.signal.type.upper()
+            qty = self.signal.payload.get("qty", 1) if self.signal.payload else 1
+            
+            # Sanitización de qty
+            try:
+                qty = int(qty)
+                if qty <= 0: raise ValueError("Cantidad no válida")
+            except:
+                self.log(f"⚠️ Cantidad inválida '{qty}', usando 1 por defecto.")
+                qty = 1
+
+            self.log(f"🚀 [LIVE] Intentando orden en Alpaca: {sig_type} {symbol} x{qty}")
+            
+            order = None
+            if sig_type in ["BUY", "PYTHON", "FORMULA"]:
+                if "SELL" in sig_type:
+                    order = alpaca_client.sell_market(symbol, qty)
+                else:
+                    order = alpaca_client.buy_market(symbol, qty)
+            elif sig_type == "SELL":
+                order = alpaca_client.sell_market(symbol, qty)
+            
+            if order:
+                self.log(f"✅ Orden aceptada por Alpaca. ID: {getattr(order, 'id', 'N/A')}")
+                # Marcar última orden para evitar spam
+                setattr(self.signal, '_last_order_at', now)
+            else:
+                self.log("❌ La orden no pudo ser procesada por Alpaca (revisa logs del broker).")
+                
+        except Exception as e:
+            self.log(f"💥 Error crítico en flujo de trading (Alpaca): {str(e)}")
+            # No relanzamos la excepción para evitar que el worker se detenga por completo
+
+    def _eval_formula(self, df: pd.DataFrame, idx: int, debug: bool) -> Optional[bool]:
         try:
             row = df.iloc[idx].to_dict()
             
@@ -218,9 +283,16 @@ class SignalEvaluator:
                 period = 14
                 series_name = 'close'
                 if isinstance(arg1, str):
+                    # MA("close", 50) - string column name
                     series_name = arg1
-                    if arg2: period = int(arg2)
-                elif isinstance(arg1, int): period = arg1
+                    if arg2 is not None: period = int(arg2)
+                elif arg2 is not None:
+                    # MA(close, 50) - close resolved to float by eval, arg2 is the period
+                    # series_name stays 'close' (default)
+                    period = int(arg2)
+                elif isinstance(arg1, (int, float)) and arg1 > 1:
+                    # MA(50) - just a period number
+                    period = int(arg1)
                 
                 if idx < period - 1: return 0.0
                 if series_name not in df.columns: return 0.0
@@ -233,8 +305,11 @@ class SignalEvaluator:
                 series_name = 'close'
                 if isinstance(arg1, str):
                     series_name = arg1
-                    if arg2: period = int(arg2)
-                elif isinstance(arg1, int): period = arg1
+                    if arg2 is not None: period = int(arg2)
+                elif arg2 is not None:
+                    period = int(arg2)
+                elif isinstance(arg1, (int, float)) and arg1 > 1:
+                    period = int(arg1)
                 
                 if idx < period: return 50.0
                 if series_name not in df.columns: return 50.0
@@ -261,9 +336,10 @@ class SignalEvaluator:
             return result
         except Exception as e:
             self.log(f"❌ Formula Error (Sig {self.signal.id}): {e}")
-            return False
+            self.log(f"❌ Formula Error (Sig {self.signal.id}): {e}")
+            return None
 
-    def _eval_python(self, df: pd.DataFrame, idx: int, debug: bool) -> bool:
+    def _eval_python(self, df: pd.DataFrame, idx: int, debug: bool) -> Optional[bool]:
         code = self.signal.payload.get("code", "")
         if not code: return False
         local_scope = {"data": df, "idx": idx, "result": False}
@@ -300,7 +376,8 @@ class SignalEvaluator:
             return res
         except Exception as e:
             self.log(f"❌ Python Error (Sig {self.signal.id}): {e}")
-            return False
+            self.log(f"❌ Python Error (Sig {self.signal.id}): {e}")
+            return None
             
 # ... StackRunner ...
 
@@ -525,7 +602,13 @@ class BacktestEngine:
             
             # Check Inversion
             cfg = config.get(str(sig.id), {})
-            if cfg.get("invert"):
+            
+            # --- FIX: Handle Error (None) separately from False ---
+            if res is None:
+                if debug: self.log(f"      ⚠️ Signal Error (None). Treated as False. Inversion skipped.")
+                # We do NOT invert an error. It remains a non-signal.
+                res = False
+            elif cfg.get("invert"):
                 if debug: self.log(f"      🔀 Inverting Result: {res} -> {not res}")
                 res = not res
 
