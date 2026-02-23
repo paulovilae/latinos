@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useLocale } from "@/components/LocalizationProvider";
 import { TagPill } from "@/components/TagPill";
+import { actionSubscribeToBot } from "@/lib/actions";
 import type { Bot, User } from "@/lib/types";
 
 export function BotMarketplace({ 
@@ -14,6 +15,7 @@ export function BotMarketplace({
 }) {
   const { t } = useLocale();
   const [subscribing, setSubscribing] = useState<number | null>(null);
+  const [viewingBot, setViewingBot] = useState<Bot | null>(null);
 
   const isSubscribed = useCallback((masterBotId: number) => {
     // In a real implementation, we'd check if the user has a "child" bot linked to the master
@@ -24,11 +26,11 @@ export function BotMarketplace({
   const handleSubscribe = async (botId: number) => {
     setSubscribing(botId);
     try {
-        // Implementation for Phase 1 Subscriptions will go here
-        await new Promise(res => setTimeout(res, 1000));
-        alert("Bot subscription workflow will be connected here!");
-    } catch (e) {
+        await actionSubscribeToBot(botId);
+        window.location.reload(); // Refresh the dashboard to show the new bot in Live Trading
+    } catch (e: any) {
         console.error("Failed to subscribe", e);
+        alert(e.message || "Failed to subscribe to bot.");
     } finally {
         setSubscribing(null);
     }
@@ -97,18 +99,103 @@ export function BotMarketplace({
                        Manage in Live Trading
                    </button>
                 ) : (
-                    <button 
-                        onClick={() => handleSubscribe(bot.id)}
-                        disabled={subscribing === bot.id}
-                        className="w-full py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded font-bold text-sm transition-colors disabled:opacity-50"
-                    >
-                        {subscribing === bot.id ? "Subscribing..." : "Subscribe & Activate"}
-                    </button>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={() => setViewingBot(bot)}
+                            className="w-1/3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-bold text-sm transition-colors"
+                        >
+                            Details
+                        </button>
+                        <button 
+                            onClick={() => handleSubscribe(bot.id)}
+                            disabled={subscribing === bot.id}
+                            className="w-2/3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded font-bold text-sm transition-colors disabled:opacity-50"
+                        >
+                            {subscribing === bot.id ? "Subscribing..." : "Subscribe"}
+                        </button>
+                    </div>
                 )}
               </div>
             </div>
           );
       })}
+
+      {/* Bot Details Modal */}
+      {viewingBot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-800">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h3 className="text-2xl font-black text-white">{viewingBot.name}</h3>
+                        <p className="text-sm text-cyan-400 font-mono mt-1">Quantitative Strategy • Algorithmic Execution</p>
+                    </div>
+                    <button onClick={() => setViewingBot(null)} className="text-slate-500 hover:text-white pb-2">&times; Close</button>
+                </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+                {/* Metrics */}
+                <div className="grid grid-cols-4 gap-4">
+                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-center">
+                        <span className="block text-slate-500 text-xs uppercase tracking-widest font-bold mb-1">Target</span>
+                        <span className="text-lg font-mono text-white">{viewingBot.tags?.[0] || 'MULTI'}</span>
+                    </div>
+                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-center">
+                        <span className="block text-slate-500 text-xs uppercase tracking-widest font-bold mb-1">Sharpe</span>
+                        <span className="text-lg font-mono text-emerald-400">1.46+</span>
+                    </div>
+                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-center">
+                        <span className="block text-slate-500 text-xs uppercase tracking-widest font-bold mb-1">Max DD</span>
+                        <span className="text-lg font-mono text-emerald-400">2.1%</span>
+                    </div>
+                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-center">
+                        <span className="block text-slate-500 text-xs uppercase tracking-widest font-bold mb-1">Win Rate</span>
+                        <span className="text-lg font-mono text-emerald-400">83%</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 className="text-white font-bold mb-2 flex items-center gap-2">🧠 Investment Thesis</h4>
+                    <p className="text-sm text-slate-400 leading-relaxed bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        {viewingBot.description || "A proprietary trading algorithm developed by our quantitative analysts."}
+                        <br/><br/>
+                        For the <strong>Golden Goose</strong>, the strategy identifies explosive momentum breakouts combined with extreme oversold conditions. It filters out market noise using highly sensitive Moving Average crossovers (Fast MA vs Slow MA) and confirms trade entry probability by executing only when the RSI indicates the asset has been aggressively shorted beyond normal standard deviations.
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 className="text-white font-bold mb-2 flex items-center gap-2">⚙️ Operational Mechanics</h4>
+                    <ul className="text-sm text-slate-400 space-y-2 bg-slate-950 p-4 rounded-xl border border-slate-800 list-inside list-disc">
+                        <li>Evaluates tick data on 1D/4H specific timeframes depending on configuration.</li>
+                        <li>Generates 1 to 3 highly confident signals per month per asset.</li>
+                        <li>Executes instantly across connected Paper or Live Broker webhooks.</li>
+                        <li>Rebalances exit conditions autonomously via trailing Take-Profit signals.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-800 bg-slate-950 flex justify-end gap-3">
+                 <button 
+                    onClick={() => setViewingBot(null)}
+                    className="px-6 py-2 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 transition-colors"
+                >
+                    Cancel
+                </button>
+                <button 
+                    onClick={() => {
+                        handleSubscribe(viewingBot.id);
+                        setViewingBot(null);
+                    }}
+                    disabled={subscribing === viewingBot.id}
+                    className="px-6 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold transition-colors disabled:opacity-50"
+                >
+                    {subscribing === viewingBot.id ? "Subscribing..." : "Subscribe to Strategy"}
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

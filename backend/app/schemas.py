@@ -58,14 +58,33 @@ class UserOut(BaseModel):
     role: str
     mfa_enabled: bool
     subscription_tier: str = "free"
+    avatar_url: Optional[str] = None
 
     class Config:
         from_attributes = True
 
+class BrokerConnectionCreate(BaseModel):
+    broker_name: str # e.g., 'alpaca', 'binance'
+    api_key: str
+    api_secret: str
+    is_paper: bool = True
+
+class BrokerConnectionOut(BaseModel):
+    id: int
+    user_id: int
+    broker_name: str
+    is_paper: bool
+    status: str
+    created_at: datetime
+    # We never return the api_key or api_secret
+
+    class Config:
+        from_attributes = True
 
 class UserUpdateRequest(BaseModel):
     name: Optional[str] = Field(None, min_length=2)
     mfa_enabled: Optional[bool] = None
+    avatar_url: Optional[str] = None
     # role: Optional[str] = None  # Removed to prevent privilege escalation via schema
 
 
@@ -78,7 +97,8 @@ class BotBase(BaseModel):
     description: Optional[str] = ""
     script: Optional[str] = ""
     tags: List[str] = []
-
+    live_trading: bool = False
+    live_trading_connection_id: Optional[int] = None
 
 class BotCreate(BotBase):
     signal_ids: Optional[List[Union[int, str, Dict]]] = None  # IDs or Config objects
@@ -90,11 +110,13 @@ class BotUpdate(BaseModel):
     tags: Optional[List[str]] = None
     status: Optional[str] = None
     signal_ids: Optional[List[Union[int, str, Dict]]] = None # Allow updating stack
+    live_trading: Optional[bool] = None
+    live_trading_connection_id: Optional[int] = None
 
 class BotOut(BotBase):
     id: int
     status: str
-    owner_id: int
+    owner_id: Optional[int] = None
     signal_manifest: Optional[List[Union[int, str, Dict]]] = []
     signals: Optional[List["SignalOut"]] = None
 
@@ -124,7 +146,7 @@ class FormulaOut(BaseModel):
     bot_id: Optional[int] = None
     version: int
     payload: Dict
-    created_by: int
+    created_by: Optional[int] = None
     created_at: datetime
     published: bool
     assets: List[str]
@@ -234,7 +256,11 @@ class MetricsResponse(BaseModel):
 
 class MarketPoint(BaseModel):
     timestamp: datetime
+    open: float
+    high: float
+    low: float
     close: float
+    volume: Optional[int] = None
 
 
 class MarketDataResponse(BaseModel):
@@ -389,6 +415,8 @@ class BacktestResult(BaseModel):
     final_capital: float = 10000.0
     total_return_pct: float = 0.0
     max_drawdown: float = 0.0
+    sharpe_ratio: float = 0.0
+    sortino_ratio: float = 0.0
     history: List[Dict] = []
     equity_curve: List[Dict] = [] # timestamps + equity values
     logs: List[str] = [] # Execution logs for debugging

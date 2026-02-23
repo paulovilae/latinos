@@ -23,7 +23,8 @@ dependencies = [
     "cachetools",
     "argon2-cffi",
     "alpaca-trade-api",
-    "slowapi"
+    "slowapi",
+    "boto3"
 ]
 
 [tool.setuptools]

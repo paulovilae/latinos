@@ -7,7 +7,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from .routers import auth, users, bots, signals, dashboard, billing, trades
+from .routers import auth, users, bots, signals, dashboard, billing, trades, brokers
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -39,7 +39,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Create all tables on startup
 @app.on_event("startup")
-def startup_event():
+async def startup_event():
     Base.metadata.create_all(bind=engine)
     
     # Auto-migration: Check if signal_manifest column exists in bots table
@@ -57,6 +57,12 @@ def startup_event():
                 print("✅ Column 'signal_manifest' added.")
     except Exception as e:
         print(f"❌ Migration check failed: {e}")
+        
+    print("🚀 Triggering Live Trading Daemon...")
+    import asyncio
+    from .daemon import market_data_loop
+    # Fire and forget the daemon background task
+    asyncio.create_task(market_data_loop())
 
 # Middlewares
 origins = [
@@ -65,7 +71,7 @@ origins = [
     "https://apilatinos.paulovila.org",
     "https://api-latinos.paulovila.org",
     "https://back-latinos.paulovila.org",
-    "https://api.latinos.paulovila.org",
+    "https://api-latinos.paulovila.org",
     "https://latinos-liard.vercel.app",
     "http://localhost:3000"
 ]
@@ -88,6 +94,7 @@ app.include_router(signals.router)
 app.include_router(dashboard.router)
 app.include_router(billing.router)
 app.include_router(trades.router)
+app.include_router(brokers.router)
 
 @app.get("/openapi.json")
 def openapi_spec():

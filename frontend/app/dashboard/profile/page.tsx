@@ -6,6 +6,8 @@ import { SectionCard } from "@/components/SectionCard";
 import { LocalizedText } from "@/components/LocalizedText";
 import { authOptions } from "@/lib/auth";
 import { RoleEditor } from "@/components/RoleEditor";
+import { AvatarUpload } from "@/components/AvatarUpload";
+import { BrokerIntegrations } from "@/components/BrokerIntegrations";
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
@@ -70,6 +72,11 @@ export default async function ProfilePage() {
                       ))}
                   </ul>
               )}
+          </SectionCard>
+
+          {/* Broker Integrations */}
+          <SectionCard title="Broker Webhooks" description="Connect your exchange accounts for live trading execution">
+             <BrokerIntegrations />
           </SectionCard>
       </div>
     </main>

@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocale } from "@/components/LocalizationProvider";
 import { TagPill } from "@/components/TagPill";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid } from 'recharts';
 import { BotMarketplace } from "./BotMarketplace";
+import { TradingViewChart, OHLCData } from "./TradingViewChart";
+import { actionGetMarketData, actionGetBrokers, actionUpdateBot, BrokerConnection } from "@/lib/actions";
 import type { DashboardSummary, Bot, Signal, AlpacaOrder, AlpacaPosition, AlpacaAccount } from "@/lib/types";
 
 // Simulation types
@@ -38,6 +39,28 @@ const mockEquityData = Array.from({ length: 20 }, (_, i) => ({
   cash: 5000 + Math.random() * 500
 }));
 
+const TIMEFRAMES = [
+  { label: '1M', range: '1d', interval: '1m' },
+  { label: '5M', range: '5d', interval: '5m' },
+  { label: '15M', range: '5d', interval: '15m' },
+  { label: '1H', range: '1mo', interval: '1h' },
+  { label: '1D', range: '1y', interval: '1d' },
+  { label: '1W', range: '5y', interval: '1wk' },
+  { label: '1Mo', range: 'max', interval: '1mo' },
+];
+
+const SYMBOLS = [
+  "BTC-USD",
+  "ETH-USD",
+  "AAPL",
+  "TSLA",
+  "MSFT",
+  "NVDA",
+  "AMZN",
+  "GOOGL",
+  "META"
+];
+
 export function LiveTradingDashboard({ initialSummary }: { initialSummary?: DashboardSummary }) {
   const { t } = useLocale();
   const [bots, setBots] = useState<Bot[]>(initialSummary?.bots || []);
@@ -48,6 +71,76 @@ export function LiveTradingDashboard({ initialSummary }: { initialSummary?: Dash
   const [loading, setLoading] = useState(!initialSummary);
   const [simResult, setSimResult] = useState<SimResult | null>(null);
   const [simulating, setSimulating] = useState(false);
+  
+  // TradingView state
+  const [selectedSymbol, setSelectedSymbol] = useState("BTC-USD");
+  const [selectedTimeframe, setSelectedTimeframe] = useState(TIMEFRAMES[4]); // Default 1D
+  const [chartData, setChartData] = useState<OHLCData[]>([]);
+  const [chartLoading, setChartLoading] = useState(false);
+
+  // Configuration Modal State
+  const [brokerConnections, setBrokerConnections] = useState<BrokerConnection[]>([]);
+  const [configBot, setConfigBot] = useState<Bot | null>(null);
+  const [configLiveTrading, setConfigLiveTrading] = useState(false);
+  const [configBrokerId, setConfigBrokerId] = useState<number | "">("");
+  const [savingConfig, setSavingConfig] = useState(false);
+
+  useEffect(() => {
+    actionGetBrokers().then(data => {
+        if(data) setBrokerConnections(data);
+    }).catch(console.error);
+  }, []);
+
+  const handleSaveConfig = async () => {
+      if(!configBot) return;
+      setSavingConfig(true);
+      try {
+          await actionUpdateBot(configBot.id, {
+              live_trading: configLiveTrading,
+              live_trading_connection_id: configBrokerId === "" ? null : configBrokerId
+          });
+          window.location.reload();
+      } catch (err: any) {
+          alert(err.message || "Failed to update configuration");
+      } finally {
+          setSavingConfig(false);
+      }
+  };
+
+  // Fetch chart data
+  useEffect(() => {
+    async function loadChartData() {
+      setChartLoading(true);
+      try {
+        const res = await actionGetMarketData(selectedSymbol, selectedTimeframe.range, selectedTimeframe.interval);
+        if (res && res.points && res.points.length > 0) {
+          const formatted = res.points.map((p: any) => {
+             // Handle yfinance timestamp formats (iso string or dict with milliseconds)
+             const ts = typeof p.timestamp === 'string' ? new Date(p.timestamp).getTime() / 1000 : 
+                        p.timestamp?.['$date'] ? p.timestamp['$date'] / 1000 : 
+                        new Date().getTime() / 1000;
+                        
+             return {
+                time: ts as any,
+                open: Number(p.open),
+                high: Number(p.high),
+                low: Number(p.low),
+                close: Number(p.close)
+             };
+          });
+          setChartData(formatted);
+        } else {
+          setChartData([]); // Clear on no data
+        }
+      } catch (err) {
+        console.error("Failed to load chart data", err);
+        setChartData([]);
+      } finally {
+        setChartLoading(false);
+      }
+    }
+    loadChartData();
+  }, [selectedSymbol, selectedTimeframe]);
 
   const runSimulation = useCallback(async () => {
     setSimulating(true);
@@ -150,6 +243,79 @@ export function LiveTradingDashboard({ initialSummary }: { initialSummary?: Dash
               <div className="text-xl md:text-3xl font-mono font-bold text-emerald-400">{pnlValue.startsWith('-') ? pnlValue : '+' + pnlValue}</div>
               <div className="text-[10px] md:text-xs text-emerald-500/50 mt-1 font-mono">Performance Estimate</div>
           </div>
+      </div>
+
+      {/* Main TradingView Chart Area */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col mb-8">
+           <div className="p-4 bg-slate-950 border-b border-slate-800 flex justify-between items-center">
+               <div className="flex items-center gap-4">
+                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                   <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                   Market Asset
+                 </h3>
+                 <div className="flex gap-2 bg-slate-900 p-0.5 rounded border border-slate-800">
+                    {SYMBOLS.slice(0, 5).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setSelectedSymbol(s)}
+                        className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                          selectedSymbol === s
+                            ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+                            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                    <select
+                       className="bg-transparent text-xs text-slate-400 font-medium px-2 outline-none hover:text-white cursor-pointer"
+                       value={SYMBOLS.includes(selectedSymbol) && SYMBOLS.indexOf(selectedSymbol) < 5 ? "" : selectedSymbol}
+                       onChange={(e) => setSelectedSymbol(e.target.value)}
+                    >
+                       <option value="" disabled>More...</option>
+                       {SYMBOLS.slice(5).map(s => (
+                          <option key={s} value={s} className="bg-slate-900 text-slate-200">{s}</option>
+                       ))}
+                    </select>
+                 </div>
+               </div>
+               <div className="flex gap-2">
+                   <button className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors px-2 py-1 bg-indigo-500/10 rounded">Candles</button>
+                   <button className="text-[10px] text-slate-400 hover:text-slate-300 transition-colors px-2 py-1 hover:bg-slate-800 rounded mr-4">Projections</button>
+                   
+                   {/* Timeframes */}
+                   <div className="flex bg-slate-900 rounded border border-slate-800 p-0.5">
+                     {TIMEFRAMES.map((tf) => (
+                       <button
+                         key={tf.label}
+                         onClick={() => setSelectedTimeframe(tf)}
+                         className={`text-[10px] px-2 py-1 rounded transition-colors ${
+                           selectedTimeframe.label === tf.label
+                             ? 'bg-slate-800 text-white font-bold shadow-sm'
+                             : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
+                         }`}
+                       >
+                         {tf.label}
+                       </button>
+                     ))}
+                   </div>
+               </div>
+           </div>
+           <div className="p-4 relative">
+               {chartLoading ? (
+                  <div className="h-[400px] flex flex-col gap-4 items-center justify-center bg-slate-950/50 rounded-xl border border-slate-800 animate-pulse">
+                      <span className="text-slate-500 font-mono text-sm">Loading market data...</span>
+                      <span className="text-indigo-500 font-bold text-xs">{selectedTimeframe.label} timeframe</span>
+                  </div>
+               ) : chartData.length > 0 ? (
+                  <TradingViewChart data={chartData} height={400} />
+               ) : (
+                  <div className="h-[400px] flex items-center justify-center bg-slate-950/50 rounded-xl border border-slate-800">
+                      <span className="text-slate-500 font-mono text-sm">No data available for this timeframe.</span>
+                  </div>
+               )}
+               {/* Overlay bot signals as a projection test in future */}
+           </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -322,7 +488,10 @@ export function LiveTradingDashboard({ initialSummary }: { initialSummary?: Dash
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {activeRobots.map(bot => {
                     const latestSignal = getLatestSignal(bot.id);
-                    const isBuy = latestSignal?.type === 'buy';
+                    const sim = simResult?.bots.find(b => b.bot_id === bot.id);
+                    
+                    const isBuy = sim ? (sim.recommendation === 'BUY') : (latestSignal?.type === 'buy');
+                    const isSell = sim ? (sim.recommendation === 'SELL') : (latestSignal?.type === 'sell');
                     
                     return (
                         <div key={bot.id} className="group relative bg-slate-900 rounded-xl border border-slate-800 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all overflow-hidden flex flex-col">
@@ -344,7 +513,6 @@ export function LiveTradingDashboard({ initialSummary }: { initialSummary?: Dash
                                 <div className="flex-1 flex flex-col items-center justify-center py-6 border-y border-slate-800/50 bg-slate-950/30 rounded-lg mb-4">
                                     <span className="text-xs text-slate-500 uppercase tracking-widest mb-2 font-semibold">{t("recommendation", "Recommendation")}</span>
                                     {(() => {
-                                        const sim = simResult?.bots.find(b => b.bot_id === bot.id);
                                         if (sim) {
                                             const recColor = sim.recommendation === 'BUY' ? 'text-emerald-400' : sim.recommendation === 'SELL' ? 'text-rose-400' : 'text-amber-400';
                                             return (
@@ -358,8 +526,8 @@ export function LiveTradingDashboard({ initialSummary }: { initialSummary?: Dash
                                                     </div>
                                                     {sim.details.length > 0 && (
                                                         <div className="flex flex-wrap gap-1 mt-2 justify-center">
-                                                            {sim.details.map(d => (
-                                                                <span key={d.signal_id} className={`text-[9px] px-1.5 py-0.5 rounded font-mono ${d.result === true ? 'bg-emerald-500/10 text-emerald-400' : d.result === false ? 'bg-rose-500/10 text-rose-400' : 'bg-slate-700 text-slate-400'}`}>
+                                                            {sim.details.map((d, i) => (
+                                                                <span key={`bot-${bot.id}-sig-${d.signal_id}-${i}`} className={`text-[9px] px-1.5 py-0.5 rounded font-mono ${d.result === true ? 'bg-emerald-500/10 text-emerald-400' : d.result === false ? 'bg-rose-500/10 text-rose-400' : 'bg-slate-700 text-slate-400'}`}>
                                                                     {d.result === true ? '✓' : d.result === false ? '✗' : '?'} {d.name.substring(0, 15)}
                                                                 </span>
                                                             ))}
@@ -392,14 +560,29 @@ export function LiveTradingDashboard({ initialSummary }: { initialSummary?: Dash
 
                             {/* Action Footer */}
                             <div className="p-3 bg-slate-950 border-t border-slate-800 grid grid-cols-2 gap-2">
-                                <button className="py-2 rounded-lg bg-indigo-600/10 hover:bg-indigo-600 text-indigo-400 hover:text-white text-xs font-bold transition-colors border border-indigo-500/20">
-                                    {t("viewDetails", "View Details")}
+                                <button 
+                                    onClick={() => {
+                                        setConfigBot(bot);
+                                        setConfigLiveTrading(bot.live_trading || false);
+                                        setConfigBrokerId(bot.live_trading_connection_id || "");
+                                    }}
+                                    className="py-2 rounded-lg bg-indigo-600/10 hover:bg-indigo-600 text-indigo-400 hover:text-white text-xs font-bold transition-colors border border-indigo-500/20 flex justify-center items-center gap-1"
+                                >
+                                    ⚙️ Configure
                                 </button>
-                                <button className={`py-2 rounded-lg text-white text-xs font-bold transition-colors shadow-lg active:scale-95 flex items-center justify-center gap-1 ${
-                                    isBuy ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20' : 'bg-rose-600 hover:bg-rose-500 shadow-rose-900/20'
-                                }`}>
-                                   {isBuy ? "🛒 " + t("buyBtn", "Buy") : "💰 " + t("sellBtn", "Sell")}
-                                </button>
+                                {isBuy ? (
+                                    <button className="py-2 rounded-lg text-white text-xs font-bold transition-colors shadow-lg active:scale-95 flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20">
+                                       🛒 {t("buyBtn", "Buy")}
+                                    </button>
+                                ) : isSell ? (
+                                    <button className="py-2 rounded-lg text-white text-xs font-bold transition-colors shadow-lg active:scale-95 flex items-center justify-center gap-1 bg-rose-600 hover:bg-rose-500 shadow-rose-900/20">
+                                       💰 {t("sellBtn", "Sell")}
+                                    </button>
+                                ) : (
+                                    <button disabled className="py-2 rounded-lg text-amber-500 text-xs font-bold bg-amber-500/10 border border-amber-500/20 flex items-center justify-center gap-1 cursor-not-allowed">
+                                       ✋ HOLD
+                                    </button>
+                                )}
                             </div>
                         </div>
                     );

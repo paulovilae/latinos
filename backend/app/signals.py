@@ -128,6 +128,45 @@ class TechnicalAnalysis:
         denom = denom.replace(0, 1)
         return -100 * ((highest_high - close) / denom)
 
+    @staticmethod
+    def atr(high: pd.Series, low: pd.Series, close: pd.Series, length: int = 14) -> pd.Series:
+        high_low = high - low
+        high_close = (high - close.shift()).abs()
+        low_close = (low - close.shift()).abs()
+        ranges = pd.concat([high_low, high_close, low_close], axis=1)
+        true_range = ranges.max(axis=1)
+        return true_range.rolling(window=length).mean()
+
+    @staticmethod
+    def adx(high: pd.Series, low: pd.Series, close: pd.Series, length: int = 14) -> pd.Series:
+        # Calculate True Range using the helper or manually to ensure self-containment
+        high_low = high - low
+        high_close = (high - close.shift()).abs()
+        low_close = (low - close.shift()).abs()
+        ranges = pd.concat([high_low, high_close, low_close], axis=1)
+        tr = ranges.max(axis=1)
+
+        # Directional Movement
+        up_move = high - high.shift()
+        down_move = low.shift() - low
+
+        plus_dm = pd.Series(0.0, index=high.index)
+        minus_dm = pd.Series(0.0, index=high.index)
+
+        plus_dm[(up_move > down_move) & (up_move > 0)] = up_move
+        minus_dm[(down_move > up_move) & (down_move > 0)] = down_move
+
+        # Smooth using Rolling Mean (Wilder uses specific smoothing, but SMA is close enough for MVP)
+        tr_smooth = tr.rolling(window=length).mean()
+        plus_di = 100 * (plus_dm.rolling(window=length).mean() / tr_smooth)
+        minus_di = 100 * (minus_dm.rolling(window=length).mean() / tr_smooth)
+
+        denom = plus_di + minus_di
+        denom = denom.replace(0, 1)
+        dx = 100 * (abs(plus_di - minus_di) / denom)
+        adx = dx.rolling(window=length).mean()
+        return adx
+
 # Restricted Global Environment for Python Signals
 SAFE_GLOBALS = {
     "__builtins__": {
@@ -192,18 +231,17 @@ class SignalEvaluator:
         if self.logs is not None: self.logs.append(message)
         else: print(message)
 
-    def evaluate(self, context: pd.DataFrame, candle_idx: int = -1, debug: bool = False) -> Optional[bool]:
+    def evaluate(self, context: pd.DataFrame, db: Session, candle_idx: int = -1, debug: bool = False, is_active: bool = False) -> Optional[bool]:
         sig_type = self.signal.type.upper()
         if debug:
             self.log(f"   🔎 Eval Sig {self.signal.id} (Type: {sig_type})")
-            
+
         result = False
         if sig_type == "FORMULA":
             result = self._eval_formula(context, candle_idx, debug)
         elif sig_type in ["PYTHON", "BUY", "SELL"]:
-            result = self._eval_python(context, candle_idx, debug)
+            result = self._eval_python(context, candle_idx, debug, is_active)
         elif sig_type == "CANDLE_PATTERN":
-            # Just a placeholder if we have this type
             if debug: self.log(f"   ⚠️ Type CANDLE_PATTERN not implemented.")
             result = False
         else:
@@ -211,24 +249,38 @@ class SignalEvaluator:
                 self.log(f"   ❌ Unknown Signal Type: {sig_type}")
             result = False
 
-        # Integración con Alpaca para ejecución real
-        # Solo se ejecuta si el resultado es True, el modo es 'live' y estamos en el último candle (live evaluation)
         if result and getattr(self.signal, 'mode', None) == "live" and candle_idx == -1:
-            self._trigger_alpaca_order(context)
+            self._trigger_alpaca_order(context, db)
             
         return result
 
-    def _trigger_alpaca_order(self, df: pd.DataFrame):
+    def _trigger_alpaca_order(self, df: pd.DataFrame, db: Session):
         """
-        Envía la orden a Alpaca si detecta que es una señal real.
-        Implementa manejo de errores robusto para evitar bloqueos.
+        Envía la orden a Alpaca usando la conexión de broker específica del bot/usuario.
         """
-        if not alpaca_client.api:
-            self.log("⚠️ Alpaca API no está configurada. Saltando orden real.")
-            return
-
         try:
-            # Prevenir spam de órdenes (mínimo 30 segundos entre órdenes del mismo bot/signal)
+            from .crud import decrypt_key
+            import alpaca_trade_api as tradeapi
+
+            # Obtener el bot y su broker connection
+            bot = db.query(models.Bot).filter(models.Bot.id == self.signal.bot_id).first()
+            if not bot or not bot.live_trading or not bot.live_trading_connection_id:
+                self.log("⚠️ Bot no está autorizado para live trading o no tiene broker ID. Saltando orden real.")
+                return
+
+            broker_conn = db.query(models.BrokerConnection).filter(models.BrokerConnection.id == bot.live_trading_connection_id).first()
+            if not broker_conn or broker_conn.status != "active":
+                self.log("❌ Conexión de broker inactiva o no encontrada.")
+                return
+
+            # Inicializar cliente Alpaca específico para este scope
+            api_key = decrypt_key(broker_conn.api_key_encrypted)
+            secret_key = decrypt_key(broker_conn.api_secret_encrypted)
+            base_url = "https://paper-api.alpaca.markets" if broker_conn.is_paper else "https://api.alpaca.markets"
+            
+            client_api = tradeapi.REST(api_key, secret_key, base_url, api_version='v2')
+
+            # Prevenir spam de órdenes (mínimo 30 segundos)
             last_order_time = getattr(self.signal, '_last_order_at', None)
             now = datetime.now()
             if last_order_time and (now - last_order_time).total_seconds() < 30:
@@ -253,16 +305,16 @@ class SignalEvaluator:
                 self.log(f"⚠️ Cantidad inválida '{qty}', usando 1 por defecto.")
                 qty = 1
 
-            self.log(f"🚀 [LIVE] Intentando orden en Alpaca: {sig_type} {symbol} x{qty}")
+            self.log(f"🚀 [LIVE] Intentando orden en Alpaca usando conexión {broker_conn.id}: {sig_type} {symbol} x{qty}")
             
             order = None
             if sig_type in ["BUY", "PYTHON", "FORMULA"]:
                 if "SELL" in sig_type:
-                    order = alpaca_client.sell_market(symbol, qty)
+                    order = client_api.submit_order(symbol=symbol, qty=qty, side='sell', type='market', time_in_force='gtc')
                 else:
-                    order = alpaca_client.buy_market(symbol, qty)
+                    order = client_api.submit_order(symbol=symbol, qty=qty, side='buy', type='market', time_in_force='gtc')
             elif sig_type == "SELL":
-                order = alpaca_client.sell_market(symbol, qty)
+                order = client_api.submit_order(symbol=symbol, qty=qty, side='sell', type='market', time_in_force='gtc')
             
             if order:
                 self.log(f"✅ Orden aceptada por Alpaca. ID: {getattr(order, 'id', 'N/A')}")
@@ -336,14 +388,13 @@ class SignalEvaluator:
             return result
         except Exception as e:
             self.log(f"❌ Formula Error (Sig {self.signal.id}): {e}")
-            self.log(f"❌ Formula Error (Sig {self.signal.id}): {e}")
             return None
 
-    def _eval_python(self, df: pd.DataFrame, idx: int, debug: bool) -> Optional[bool]:
+    def _eval_python(self, df: pd.DataFrame, idx: int, debug: bool, is_active: bool = False) -> Optional[bool]:
         code = self.signal.payload.get("code", "")
         if not code: return False
-        local_scope = {"data": df, "idx": idx, "result": False}
-        
+        local_scope = {"data": df, "idx": idx, "result": False, "is_active": is_active}
+
         # Inject Debug Logger for TA if debug is True
         run_globals = SAFE_GLOBALS.copy()
         if debug:
@@ -375,7 +426,6 @@ class SignalEvaluator:
             if debug: self.log(f"   👉 Result: {res}")
             return res
         except Exception as e:
-            self.log(f"❌ Python Error (Sig {self.signal.id}): {e}")
             self.log(f"❌ Python Error (Sig {self.signal.id}): {e}")
             return None
             
@@ -422,9 +472,6 @@ class BacktestEngine:
                 target_ids.append(s_id)
                 stack_config[s_id] = {"invert": item.get("invert", False)}
 
-                target_ids.append(s_id)
-                stack_config[s_id] = {"invert": item.get("invert", False)}
-        
         symbol = symbol.upper()
         interval = "1d" # Hardcoded for MVP
         
@@ -501,8 +548,8 @@ class BacktestEngine:
             # Evaluate (Safety check: don't trade on last candle, just close)
             is_green = False
             if i < len(df) - 1:
-                is_green = self._evaluate_stack(signals, df, i, stack_config, debug)
-            
+                is_green = self._evaluate_stack(signals, df, self.db, i, stack_config, debug, in_position)
+
             # Recalc Equity
             current_equity = current_capital
             if in_position: 
@@ -580,7 +627,35 @@ class BacktestEngine:
         self.log(f"✅ Backtest Complete. Final Equity: ${final_capital:.2f} (Return: {total_return_pct:.2f}%)")
         self.log(f"📊 Summary: Processed {len(df)} candles.")
         self.log(f"   - Trades: {total_trades} ({len(win_trades)} Wins, {len(loss_trades)} Losses)")
-        
+
+        # Calculate Sharpe and Sortino Ratios
+        sharpe_ratio = 0.0
+        sortino_ratio = 0.0
+
+        if len(equity_curve) > 1:
+            eq_df = pd.DataFrame(equity_curve)
+            eq_df['returns'] = eq_df['equity'].pct_change()
+            returns = eq_df['returns'].dropna()
+
+            if not returns.empty and returns.std() != 0:
+                mean_return = returns.mean()
+                std_return = returns.std()
+                # Annualize (assuming daily data, 252 trading days)
+                sharpe_ratio = (mean_return / std_return) * (252 ** 0.5)
+
+                # Sortino: Only consider downside deviation
+                downside_returns = returns[returns < 0]
+                if not downside_returns.empty:
+                    downside_std = downside_returns.std()
+                    if downside_std != 0:
+                        sortino_ratio = (mean_return / downside_std) * (252 ** 0.5)
+                    else:
+                        # No downside deviation (all positive or zero flat)
+                        sortino_ratio = sharpe_ratio * 2 # Heuristic boost
+                else:
+                    # No negative returns
+                    sortino_ratio = 100.0 # High value cap
+
         return BacktestResult(
             total_trades=total_trades,
             win_rate=win_rate,
@@ -589,17 +664,19 @@ class BacktestEngine:
             final_capital=final_capital,
             total_return_pct=total_return_pct,
             max_drawdown=max_dd,
+            sharpe_ratio=round(sharpe_ratio, 2),
+            sortino_ratio=round(sortino_ratio, 2),
             history=trades,
             equity_curve=equity_curve,
             logs=self.logs
         )
 
-    def _evaluate_stack(self, signals, df: pd.DataFrame, idx: int, config: Dict, debug: bool = False) -> bool:
+    def _evaluate_stack(self, signals, df: pd.DataFrame, db: Session, idx: int, config: Dict, debug: bool = False, is_active: bool = False) -> bool:
         final_result = True
         for sig in signals:
             evaluator = SignalEvaluator(sig, self.logs)
-            res = evaluator.evaluate(df, idx, debug)
-            
+            res = evaluator.evaluate(df, db, idx, debug, is_active)
+
             # Check Inversion
             cfg = config.get(str(sig.id), {})
             

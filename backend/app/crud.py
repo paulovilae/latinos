@@ -159,3 +159,59 @@ def create_trade(db: Session, trade: schemas.TradeCreate, user_id: int):
     db.commit()
     db.refresh(db_trade)
     return db_trade
+
+# --- Broker Connections ---
+
+def encrypt_key(key: str) -> str:
+    # In a true prod environment, use a KMS or Fernet with a secure key.
+    # For now, we will perform a basic encoding to prevent storing plain text.
+    import base64
+    return base64.b64encode(key.encode()).decode()
+
+def decrypt_key(encrypted_key: str) -> str:
+    import base64
+    return base64.b64decode(encrypted_key.encode()).decode()
+
+def create_broker_connection(db: Session, broker_in: schemas.BrokerConnectionCreate, user_id: int):
+    # Check if a connection for this broker already exists for the user
+    existing = db.query(models.BrokerConnection).filter(
+        models.BrokerConnection.user_id == user_id,
+        models.BrokerConnection.broker_name == broker_in.broker_name,
+        models.BrokerConnection.is_paper == broker_in.is_paper
+    ).first()
+    
+    if existing:
+        # Update existing
+        existing.api_key_encrypted = encrypt_key(broker_in.api_key)
+        existing.api_secret_encrypted = encrypt_key(broker_in.api_secret)
+        existing.status = "active"
+        db.commit()
+        db.refresh(existing)
+        return existing
+        
+    db_conn = models.BrokerConnection(
+        user_id=user_id,
+        broker_name=broker_in.broker_name,
+        api_key_encrypted=encrypt_key(broker_in.api_key),
+        api_secret_encrypted=encrypt_key(broker_in.api_secret),
+        is_paper=broker_in.is_paper,
+        status="active"
+    )
+    db.add(db_conn)
+    db.commit()
+    db.refresh(db_conn)
+    return db_conn
+
+def get_broker_connections(db: Session, user_id: int):
+    return db.query(models.BrokerConnection).filter(models.BrokerConnection.user_id == user_id).all()
+
+def delete_broker_connection(db: Session, connection_id: int, user_id: int):
+    conn = db.query(models.BrokerConnection).filter(
+        models.BrokerConnection.id == connection_id,
+        models.BrokerConnection.user_id == user_id
+    ).first()
+    if conn:
+        db.delete(conn)
+        db.commit()
+        return True
+    return False

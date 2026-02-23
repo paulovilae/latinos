@@ -52,7 +52,7 @@ def _fetch_from_yahoo(symbol: str, interval: str, range_: str) -> Tuple[str | No
         
         # Determine period based on range_ string (e.g. "1y", "1mo")
         # yfinance supports: 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
-        history = ticker.history(period=range_, interval='1d') # Force 1d for daily simulation
+        history = ticker.history(period=range_, interval=interval)
         
         if history.empty:
             raise MarketDataError(f"No data found for {symbol}")

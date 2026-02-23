@@ -14,6 +14,8 @@ export interface Bot {
   owner_id: number;
   tags: string[];
   script?: string;
+  live_trading?: boolean;
+  live_trading_connection_id?: number | null;
 }
 
 export interface Formula {

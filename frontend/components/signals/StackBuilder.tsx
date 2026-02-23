@@ -18,6 +18,8 @@ interface SavedRobot {
   name: string;
   signal_ids: (number | { id: number, invert?: boolean })[];
   status: "running" | "paused" | "draft" | "stopped";
+  live_trading?: boolean;
+  live_trading_connection_id?: number | null;
 }
 
 export function StackBuilder() {
@@ -31,6 +33,9 @@ export function StackBuilder() {
   const [robotName, setRobotName] = useState("");
   const [savedRobots, setSavedRobots] = useState<SavedRobot[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [liveTrading, setLiveTrading] = useState(false);
+  const [liveConnId, setLiveConnId] = useState<number | null>(null);
+  const [brokers, setBrokers] = useState<any[]>([]);
   
   // Selection for backtest
   const [selectedSymbol, setSelectedSymbol] = useState("AAPL");
@@ -78,6 +83,11 @@ export function StackBuilder() {
       .catch(console.error);
     // Load saved robots
     loadRobots();
+    // Load brokers
+    fetch("/api/brokers")
+      .then(res => res.json())
+      .then((data) => setBrokers(data || []))
+      .catch(console.error);
   }, []);
 
   const loadRobots = async () => {
@@ -85,8 +95,6 @@ export function StackBuilder() {
       const res = await fetch("/api/bots");
       const bots = await res.json();
       setSavedRobots(bots.map((b: any) => {
-        if (b.name === "prueba") console.log("🔍 DEBUG PRUEBA RAW:", b);
-
         let manifest = [];
         if (b.signal_manifest) {
             try {
@@ -104,7 +112,9 @@ export function StackBuilder() {
             signal_ids: (manifest && manifest.length > 0) 
                 ? manifest 
                 : (b.signals?.map((s: any) => s.id) || []),
-            status: b.status || "draft"
+            status: b.status || "draft",
+            live_trading: b.live_trading || false,
+            live_trading_connection_id: b.live_trading_connection_id || null
         };
       }));
     } catch (e) {
@@ -202,6 +212,8 @@ export function StackBuilder() {
     try {
       const payload = {
           name: robotName,
+          live_trading: liveTrading,
+          live_trading_connection_id: liveConnId || null,
           signal_ids: stack.map(s => {
              if ('invert' in s && s.invert) {
                  return { id: s.id, invert: true };
@@ -260,6 +272,8 @@ export function StackBuilder() {
     setStack(signalsToLoad);
     setRobotName(robot.name);
     setCurrentRobotId(robot.id);
+    setLiveTrading(robot.live_trading || false);
+    setLiveConnId(robot.live_trading_connection_id || null);
   };
 
   const filteredStrategies = availableStrategies.filter(s => 
@@ -577,7 +591,7 @@ export function StackBuilder() {
             {backtestResult && (
                  <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 animate-in fade-in slide-in-from-bottom-4">
                     <h4 className="font-semibold text-white mb-4 border-b border-slate-800 pb-2">{t("resultsTitle", "Results")}</h4>
-                    <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                         <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 relative overflow-hidden group hover:border-emerald-500/50 transition-colors">
                             <div className="relative z-10 text-center">
                                 <div className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{t("totalPnL", "Total PnL")}</div>
@@ -606,6 +620,26 @@ export function StackBuilder() {
                                 </div>
                             </div>
                              <div className="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-violet-500/10 to-transparent"></div>
+                        </div>
+
+                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 relative overflow-hidden group hover:border-amber-500/50 transition-colors">
+                            <div className="relative z-10 text-center">
+                                <div className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{t("sharpeRatio", "Sharpe Ratio")}</div>
+                                <div className="text-xl md:text-2xl font-mono font-bold text-amber-400">
+                                    {(backtestResult.results?.sharpe_ratio || 0).toFixed(2)}
+                                </div>
+                            </div>
+                            <div className="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-amber-500/10 to-transparent"></div>
+                        </div>
+
+                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 relative overflow-hidden group hover:border-cyan-500/50 transition-colors">
+                            <div className="relative z-10 text-center">
+                                <div className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{t("sortinoRatio", "Sortino Ratio")}</div>
+                                <div className="text-xl md:text-2xl font-mono font-bold text-cyan-400">
+                                    {(backtestResult.results?.sortino_ratio || 0).toFixed(2)}
+                                </div>
+                            </div>
+                            <div className="absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-cyan-500/10 to-transparent"></div>
                         </div>
 
                         <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 relative overflow-hidden group hover:border-rose-500/50 transition-colors">
@@ -787,7 +821,37 @@ export function StackBuilder() {
 
             {/* Save Robot Section */}
             <div className="p-4 bg-slate-900 rounded-xl border border-slate-800">
-                <h4 className="font-semibold text-white mb-4">{t("saveRobotTitle", "Save as Robot")}</h4>
+                <h4 className="font-semibold text-white mb-4 flex justify-between items-center">
+                    {t("saveRobotTitle", "Save as Robot")}
+                    {currentRobotId && <span className="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/30">Editing #{currentRobotId}</span>}
+                </h4>
+                
+                <div className="flex flex-col sm:flex-row items-center gap-4 mb-4 bg-slate-950 p-3 rounded-lg border border-slate-800">
+                    <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                        <input 
+                            type="checkbox" 
+                            checked={liveTrading}
+                            onChange={(e) => setLiveTrading(e.target.checked)}
+                            className="rounded bg-slate-950 border-slate-700 text-emerald-500 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm font-semibold text-emerald-400 tracking-wide uppercase">Live Trading</span>
+                    </label>
+                    
+                    {liveTrading && (
+                        <div className="flex-1 w-full sm:w-auto">
+                            <select
+                                value={liveConnId || ""}
+                                onChange={(e) => setLiveConnId(e.target.value ? Number(e.target.value) : null)}
+                                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                            >
+                                <option value="">Select Broker Connection...</option>
+                                {brokers.map(b => (
+                                    <option key={b.id} value={b.id} className="capitalize">{b.broker_name} {b.is_paper ? "(Paper)" : "(Live)"}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                </div>
                 <div className="flex gap-2 mb-4">
                     <input
                         type="text"

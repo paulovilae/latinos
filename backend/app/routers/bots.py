@@ -14,11 +14,30 @@ router = APIRouter(
 
 @router.post("/", response_model=schemas.BotOut, status_code=status.HTTP_201_CREATED)
 def create_bot(payload: schemas.BotCreate, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if user.role != "admin" and user.subscription_tier != "pro":
-        bot_count = db.query(models.Bot).filter(models.Bot.owner_id == user.id).count()
-        if bot_count >= 1:
-            raise HTTPException(status_code=403, detail="Upgrade to Pro to create more bots.")
-            
+    # Define limits based on subscription tier
+    limits = {
+        "free": 1,
+        "starter": 1,
+        "pro": 5,
+        "whale": 100
+    }
+
+    # Admins bypass limits
+    if user.role == "admin":
+        return crud.create_bot(db, payload, user.id)
+
+    # Check user limit
+    tier = (user.subscription_tier or "free").lower()
+    limit = limits.get(tier, 1) # Default to 1 (Starter/Free)
+
+    bot_count = db.query(models.Bot).filter(models.Bot.owner_id == user.id).count()
+
+    if bot_count >= limit:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Plan limit reached. Your {tier.title()} plan allows {limit} bots. Upgrade to add more."
+        )
+
     return crud.create_bot(db, payload, user.id)
 
 @router.get("/", response_model=List[schemas.BotOut])
@@ -67,6 +86,30 @@ def deploy_bot(bot_id: int, user: models.User = Depends(get_current_user), db: S
     bot = crud.get_bot(db, bot_id)
     if not bot or (user.role != "admin" and bot.owner_id != user.id):
         raise HTTPException(status_code=404, detail="Bot not found")
+
+    # Enforce Running Bot Limits
+    if user.role != "admin":
+        limits = {
+            "free": 1,
+            "starter": 1,
+            "pro": 5,
+            "whale": 100
+        }
+        tier = (user.subscription_tier or "free").lower()
+        limit = limits.get(tier, 1)
+
+        # Count currently running bots (excluding this one if it's already running, though deploy usually implies start)
+        running_count = db.query(models.Bot).filter(
+            models.Bot.owner_id == user.id,
+            models.Bot.status == "running"
+        ).count()
+
+        if running_count >= limit:
+             raise HTTPException(
+                status_code=403,
+                detail=f"Live bot limit reached. Your {tier.title()} plan allows {limit} active bots."
+            )
+
     bot.status = "running"
     db.commit()
     return bot
@@ -79,6 +122,62 @@ def pause_bot(bot_id: int, user: models.User = Depends(get_current_user), db: Se
     bot.status = "paused"
     db.commit()
     return bot
+
+@router.post("/{bot_id}/subscribe", response_model=schemas.BotOut)
+def subscribe_to_bot(bot_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Subscribes to an Admin Marketplace bot. Clones the bot and its formulas to the user's account.
+    """
+    # 1. Enforce bot creation limits
+    if user.role != "admin":
+        tier = (user.subscription_tier or "free").lower()
+        limits = {"free": 1, "starter": 1, "pro": 5, "whale": 100}
+        limit = limits.get(tier, 1)
+        
+        bot_count = db.query(models.Bot).filter(models.Bot.owner_id == user.id).count()
+        if bot_count >= limit:
+            raise HTTPException(status_code=403, detail=f"Plan limit reached. Your {tier.title()} plan allows {limit} bots.")
+            
+    # 2. Retrieve Master Bot
+    master_bot = crud.get_bot(db, bot_id)
+    if not master_bot:
+        raise HTTPException(status_code=404, detail="Master bot not found.")
+        
+    if master_bot.owner_id == user.id:
+        raise HTTPException(status_code=400, detail="Cannot subscribe to your own bot.")
+        
+    # 3. Clone Bot Data
+    cloned_bot = models.Bot(
+        name=f"{master_bot.name} (Subscribed)",
+        description=master_bot.description,
+        script=master_bot.script,
+        status="paused",  # Start paused so they can configure it
+        owner_id=user.id,
+        tags=master_bot.tags,
+        signal_manifest=master_bot.signal_manifest,
+        live_trading=False,
+        live_trading_connection_id=None
+    )
+    db.add(cloned_bot)
+    db.flush() # Flush to get the cloned_bot.id
+    
+    # 4. Clone associated Formulas
+    master_formulas = crud.get_formulas(db, master_bot.id)
+    for f in master_formulas:
+        cloned_formula = models.FormulaVersion(
+            bot_id=cloned_bot.id,
+            version=f.version,
+            payload=f.payload,
+            created_by=user.id,
+            published=f.published,
+            assets=f.assets,
+            notes=f.notes
+        )
+        db.add(cloned_formula)
+        
+    db.commit()
+    db.refresh(cloned_bot)
+    return cloned_bot
 
 # Formulas
 

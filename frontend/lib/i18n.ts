@@ -327,6 +327,8 @@ export const translations = {
   addStrategiesParams: { en: "Add signals before running simulation.", es: "Agrega señales antes de simular." },
   addSignalStack: { en: "Please add at least one signal to the stack.", es: "Agrega al menos una señal a la pila." },
   backtestFailed: { en: "Backtest failed", es: "Falló el backtest" },
+  sharpeRatio: { en: "Sharpe Ratio", es: "Ratio Sharpe" },
+  sortinoRatio: { en: "Sortino Ratio", es: "Ratio Sortino" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

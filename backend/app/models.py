@@ -23,6 +23,21 @@ class User(Base):
     bots = relationship("Bot", back_populates="owner")
     subscriptions = relationship("Subscription", back_populates="user")
     formulas = relationship("FormulaVersion", back_populates="creator")
+    broker_connections = relationship("BrokerConnection", back_populates="user", cascade="all, delete-orphan")
+
+class BrokerConnection(Base):
+    __tablename__ = "broker_connections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    broker_name = Column(String, index=True) # e.g., 'alpaca', 'binance'
+    api_key_encrypted = Column(String)
+    api_secret_encrypted = Column(String)
+    is_paper = Column(Boolean, default=True)
+    status = Column(String, default="active") # active, error, inactive
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="broker_connections")
 
 class Bot(Base):
     __tablename__ = "bots"
@@ -40,6 +55,10 @@ class Bot(Base):
     signals = relationship("Signal", back_populates="bot")
     backtests = relationship("Backtest", back_populates="bot", cascade="all, delete-orphan")
     signal_manifest = Column(JSON, default=list) # Stores list of signal IDs for the stack
+    live_trading = Column(Boolean, default=False)
+    live_trading_connection_id = Column(Integer, ForeignKey("broker_connections.id", ondelete="SET NULL"), nullable=True)
+
+    broker_connection = relationship("BrokerConnection")
 
 class FormulaVersion(Base):
     __tablename__ = "formulas"

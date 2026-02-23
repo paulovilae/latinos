@@ -8,7 +8,7 @@ import { SectionCard } from "@/components/SectionCard";
 import { TagPill } from "@/components/TagPill";
 import { LocalizedText } from "@/components/LocalizedText";
 import { BillingPlans } from "@/components/BillingPlans";
-import { DashboardChartWrapper } from "./DashboardChartWrapper";
+
 import { SignalFeed } from "@/components/signals/SignalFeed";
 import { LiveTradingDashboardWrapper } from "@/components/dashboard/LiveTradingDashboardWrapper";
 
@@ -49,23 +49,7 @@ export default async function DashboardPage(props: {
         <MetricCard label="Backtests" value={metrics.backtests} helper="completed runs" />
       </SectionGrid>
 
-      {/* Main Chart Section - Loads asynchronously */}
-      <SectionCard 
-        id="chart" 
-        title={<LocalizedText id="chartTitle" fallback="Market Overview" />}
-        description={<LocalizedText id="chartDesc" fallback="Real-time price feed for BTC-USD" />}
-      >
-         <Suspense fallback={
-           <div className="h-80 flex items-center justify-center bg-slate-900/50 rounded-lg border border-slate-800 animate-pulse">
-             <div className="text-center text-slate-500">
-               <div className="animate-spin h-8 w-8 border-2 border-emerald-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-               <p className="text-sm">Loading market data...</p>
-             </div>
-           </div>
-         }>
-           <DashboardChartWrapper signals={signals} />
-         </Suspense>
-      </SectionCard>
+
 
       {/* Live Trading Section */}
       <SectionCard
