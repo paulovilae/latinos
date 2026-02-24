@@ -57,7 +57,8 @@ class Bot(Base):
     signal_manifest = Column(JSON, default=list) # Stores list of signal IDs for the stack
     live_trading = Column(Boolean, default=False)
     live_trading_connection_id = Column(Integer, ForeignKey("broker_connections.id", ondelete="SET NULL"), nullable=True)
-
+    live_metrics = Column(JSON, default=dict) # Stores trailing 30d backtest stats
+    
     broker_connection = relationship("BrokerConnection")
 
 class FormulaVersion(Base):

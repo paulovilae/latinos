@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useLocale } from "@/components/LocalizationProvider";
 import { TagPill } from "@/components/TagPill";
 import { BotMarketplace } from "./BotMarketplace";
+import { RobotArenaTable } from "./RobotArenaTable";
 import { TradingViewChart, OHLCData } from "./TradingViewChart";
 import { actionGetMarketData, actionGetBrokers, actionUpdateBot, BrokerConnection } from "@/lib/actions";
 import type { DashboardSummary, Bot, Signal, AlpacaOrder, AlpacaPosition, AlpacaAccount } from "@/lib/types";
@@ -84,6 +85,9 @@ export function LiveTradingDashboard({ initialSummary }: { initialSummary?: Dash
   const [configLiveTrading, setConfigLiveTrading] = useState(false);
   const [configBrokerId, setConfigBrokerId] = useState<number | "">("");
   const [savingConfig, setSavingConfig] = useState(false);
+
+  // Dashboard Tabs
+  const [activeTab, setActiveTab] = useState<'marketplace' | 'arena'>('marketplace');
 
   useEffect(() => {
     actionGetBrokers().then(data => {
@@ -419,46 +423,47 @@ export function LiveTradingDashboard({ initialSummary }: { initialSummary?: Dash
           </div>
       </div>
 
-      {/* Robots/Marketplace Section */}
-      <div>
-        {initialSummary?.subscription_tier === "admin" ? (
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <span>🤖</span> {t("activeRobots", "Active Robots")} 
-                  <span className="text-xs bg-slate-800 text-slate-400 px-2 py-1 rounded-full">{activeRobots.length}</span>
-              </h3>
-              <button
-                onClick={runSimulation}
-                disabled={simulating}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-sm font-bold shadow-lg shadow-orange-900/30 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
-              >
-                {simulating ? (
-                  <><span className="animate-spin">⏳</span> {t("simulating", "Simulating...")}</>
-                ) : (
-                  <><span>⚡</span> {t("simulate", "Simulate")}</>
-                )}
-              </button>
+        {/* Robots/Marketplace Section */}
+        <div>
+            {/* Tab Controls (Visible to everyone) */}
+            <div className="flex items-center justify-between mb-6 mt-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <span>🤖</span> {initialSummary?.subscription_tier === "admin" ? t("activeRobots", "Active Robots") : "Bot Marketplace"}
+                </h3>
+            
+            <div className="flex bg-slate-900 border border-slate-800 rounded-lg p-1">
+                <button 
+                    onClick={() => setActiveTab('marketplace')}
+                    className={`px-6 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'marketplace' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                >
+                    🛒 Bot Marketplace
+                </button>
+                <button 
+                    onClick={() => setActiveTab('arena')}
+                    className={`px-6 py-2 rounded-md text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'arena' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                >
+                    ⚔️ Robot Arena
+                </button>
             </div>
-        ) : (
-            <div className="flex items-center justify-between mb-4 mt-8">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <span>🛒</span> Bot Marketplace
-              </h3>
-            </div>
-        )}
+        </div>
 
-        {/* Regular users see Marketplace first */}
-        {initialSummary?.subscription_tier !== "admin" && (
-            <div className="mb-12">
+        {/* Tab Content Router */}
+        <div className="mb-12">
+            {activeTab === 'marketplace' ? (
                 <BotMarketplace 
                     bots={initialSummary?.bots || []} 
                     user={{ id: 0, role: 'user', email: '', name: '', mfa_enabled: false, subscription_tier: 'free' } as any} 
                     userBots={activeRobots} 
                 />
-            </div>
-        )}
+            ) : (
+                <RobotArenaTable 
+                    bots={(initialSummary?.bots || []).filter(b => b.status === "running")} 
+                />
+            )}
+        </div>
 
-        {initialSummary?.subscription_tier !== "admin" && activeRobots.length > 0 && (
+        {/* My Subscribed Bots (or Admin Active Bots) */}
+        {activeRobots.length > 0 && (
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                   <span>🤖</span> My Subscribed Bots
@@ -640,7 +645,88 @@ export function LiveTradingDashboard({ initialSummary }: { initialSummary?: Dash
         </div>
       </div>
 
+      {/* Configuration Modal */}
+      {configBot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden flex flex-col shadow-2xl">
+            <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+                <div>
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        ⚙️ Configure Bot
+                    </h3>
+                    <p className="text-xs text-slate-400 font-mono mt-1">{configBot.name}</p>
+                </div>
+                <button 
+                    onClick={() => setConfigBot(null)}
+                    className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                >
+                    ✕
+                </button>
+            </div>
+            
+            <div className="p-6 flex flex-col gap-6">
+                
+                {/* Live Trading Toggle */}
+                <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer" onClick={() => setConfigLiveTrading(!configLiveTrading)}>
+                    <div>
+                        <h4 className="font-bold text-white text-sm">Live Trading</h4>
+                        <p className="text-xs text-slate-500 mt-1">Allow this bot to execute trades automatically.</p>
+                    </div>
+                    <div className={`w-12 h-6 rounded-full transition-colors relative ${configLiveTrading ? 'bg-emerald-500' : 'bg-slate-700'}`}>
+                        <div className={`absolute top-1 bottom-1 w-4 bg-white rounded-full transition-all ${configLiveTrading ? 'left-7' : 'left-1'}`}></div>
+                    </div>
+                </div>
 
+                {/* Broker Connection Dropdown */}
+                {configLiveTrading && (
+                    <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                            Broker Connection
+                        </label>
+                        <select
+                            value={configBrokerId}
+                            onChange={(e) => setConfigBrokerId(e.target.value === "" ? "" : Number(e.target.value))}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-white text-sm focus:outline-none focus:border-indigo-500"
+                        >
+                            <option value="">-- Select an API Connection --</option>
+                            {brokerConnections.map(b => (
+                                <option key={b.id} value={b.id}>
+                                    {b.broker_name.charAt(0).toUpperCase() + b.broker_name.slice(1)} ({b.is_paper ? 'Paper' : 'Live'}) - Connection #{b.id}
+                                </option>
+                            ))}
+                        </select>
+                        {brokerConnections.length === 0 && (
+                            <p className="text-xs text-amber-500 mt-2">
+                                No broker connections found. Add one in your Profile.
+                            </p>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            <div className="p-4 border-t border-slate-800 bg-slate-950 flex justify-end gap-3">
+                <button
+                    onClick={() => setConfigBot(null)}
+                    disabled={savingConfig}
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition-colors"
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={handleSaveConfig}
+                    disabled={savingConfig || (configLiveTrading && configBrokerId === "")}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                    {savingConfig ? (
+                        <span className="animate-spin text-lg">↻</span>
+                    ) : (
+                        "💾 Save Configuration"
+                    )}
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

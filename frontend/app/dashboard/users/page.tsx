@@ -15,9 +15,11 @@ export default async function UsersPage() {
     redirect("/dashboard");
   }
 
+  const token = (session?.user as any)?.accessToken;
+
   let users: User[] = [];
   try {
-      users = await fetchUsers();
+      users = await fetchUsers(token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
   } catch (e) {
       console.error("Failed to fetch users:", e);
       // Fallback or empty list to prevent crash

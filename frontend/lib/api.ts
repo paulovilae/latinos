@@ -40,7 +40,14 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
       throw new Error(`API request failed: ${response.status} ${errorText}`);
     }
     if (response.status === 204) return null as T;
-    return (await response.json()) as T;
+    
+    const textBody = await response.text();
+    try {
+        return JSON.parse(textBody) as T;
+    } catch (parseErr) {
+        console.error(`Failed to parse API response as JSON from ${path}. Response:`, textBody.substring(0, 200));
+        throw new Error(`API returned invalid JSON (Status: ${response.status}). Response excerpt: ${textBody.substring(0, 100)}...`);
+    }
   };
 
   try {
@@ -65,8 +72,8 @@ export function fetchBotFormulas(botId: number): Promise<Formula[]> {
 
 // Stripe functions moved to actions.ts for Server Actions support
 
-export function fetchUsers(): Promise<User[]> {
-  return apiFetch<User[]>("/api/users");
+export function fetchUsers(init?: RequestInit): Promise<User[]> {
+  return apiFetch<User[]>("/api/users", init);
 }
 
 export interface MarketDataResponse {

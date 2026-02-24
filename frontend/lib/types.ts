@@ -16,6 +16,7 @@ export interface Bot {
   script?: string;
   live_trading?: boolean;
   live_trading_connection_id?: number | null;
+  live_metrics?: Record<string, any>;
 }
 
 export interface Formula {

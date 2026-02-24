@@ -57,11 +57,18 @@ export function BotMarketplace({
             <div key={bot.id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-700 transition-colors flex flex-col">
               <div className="p-5 border-b border-slate-800/50 flex-1">
                 <div className="flex justify-between items-start mb-3">
-                  <h4 className="font-bold text-lg text-white group-hover:text-cyan-400 transition-colors">
-                    {bot.name}
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-lg text-white group-hover:text-cyan-400 transition-colors">
+                      {bot.name}
+                    </h4>
+                    {bot.live_metrics?.trailing_30d?.sharpe > 1.0 && (
+                        <span className="text-xs bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-400 px-2 py-0.5 rounded-full border border-orange-500/30 flex items-center gap-1">
+                            🔥 Trending
+                        </span>
+                    )}
+                  </div>
                   {active && (
-                    <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/20">
+                    <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap">
                       SUBSCRIBED
                     </span>
                   )}
@@ -139,19 +146,31 @@ export function BotMarketplace({
                 <div className="grid grid-cols-4 gap-4">
                     <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-center">
                         <span className="block text-slate-500 text-xs uppercase tracking-widest font-bold mb-1">Target</span>
-                        <span className="text-lg font-mono text-white">{viewingBot.tags?.[0] || 'MULTI'}</span>
+                        <span className="text-lg font-mono text-white">{viewingBot.live_metrics?.trailing_30d?.symbol || viewingBot.tags?.[0] || 'MULTI'}</span>
                     </div>
-                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-center">
-                        <span className="block text-slate-500 text-xs uppercase tracking-widest font-bold mb-1">Sharpe</span>
-                        <span className="text-lg font-mono text-emerald-400">1.46+</span>
+                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-center" title="Trailing 30-day Sharpe Ratio">
+                        <span className="block text-slate-500 text-xs uppercase tracking-widest font-bold mb-1">30D Sharpe</span>
+                        <span className="text-lg font-mono text-emerald-400">
+                            {viewingBot.live_metrics?.trailing_30d?.sharpe !== undefined 
+                                ? viewingBot.live_metrics.trailing_30d.sharpe.toFixed(2) 
+                                : "N/A"}
+                        </span>
                     </div>
-                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-center">
+                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-center" title="Maximum Drawdown over 30 days">
                         <span className="block text-slate-500 text-xs uppercase tracking-widest font-bold mb-1">Max DD</span>
-                        <span className="text-lg font-mono text-emerald-400">2.1%</span>
+                        <span className="text-lg font-mono text-emerald-400">
+                            {viewingBot.live_metrics?.trailing_30d?.max_drawdown !== undefined 
+                                ? `${(viewingBot.live_metrics.trailing_30d.max_drawdown * 100).toFixed(1)}%` 
+                                : "N/A"}
+                        </span>
                     </div>
-                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-center">
+                    <div className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-center" title="Win Rate over 30 days">
                         <span className="block text-slate-500 text-xs uppercase tracking-widest font-bold mb-1">Win Rate</span>
-                        <span className="text-lg font-mono text-emerald-400">83%</span>
+                        <span className="text-lg font-mono text-emerald-400">
+                            {viewingBot.live_metrics?.trailing_30d?.win_rate !== undefined 
+                                ? `${(viewingBot.live_metrics.trailing_30d.win_rate * 100).toFixed(0)}%` 
+                                : "N/A"}
+                        </span>
                     </div>
                 </div>
 

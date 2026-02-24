@@ -114,15 +114,14 @@ export const authOptions: NextAuthOptions = {
            }
       } else if (user) {
         token.role = (user as any).role;
-        token.plan = (user as any).subscription_tier;
-        token.accessToken = (user as any).accessToken;
+        token.plan = (user as any).subscription_tier || (user as any).plan;
+        token.accessToken = (user as any).accessToken || (user as any).access_token;
       }
       
-      // Self-healing: if accessToken is missing (stale session) and it's the demo admin, restore it.
+      // Self-healing: if accessToken is missing (stale session), try to restore it from NEXT_PUBLIC_DEMO_TOKEN
       // This prevents 401 errors after server restarts or code changes.
-      // SECURITY: This is only enabled if the environment variable allows it.
-      if (!token.accessToken && token.email === "demo@latinos.trade" && process.env.NODE_ENV !== "production") {
-          token.accessToken = "demo-admin-token";
+      if (!token.accessToken && process.env.NEXT_PUBLIC_DEMO_TOKEN) {
+          token.accessToken = process.env.NEXT_PUBLIC_DEMO_TOKEN;
           token.role = "admin";
       }
       

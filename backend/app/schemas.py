@@ -99,6 +99,7 @@ class BotBase(BaseModel):
     tags: List[str] = []
     live_trading: bool = False
     live_trading_connection_id: Optional[int] = None
+    live_metrics: Optional[Dict] = {}
 
 class BotCreate(BotBase):
     signal_ids: Optional[List[Union[int, str, Dict]]] = None  # IDs or Config objects
@@ -112,6 +113,7 @@ class BotUpdate(BaseModel):
     signal_ids: Optional[List[Union[int, str, Dict]]] = None # Allow updating stack
     live_trading: Optional[bool] = None
     live_trading_connection_id: Optional[int] = None
+    live_metrics: Optional[Dict] = None
 
 class BotOut(BotBase):
     id: int

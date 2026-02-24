@@ -58,6 +58,10 @@ async def startup_event():
     except Exception as e:
         print(f"❌ Migration check failed: {e}")
         
+    print("🕒 Initializing Backend Task Scheduler for Automated Backtesting...")
+    from .scheduler import init_scheduler
+    init_scheduler()
+
     print("🚀 Triggering Live Trading Daemon...")
     import asyncio
     from .daemon import market_data_loop
