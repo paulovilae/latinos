@@ -50,17 +50,8 @@ const TIMEFRAMES = [
   { label: '1Mo', range: 'max', interval: '1mo' },
 ];
 
-const SYMBOLS = [
-  "BTC-USD",
-  "ETH-USD",
-  "AAPL",
-  "TSLA",
-  "MSFT",
-  "NVDA",
-  "AMZN",
-  "GOOGL",
-  "META"
-];
+import { SUPPORTED_ASSETS } from "@/lib/constants";
+const SYMBOLS = SUPPORTED_ASSETS;
 
 export function LiveTradingDashboard({ initialSummary }: { initialSummary?: DashboardSummary }) {
   const { t } = useLocale();

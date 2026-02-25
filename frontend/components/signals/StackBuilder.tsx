@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useLocale } from "@/components/LocalizationProvider";
 import { SignalScanner } from "./SignalScanner";
+import { SUPPORTED_ASSETS } from "@/lib/constants";
 // Using Next.js API routes (no direct backend calls)
 
 interface Signal {
@@ -47,7 +48,7 @@ export function StackBuilder() {
   
   // Asset Allocation
   const [assignedAssets, setAssignedAssets] = useState<string[]>([]);
-  const availableAssets = ["BTC-USD", "ETH-USD", "AAPL", "NVDA", "SPY", "SOXL", "SOXR"];
+  const availableAssets = SUPPORTED_ASSETS;
   
   // Signal Search
   const [signalSearch, setSignalSearch] = useState("");

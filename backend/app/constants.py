@@ -49,3 +49,18 @@ PLANS: list[schemas.Plan] = [
 # Caches
 dashboard_cache = TTLCache(maxsize=100, ttl=60)
 static_cache = TTLCache(maxsize=50, ttl=86400)
+
+SUPPORTED_ASSETS = [
+    "BTC-USD",
+    "ETH-USD",
+    "AAPL",
+    "TSLA",
+    "MSFT",
+    "NVDA",
+    "AMZN",
+    "GOOGL",
+    "META",
+    "SPY",
+    "SOXL",
+    "SOXR"
+]

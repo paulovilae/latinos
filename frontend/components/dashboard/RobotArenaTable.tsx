@@ -2,6 +2,8 @@
 import React, { useState, Fragment } from "react";
 import { Bot } from "@/lib/types";
 
+import { SUPPORTED_ASSETS } from "@/lib/constants";
+
 export function RobotArenaTable({ bots }: { bots: Bot[] }) {
   const [selectedAsset, setSelectedAsset] = useState("BTC-USD");
   const [selectedTimeframe, setSelectedTimeframe] = useState("30d");
@@ -92,11 +94,9 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
                     onChange={(e) => setSelectedAsset(e.target.value)}
                     className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-3 py-1.5 focus:border-indigo-500 outline-none"
                 >
-                    <option value="BTC-USD">Bitcoin (BTC-USD)</option>
-                    <option value="ETH-USD">Ethereum (ETH-USD)</option>
-                    <option value="AAPL">Apple (AAPL)</option>
-                    <option value="NVDA">Nvidia (NVDA)</option>
-                    <option value="SPY">S&P 500 (SPY)</option>
+                    {SUPPORTED_ASSETS.map((asset) => (
+                        <option key={asset} value={asset}>{asset}</option>
+                    ))}
                 </select>
                 <select 
                     value={selectedTimeframe}

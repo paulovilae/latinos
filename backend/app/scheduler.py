@@ -6,6 +6,7 @@ from datetime import datetime
 from .db import SessionLocal
 from .models import Bot, FormulaVersion, User
 from .signals import BacktestEngine
+from .constants import SUPPORTED_ASSETS
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ def run_daily_backtests():
                     continue
                 
                 new_metrics = {}
-                matrix_symbols = ["BTC-USD", "ETH-USD", "AAPL", "NVDA", "SPY", "SOXL", "SOXR"]
+                matrix_symbols = SUPPORTED_ASSETS
                 matrix_timeframes = {"7d": 7, "15d": 15, "30d": 30, "90d": 90, "180d": 180, "365d": 365}
                 
                 for asset in matrix_symbols:
