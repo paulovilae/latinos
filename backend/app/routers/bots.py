@@ -50,6 +50,7 @@ def list_bots(user: models.User = Depends(get_current_user), db: Session = Depen
 def update_bot(
     bot_id: int,
     payload: schemas.BotUpdate,
+    background_tasks: BackgroundTasks,
     user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -62,10 +63,19 @@ def update_bot(
     if payload.tags is not None: bot.tags = payload.tags
     if payload.status: bot.status = payload.status
     if payload.script is not None: bot.script = payload.script
-    if payload.signal_ids is not None: bot.signal_manifest = payload.signal_ids
     
+    trigger_arena_refresh = False
+    if payload.signal_ids is not None: 
+        bot.signal_manifest = payload.signal_ids
+        trigger_arena_refresh = True
+        
     db.commit()
     db.refresh(bot)
+    
+    if trigger_arena_refresh:
+        from ..scheduler import run_daily_backtests
+        background_tasks.add_task(run_daily_backtests)
+        
     return bot
 
 @router.delete("/{bot_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -121,6 +131,24 @@ def pause_bot(bot_id: int, user: models.User = Depends(get_current_user), db: Se
         raise HTTPException(status_code=404, detail="Bot not found")
     bot.status = "paused"
     db.commit()
+    return bot
+
+@router.post("/{bot_id}/refresh_arena", response_model=schemas.BotOut)
+def refresh_arena_metrics(
+    bot_id: int, 
+    background_tasks: BackgroundTasks,
+    user: models.User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Manually triggers a Robot Arena matrix recalculation for this bot."""
+    bot = crud.get_bot(db, bot_id)
+    if not bot or (user.role != "admin" and bot.owner_id != user.id):
+        raise HTTPException(status_code=404, detail="Bot not found")
+        
+    # Queue the specific bot for refreshing
+    from ..scheduler import run_daily_backtests
+    background_tasks.add_task(run_daily_backtests)
+    
     return bot
 
 @router.post("/{bot_id}/subscribe", response_model=schemas.BotOut)

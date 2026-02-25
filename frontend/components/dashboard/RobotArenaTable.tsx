@@ -1,10 +1,33 @@
 "use client";
-import { useState } from "react";
+import React, { useState, Fragment } from "react";
 import { Bot } from "@/lib/types";
 
 export function RobotArenaTable({ bots }: { bots: Bot[] }) {
   const [selectedAsset, setSelectedAsset] = useState("BTC-USD");
   const [selectedTimeframe, setSelectedTimeframe] = useState("30d");
+  const [expandedBotId, setExpandedBotId] = useState<number | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async (botId: number) => {
+    setIsRefreshing(true);
+    try {
+        const res = await fetch(`/api/bots/${botId}/refresh_arena`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
+            }
+        });
+        if (res.ok) {
+            alert("Matrix Backtest Queued. Refresh the page in a few minutes to see updated results.");
+        } else {
+            alert("Failed to queue refresh.");
+        }
+    } catch(e) {
+        console.error(e);
+    } finally {
+        setIsRefreshing(false);
+    }
+  };
 
   // Sort bots for the arena leaderboard
   const sortedArenaBots = [...bots]
@@ -35,9 +58,23 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
         let targetB = metricsB?.[selectedAsset]?.[selectedTimeframe];
         if (!targetB && selectedTimeframe === "30d" && (selectedAsset === "BTC-USD" || selectedAsset === metricsB?.trailing_30d?.symbol)) targetB = metricsB?.trailing_30d;
 
+        const retA = targetA?.total_return || -999;
+        const retB = targetB?.total_return || -999;
         const sharpeA = targetA?.sharpe || -999;
         const sharpeB = targetB?.sharpe || -999;
-        return sharpeB - sharpeA; // Descending
+        
+        // Rule 1: Positive returns ALWAYS beat negative returns
+        if (retA >= 0 && retB < 0) return -1;
+        if (retB >= 0 && retA < 0) return 1;
+        
+        // Rule 2: If BOTH are positive, rank by Sharpe Ratio (Descending)
+        if (retA >= 0 && retB >= 0) {
+            return sharpeB - sharpeA;
+        }
+        
+        // Rule 3: If BOTH are negative, rank strictly by Total Return (who lost the least is better = higher number)
+        // e.g., -3% is better than -8%, so -3% should appear first
+        return retB - retA; 
     });
 
   return (
@@ -66,6 +103,8 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
                     onChange={(e) => setSelectedTimeframe(e.target.value)}
                     className="bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-3 py-1.5 focus:border-indigo-500 outline-none"
                 >
+                    <option value="7d">1 Week</option>
+                    <option value="15d">15 Days</option>
                     <option value="30d">30 Days</option>
                     <option value="90d">90 Days</option>
                     <option value="180d">180 Days</option>
@@ -85,11 +124,11 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
                 <table className="w-full text-left text-sm text-slate-400">
                     <thead className="bg-slate-950/50 text-xs uppercase font-medium text-slate-500 border-b border-slate-800">
                         <tr>
-                            <th className="px-6 py-4">Rank & Robot</th>
-                            <th className="px-6 py-4">Total Return ({selectedTimeframe})</th>
-                            <th className="px-6 py-4">Win Rate</th>
-                            <th className="px-6 py-4">Max DD</th>
-                            <th className="px-6 py-4 text-right">Sharpe Ratio</th>
+                            <th className="px-6 py-4 cursor-help" title="The robot's competitive rank based on its risk-adjusted performance (Sharpe Ratio).">Rank & Robot</th>
+                            <th className="px-6 py-4 cursor-help" title="Cumulative percentage profit or loss generated over the selected timeframe.">Total Return ({selectedTimeframe})</th>
+                            <th className="px-6 py-4 cursor-help" title="Percentage of all executed trades that resulted in a profit.">Win Rate</th>
+                            <th className="px-6 py-4 cursor-help text-rose-500/80" title="Maximum Drawdown: The largest historical peak-to-trough drop in the robot's portfolio value. Measures worst-case risk.">Max DD</th>
+                            <th className="px-6 py-4 text-right cursor-help text-indigo-400/80" title="Risk-Adjusted Return. Measures how much excess return you receive for the extra volatility endured. >1.0 is Good, >2.0 is Excellent.">Sharpe Ratio</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800">
@@ -105,8 +144,15 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
                             }
                             
                             const isLeader = idx === 0;
+                            const isExpanded = expandedBotId === bot.id;
+                            
                             return (
-                                <tr key={`arena-${bot.id}`} className={`hover:bg-slate-800/50 transition-colors ${isLeader ? 'bg-indigo-900/10' : ''}`}>
+                                <Fragment key={`arena-frag-${bot.id}`}>
+                                <tr 
+                                    key={`arena-${bot.id}`} 
+                                    onClick={() => setExpandedBotId(isExpanded ? null : bot.id)}
+                                    className={`hover:bg-slate-800/50 transition-colors cursor-pointer ${isLeader ? 'bg-indigo-900/10' : ''}`}
+                                >
                                 <td className="px-6 py-4 flex items-center gap-3">
                                     <div className={`w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center font-black ${isLeader ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : idx === 1 ? 'bg-slate-300/20 text-slate-300 border border-slate-300/30' : idx === 2 ? 'bg-amber-700/20 text-amber-600 border border-amber-700/30' : 'bg-slate-800 text-slate-500'}`}>
                                         #{idx + 1}
@@ -134,6 +180,47 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
                                     </span>
                                 </td>
                                 </tr>
+                                
+                                {isExpanded && (
+                                    <tr className="bg-slate-900/80 border-b border-slate-800">
+                                        <td colSpan={5} className="px-6 py-6">
+                                            <div className="flex flex-col md:flex-row gap-6">
+                                                <div className="flex-1">
+                                                    <h4 className="text-white font-bold mb-2 text-sm uppercase tracking-wider text-indigo-400">Strategy Formula</h4>
+                                                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-sm text-slate-300">
+                                                        {bot.name.toLowerCase().includes('golden') ? (
+                                                            <div className="space-y-3">
+                                                                <p className="text-yellow-500 font-bold mb-1">🪙 The Golden Goose Protocol (n8n)</p>
+                                                                <ul className="list-disc pl-5 space-y-2">
+                                                                    <li><strong className="text-white">Timeframe:</strong> 1-Day Candles</li>
+                                                                    <li><strong className="text-white">Trend Identifier:</strong> SMA Cross (Short &gt; Long)</li>
+                                                                    <li><strong className="text-white">Momentum:</strong> RSI Bullish divergence detected</li>
+                                                                    <li><strong className="text-white">Volatility:</strong> MACD Histogram Reversal from negative</li>
+                                                                    <li><strong className="text-white">Execution:</strong> Webhook signal dispatched at closing price crossing VWAP</li>
+                                                                </ul>
+                                                            </div>
+                                                        ) : (
+                                                            <p>{bot.description || 'No specific formula description provided for this bot.'}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="w-full md:w-64 flex flex-col justify-center gap-3 bg-slate-950/50 p-4 rounded-xl border border-slate-800/50">
+                                                    <p className="text-xs text-slate-500 text-center mb-1">
+                                                        Matrix Backtests usually trigger nightly. You can manually force a recalculation across all Timeframes & Assets.
+                                                    </p>
+                                                    <button 
+                                                        onClick={() => handleRefresh(bot.id)}
+                                                        disabled={isRefreshing}
+                                                        className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg text-sm transition-all shadow-[0_0_15px_rgba(79,70,229,0.3)] hover:shadow-[0_0_20px_rgba(79,70,229,0.5)]"
+                                                    >
+                                                        {isRefreshing ? "⏳ Queuing..." : "Force Refresh Matrix"}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                                </Fragment>
                             )
                         })}
                     </tbody>

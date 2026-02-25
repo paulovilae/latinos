@@ -39,8 +39,8 @@ def run_daily_backtests():
                     continue
                 
                 new_metrics = {}
-                matrix_symbols = ["BTC-USD", "AAPL", "NVDA", "SPY"]
-                matrix_timeframes = {"30d": 30, "90d": 90, "180d": 180, "365d": 365}
+                matrix_symbols = ["BTC-USD", "ETH-USD", "AAPL", "NVDA", "SPY"]
+                matrix_timeframes = {"7d": 7, "15d": 15, "30d": 30, "90d": 90, "180d": 180, "365d": 365}
                 
                 for asset in matrix_symbols:
                     new_metrics[asset] = {}
@@ -96,14 +96,6 @@ def init_scheduler():
         CronTrigger(hour=0, minute=0),
         id="run_daily_backtests_midnight",
         replace_existing=True
-    )
-    
-    # Also run 1 minute after startup for development testing 
-    scheduler.add_job(
-        run_daily_backtests,
-        'date',
-        run_date=None, # Runs immediately
-        id="run_daily_backtests_startup"
     )
     
     scheduler.start()

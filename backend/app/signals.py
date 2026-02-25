@@ -493,9 +493,11 @@ class BacktestEngine:
             from .market_data_loader import sync_market_data
             sync_market_data(self.db, symbol, interval, range_=f"{days}d", use_synthetic=True)
             
+        cutoff = datetime.utcnow() - timedelta(days=days)
         query = self.db.query(MarketData).filter(
             MarketData.symbol == symbol.upper(),
-            MarketData.interval == interval
+            MarketData.interval == interval,
+            MarketData.timestamp >= cutoff
         ).order_by(MarketData.timestamp.asc())
         data = [{"open": d.open, "high": d.high, "low": d.low, "close": d.close, "volume": d.volume, "timestamp": d.timestamp} for d in query.all()]
         

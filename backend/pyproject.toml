@@ -24,7 +24,8 @@ dependencies = [
     "argon2-cffi",
     "alpaca-trade-api",
     "slowapi",
-    "boto3"
+    "boto3",
+    "apscheduler"
 ]
 
 [tool.setuptools]
