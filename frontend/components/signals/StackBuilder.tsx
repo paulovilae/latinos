@@ -20,6 +20,7 @@ interface SavedRobot {
   status: "running" | "paused" | "draft" | "stopped";
   live_trading?: boolean;
   live_trading_connection_id?: number | null;
+  tags?: string[];
 }
 
 export function StackBuilder() {
@@ -43,6 +44,10 @@ export function StackBuilder() {
   const [initialCapital, setInitialCapital] = useState(10000);
   const [takeProfit, setTakeProfit] = useState(5.0);
   const [stopLoss, setStopLoss] = useState(3.0);
+  
+  // Asset Allocation
+  const [assignedAssets, setAssignedAssets] = useState<string[]>([]);
+  const availableAssets = ["BTC-USD", "ETH-USD", "AAPL", "NVDA", "SPY"];
   
   // Signal Search
   const [signalSearch, setSignalSearch] = useState("");
@@ -115,7 +120,8 @@ export function StackBuilder() {
                 : (b.signals?.map((s: any) => s.id) || []),
             status: b.status || "draft",
             live_trading: b.live_trading || false,
-            live_trading_connection_id: b.live_trading_connection_id || null
+            live_trading_connection_id: b.live_trading_connection_id || null,
+            tags: b.tags || []
         };
       }));
     } catch (e) {
@@ -215,6 +221,7 @@ export function StackBuilder() {
           name: robotName,
           live_trading: liveTrading,
           live_trading_connection_id: liveConnId || null,
+          tags: assignedAssets,
           signal_ids: stack.map(s => {
              if ('invert' in s && s.invert) {
                  return { id: s.id, invert: true };
@@ -275,6 +282,7 @@ export function StackBuilder() {
     setCurrentRobotId(robot.id);
     setLiveTrading(robot.live_trading || false);
     setLiveConnId(robot.live_trading_connection_id || null);
+    setAssignedAssets(robot.tags || []);
   };
 
   const filteredStrategies = availableStrategies.filter(s => 
@@ -854,6 +862,35 @@ export function StackBuilder() {
                     {currentRobotId && <span className="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/30">Editing #{currentRobotId}</span>}
                 </h4>
                 
+                {/* Asset Allocation */}
+                <div className="mb-4 bg-slate-950 p-3 rounded-lg border border-slate-800">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">TARGET ASSETS</label>
+                    <div className="flex flex-wrap gap-2">
+                        {availableAssets.map(asset => (
+                            <button
+                                key={asset}
+                                onClick={() => {
+                                    if (assignedAssets.includes(asset)) {
+                                        setAssignedAssets(assignedAssets.filter(a => a !== asset));
+                                    } else {
+                                        setAssignedAssets([...assignedAssets, asset]);
+                                    }
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                    assignedAssets.includes(asset)
+                                    ? "bg-indigo-600 text-white border border-indigo-500 shadow-md shadow-indigo-500/20"
+                                    : "bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 hover:text-white"
+                                }`}
+                            >
+                                {asset}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-2">
+                        {assignedAssets.length === 0 ? "⚠️ Bot will not execute live trades if no assets are selected." : `Bot will listen for signals on ${assignedAssets.length} asset(s).`}
+                    </div>
+                </div>
+
                 <div className="flex flex-col sm:flex-row items-center gap-4 mb-4 bg-slate-950 p-3 rounded-lg border border-slate-800">
                     <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
                         <input 
@@ -903,6 +940,7 @@ export function StackBuilder() {
                             setIsRunning(false);
                             setSignalSearch("");
                             setCurrentRobotId(null);
+                            setAssignedAssets([]);
                         }}
                         className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium border border-slate-700 transition-all whitespace-nowrap"
                         title="Clear workspace to create a new robot"
