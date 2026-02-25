@@ -53,6 +53,7 @@ export function StackBuilder() {
 
   // Selected stack item for keyboard delete
   const [selectedStackIdx, setSelectedStackIdx] = useState<number | null>(null);
+  const [viewingCodeIdx, setViewingCodeIdx] = useState<number | null>(null);
 
   // Keyboard Delete/Backspace handler
   useEffect(() => {
@@ -412,8 +413,35 @@ export function StackBuilder() {
                                 >
                                     {(sig as any).invert ? 'Inverted' : 'Invert'}
                                 </button>
-                                <button onClick={(e) => { e.stopPropagation(); removeFromStack(idx); setSelectedStackIdx(null); }} className="text-white/70 hover:text-red-400 hover:bg-red-500/10 p-1 rounded transition-colors text-base leading-none" title="Remove signal (Del)">×</button>
+                                 <button 
+                                     onClick={(e) => {
+                                         e.stopPropagation();
+                                         setViewingCodeIdx(viewingCodeIdx === idx ? null : idx);
+                                     }}
+                                     className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border transition-colors whitespace-nowrap ${
+                                         viewingCodeIdx === idx
+                                           ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/50 hover:bg-indigo-500/30' 
+                                           : 'bg-slate-800 text-slate-500 border-slate-700 hover:text-white hover:border-slate-500'
+                                     }`}
+                                     title="View Code (Python)"
+                                 >
+                                     {'{ }'} Code
+                                 </button>
+                                 <button onClick={(e) => { e.stopPropagation(); removeFromStack(idx); setSelectedStackIdx(null); }} className="text-white/70 hover:text-red-400 hover:bg-red-500/10 p-1 rounded transition-colors text-base leading-none" title="Remove signal (Del)">×</button>
                              </div>
+                             
+                             {/* Expanded Code View */}
+                             {viewingCodeIdx === idx && (
+                                <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-slate-900 border border-indigo-500/40 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-4 cursor-text overflow-hidden" onClick={e => e.stopPropagation()}>
+                                     <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-800">
+                                         <span className="text-xs font-bold text-indigo-400 font-mono">def {sig.payload?.name?.replace(/[^a-zA-Z0-9_]/g, '') || 'signal_logic'}():</span>
+                                         <button onClick={(e) => { e.stopPropagation(); setViewingCodeIdx(null); }} className="text-slate-500 hover:text-white font-bold p-1">✕</button>
+                                     </div>
+                                     <pre className="text-[10px] sm:text-xs font-mono whitespace-pre-wrap text-emerald-300 bg-slate-950 p-4 rounded-lg border border-slate-800 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                        {sig.payload?.code || JSON.stringify(sig.payload, null, 2)}
+                                     </pre>
+                                </div>
+                             )}
                              
                              {/* Traffic Light Logic Visualization */}
                              <div className="absolute -right-3 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 bg-slate-950 p-1.5 rounded-full border border-slate-800">
