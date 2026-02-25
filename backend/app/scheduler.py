@@ -39,7 +39,7 @@ def run_daily_backtests():
                     continue
                 
                 new_metrics = {}
-                matrix_symbols = ["BTC-USD", "ETH-USD", "AAPL", "NVDA", "SPY"]
+                matrix_symbols = ["BTC-USD", "ETH-USD", "AAPL", "NVDA", "SPY", "SOXL", "SOXR"]
                 matrix_timeframes = {"7d": 7, "15d": 15, "30d": 30, "90d": 90, "180d": 180, "365d": 365}
                 
                 for asset in matrix_symbols:

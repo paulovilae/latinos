@@ -47,7 +47,7 @@ export function StackBuilder() {
   
   // Asset Allocation
   const [assignedAssets, setAssignedAssets] = useState<string[]>([]);
-  const availableAssets = ["BTC-USD", "ETH-USD", "AAPL", "NVDA", "SPY"];
+  const availableAssets = ["BTC-USD", "ETH-USD", "AAPL", "NVDA", "SPY", "SOXL", "SOXR"];
   
   // Signal Search
   const [signalSearch, setSignalSearch] = useState("");
