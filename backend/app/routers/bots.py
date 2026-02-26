@@ -162,6 +162,94 @@ def refresh_arena_metrics(
     
     return bot
 
+import subprocess
+import os
+import base64
+import tempfile
+import json
+from .. import schemas
+
+@router.post("/{bot_id}/compile/wasm", response_model=schemas.BotOut)
+def compile_bot_to_wasm(
+    bot_id: int, 
+    payload: dict, # Accepts raw Dify JSON DAG
+    user: models.User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """
+    Accepts a Dify Strategy JSON via the UI, transpiles the visual logic down to Rust, 
+    compiles it into a Native WebAssembly Binary using a sandbox, and saves the blob to the DB.
+    """
+    bot = crud.get_bot(db, bot_id)
+    if not bot or (user.role != "admin" and bot.owner_id != user.id):
+        raise HTTPException(status_code=404, detail="Bot not found")
+        
+    try:
+        # 1. Write the incoming Dify JSON to a temporary file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            json.dump(payload, f)
+            temp_yaml_path = f.name
+            
+        # 2. Setup the compiler directory and target
+        compiler_dir = "/app/wasm_test/compiler"
+        target_rs_file = "/app/wasm_test/src/lib.rs"
+        
+        # 3. Step 1: Execute Python Transpiler (Reads YAML -> Writes Rust)
+        transpile_cmd = ["python3", f"{compiler_dir}/transpile.py", temp_yaml_path, target_rs_file]
+        subprocess.run(transpile_cmd, check=True, capture_output=True, text=True)
+        
+        # 4. Step 2: Fire off the Rust WASM Compiler Builder (Sandboxed)
+        # We mount the compiler directory into a rust:latest container, build the target, and read the resulting .wasm data
+        host_compiler_dir = "/home/paulo/Programs/apps/latinos/backend/wasm_test" # This must be the absolute path on the host
+        
+        # We need to run this command through the host's docker daemon. 
+        # Since we are inside the latinos-backend container, we will assume the container has docker client installed
+        # and /var/run/docker.sock mounted, OR we compile locally if rust is somehow present.
+        # For this execution environment we will shell out to local rustc if available, or try docker.
+        
+        try:
+             # Attempt to compile locally first
+             compile_cmd = ["cargo", "build", "--target", "wasm32-unknown-unknown", "--release"]
+             subprocess.run(compile_cmd, cwd=compiler_dir, check=True, capture_output=True, text=True)
+        except Exception:
+             # Fallback to Docker via sock (assuming it exists)
+             docker_cmd = [
+                 "docker", "run", "--rm", 
+                 "-v", f"{host_compiler_dir}:/usr/src/app", 
+                 "-w", "/usr/src/app", 
+                 "rust:latest", 
+                 "cargo", "build", "--target", "wasm32-unknown-unknown", "--release"
+             ]
+             subprocess.run(docker_cmd, check=True, capture_output=True, text=True)
+
+        # 5. Read the compiled WASM binary
+        wasm_file_path = f"{compiler_dir}/target/wasm32-unknown-unknown/release/strategy.wasm"
+        if not os.path.exists(wasm_file_path):
+             raise Exception(f"Compilation finished but no WASM found at {wasm_file_path}")
+             
+        with open(wasm_file_path, "rb") as bf:
+             wasm_binary = bf.read()
+             
+        encoded_wasm = base64.b64encode(wasm_binary).decode('utf-8')
+        
+        # 6. Save to database
+        bot.is_wasm = True
+        bot.wasm_base64 = encoded_wasm
+        bot.status = "standby" # Ready to trade
+        
+        db.commit()
+        db.refresh(bot)
+        
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=500, detail=f"Compilation Failed: {e.stderr}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Adapter Error: {str(e)}")
+    finally:
+        if os.path.exists(temp_yaml_path):
+             os.remove(temp_yaml_path)
+             
+    return bot
+
 @router.post("/{bot_id}/subscribe", response_model=schemas.BotOut)
 def subscribe_to_bot(bot_id: int, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     """

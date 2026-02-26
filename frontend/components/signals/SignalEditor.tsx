@@ -2,15 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useLocale } from "@/components/LocalizationProvider";
-import { CodeEditor } from "./CodeEditor";
-import { AIAssistant } from "./AIAssistant";
-import { SignalTester } from "@/components/signals/SignalTester";
-// Using Next.js API routes (no direct backend calls)
+import { ExternalLink, Zap, Network } from "lucide-react";
 
 interface Signal {
   id: number;
-  type: "FORMULA" | "PYTHON";
-  payload: { code: string; name?: string; description?: string };
+  type: "FORMULA" | "PYTHON" | "DIFY_WASM";
+  payload: { code: string; name?: string; description?: string; dify_app_id?: string };
   mode: string;
 }
 
@@ -18,13 +15,6 @@ export function SignalEditor() {
   const { t } = useLocale();
   const [signals, setStrategies] = useState<Signal[]>([]);
   const [selectedSignal, setSelectedSignal] = useState<Signal | null>(null);
-  
-  // Form State
-  const [name, setName] = useState("");
-  const [type, setType] = useState<"FORMULA" | "PYTHON">("FORMULA");
-  const [code, setCode] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showTester, setShowTester] = useState(false);
 
   useEffect(() => {
     refreshStrategies();
@@ -38,173 +28,93 @@ export function SignalEditor() {
       if (Array.isArray(data)) {
         setStrategies(data);
       } else {
-        console.error("Strategies data is not array:", data);
         setStrategies([]);
       }
     } catch (e) {
       console.error("Failed to load signals", e);
-      setStrategies([]); // Fallback to empty
+      setStrategies([]);
     }
   };
 
-  const handleSave = async () => {
-    setIsSubmitting(true);
-    try {
-      if (selectedSignal) {
-        await fetch(`/api/signals/${selectedSignal.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                type,
-                payload: { name, code },
-                mode: selectedSignal.mode || "simulation"
-            })
-        });
-      } else {
-        await fetch("/api/signals", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                type,
-                payload: { name, code },
-                mode: "simulation"
-            })
-        });
-      }
-      await refreshStrategies();
-      // Show success message
-      if (selectedSignal) {
-        alert(t("signalSuccessUpdate", "✅ Signal updated successfully!"));
-      } else {
-        alert(t("signalSuccessCreate", "✅ Signal created successfully!"));
-        setName("");
-        setCode("");
-      }
-    } catch (e) {
-      alert(t("signalError", "Failed to save signal"));
-    } finally {
-      setIsSubmitting(false);
-    }
+  const openDifyWorkspace = () => {
+    // Navigate to the Dify internal workspace IP or domain
+    window.open("http://192.168.1.35/apps", "_blank");
   };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:h-[500px] h-auto">
-      {/* List */}
-      <div className="md:col-span-1 border-r border-slate-700 pr-4 overflow-y-auto h-[150px] md:h-full">
+      {/* Legacy List */}
+      <div className="md:col-span-1 border-r border-slate-700 pr-4 overflow-y-auto h-[250px] md:h-full">
         <h3 className="text-sm font-semibold text-slate-400 mb-3">{t("yourStrategies", "Your Strategies")}</h3>
         <div className="space-y-2">
             {signals.map(sig => (
                 <div 
                     key={sig.id} 
-                    className="p-3 bg-slate-800 rounded-lg cursor-pointer md:hover:bg-slate-700 active:bg-slate-700 transition flex justify-between items-center group touch-manipulation"
-                    onClick={() => {
-                        setSelectedSignal(sig);
-                        setName(sig.payload.name || "");
-                        setType(sig.type);
-                        // Fix for visible "\n" literals in legacy data
-                        const cleanCode = sig.payload.code 
-                            ? sig.payload.code.replace(/\\n/g, '\n') 
-                            : "";
-                        setCode(cleanCode);
-                    }}
+                    className={`p-3 rounded-lg cursor-pointer transition flex justify-between items-center group
+                        ${selectedSignal?.id === sig.id ? 'bg-indigo-900/50 border border-indigo-500/50' : 'bg-slate-800 hover:bg-slate-700'}`}
+                    onClick={() => setSelectedSignal(sig)}
                 >
                     <div>
                         <div className="font-medium text-white">{sig.payload.name || `Signal #${sig.id}`}</div>
                         <div className="text-xs text-slate-500">{sig.type}</div>
                     </div>
-                    <button
-                        className="p-1 hover:bg-red-500/20 rounded text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={async (e) => {
-                            e.stopPropagation();
-                            if(!confirm(t("confirmDelete", "Delete this signal?"))) return;
-                            try {
-                                await fetch(`/api/signals/${sig.id}`, { method: "DELETE" });
-                                refreshStrategies();
-                                if(selectedSignal?.id === sig.id) {
-                                    setSelectedSignal(null);
-                                    setName("");
-                                    setCode("");
-                                }
-                            } catch(err) {
-                                alert(t("signalError", "Failed to delete signal"));
-                            }
-                        }}
-                    >
-                        🗑️
-                    </button>
                 </div>
             ))}
              {signals.length === 0 && (
                 <div className="text-sm text-slate-500 italic">{t("noStrategiesYet", "No signals yet.")}</div>
             )}
         </div>
-        <button 
-            className="mt-4 w-full py-2 bg-indigo-600/20 text-indigo-300 rounded-lg text-sm hover:bg-indigo-600/30"
-            onClick={() => {
-                setSelectedSignal(null);
-                setName("");
-                setCode("");
-            }}
-        >
-            + {t("newSignal", "New Signal")}
-        </button>
       </div>
 
-      {/* Editor */}
-      <div className="md:col-span-2 flex flex-col gap-4">
-        <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
-            <input 
-                className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 w-full md:flex-1 text-white"
-                placeholder={t("signalNamePlaceholder", "Signal Name")}
-                value={name}
-                onChange={e => setName(e.target.value)}
-            />
-            <select 
-                className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 w-full md:w-auto text-white"
-                value={type}
-                onChange={e => setType(e.target.value as any)}
-            >
-                <option value="FORMULA">{t("mathFormula", "Math Formula")}</option>
-                <option value="PYTHON">{t("pythonCode", "Python Script")}</option>
-            </select>
-            <div className="w-full md:w-auto">
-                <AIAssistant 
-                    language={type === 'FORMULA' ? 'formula' : 'python'}
-                    onGenerate={(generated) => setCode(generated)}
-                />
+      {/* Dify Integration Panel */}
+      <div className="md:col-span-2 flex flex-col items-center justify-center p-8 text-center bg-slate-900/50 rounded-2xl border border-dashed border-slate-700 relative overflow-hidden">
+        {/* Background Decoration */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
+            <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] bg-indigo-600/30 blur-[100px] rounded-full"></div>
+            <div className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] bg-blue-600/30 blur-[100px] rounded-full"></div>
+        </div>
+
+        <div className="relative z-10 flex flex-col items-center max-w-md">
+            <div className="w-20 h-20 bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-6 border border-indigo-500/20 shadow-[0_0_30px_rgba(99,102,241,0.2)]">
+                <Network className="w-10 h-10 text-indigo-400" />
             </div>
-        </div>
+            
+            <h2 className="text-2xl font-bold text-white mb-3">
+                Imaginos Visual Builder
+            </h2>
+            
+            <p className="text-slate-400 mb-8 leading-relaxed">
+                The legacy Python code editor has been deprecated. All quantitative signals and routing logic are now built visually using the high-performance Dify WASM compiler.
+            </p>
 
-        <div className="relative h-[350px] md:flex-1 w-full min-h-[350px]">
-            <CodeEditor 
-                value={code}
-                onChange={setCode}
-                language={type === 'FORMULA' ? 'formula' : 'python'}
-                placeholder={type === 'FORMULA' ? "close > open" : "if data.close > data.open:\n    result = True"}
-            />
-        </div>
-        
-        {/* Signal Tester */}
-        {selectedSignal && showTester && (
-             <SignalTester signalId={selectedSignal.id} />
-        )}
-
-        <div className="flex justify-end gap-3">
-             {selectedSignal && (
-                <button
-                    className="px-4 py-2 bg-indigo-600/20 text-indigo-300 rounded-lg font-medium hover:bg-indigo-600/30"
-                    onClick={() => setShowTester(!showTester)}
+            <div className="flex flex-col w-full gap-4">
+                <button 
+                    onClick={openDifyWorkspace}
+                    className="flex items-center justify-center gap-2 w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-xl font-semibold shadow-lg shadow-indigo-500/25 transition-all outline-none"
                 >
-                    {showTester ? "Hide Tester" : "Test Signal"}
+                    <Zap className="w-5 h-5" />
+                    Launch Visual Workspace
+                    <ExternalLink className="w-4 h-4 opacity-70 ml-1" />
                 </button>
-             )}
-             <button 
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 disabled:opacity-50"
-                onClick={handleSave}
-                disabled={isSubmitting || !code}
-             >
-                {selectedSignal ? t("updateSignal", "Update Signal") : t("createSignal", "Create Signal")}
-             </button>
+
+                {selectedSignal && selectedSignal.type !== "DIFY_WASM" && (
+                    <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-left mt-4">
+                        <p className="text-sm text-amber-200 font-medium mb-1">Legacy Strategy Detected</p>
+                        <p className="text-xs text-amber-200/70">
+                            "{selectedSignal.payload.name || 'This signal'}" is using the deprecated {selectedSignal.type} engine. 
+                            It will continue to execute, but cannot be visually edited. Please recreate it in the new Builder.
+                        </p>
+                    </div>
+                )}
+                {selectedSignal && selectedSignal.type === "DIFY_WASM" && (
+                     <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-left mt-4">
+                        <p className="text-sm text-emerald-400 font-medium mb-1">WASM Active</p>
+                        <p className="text-xs text-emerald-400/70">
+                            This strategy is compiled to high-speed WebAssembly and is executing natively.
+                        </p>
+                     </div>
+                )}
+            </div>
         </div>
       </div>
     </div>

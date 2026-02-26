@@ -1,0 +1,113 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Latinos Financial Tools
+  description: Calculates technical indicators for market data.
+servers:
+  - url: https://apilatinos.paulovila.org
+paths:
+  /api/dify/tools/rsi:
+    post:
+      summary: Calculate RSI
+      operationId: CalculateRSI
+      tags:
+        - indicators
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IndicatorInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndicatorOutput"
+  /api/dify/tools/macd:
+    post:
+      summary: Calculate MACD
+      operationId: CalculateMACD
+      tags:
+        - indicators
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MACDInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MACDOutput"
+
+components:
+  schemas:
+    IndicatorInput:
+      type: object
+      required:
+        - close_prices
+      properties:
+        close_prices:
+          type: array
+          items:
+            type: number
+          description: Array of historical close prices.
+        period:
+          type: integer
+          default: 14
+          description: Calculation period.
+    IndicatorOutput:
+      type: object
+      properties:
+        latest_value:
+          type: number
+          description: The most recent calculated value.
+        history:
+          type: array
+          items:
+            type: number
+          description: The history of calculated values.
+    MACDInput:
+      type: object
+      required:
+        - close_prices
+      properties:
+        close_prices:
+          type: array
+          items:
+            type: number
+        fast_period:
+          type: integer
+          default: 12
+        slow_period:
+          type: integer
+          default: 26
+        signal_period:
+          type: integer
+          default: 9
+    MACDOutput:
+      type: object
+      properties:
+        latest_macd:
+          type: number
+        latest_signal:
+          type: number
+        latest_hist:
+          type: number
+        macd_history:
+          type: array
+          items:
+            type: number
+        signal_history:
+          type: array
+          items:
+            type: number
+        hist_history:
+          type: array
+          items:
+            type: number

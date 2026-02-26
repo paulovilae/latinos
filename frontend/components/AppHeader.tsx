@@ -43,7 +43,7 @@ export function AppHeader() {
         {/* Admin Links */}
         {(session?.user as any)?.role === "admin" && (
           <>
-            <Link href="/dashboard/signals" className="hover:text-cyan-300">
+            <Link href="https://dify.imaginos.ai/tools?category=api" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-300">
               <LocalizedText id="navSignalStudio" fallback="Signal Studio" />
             </Link>
             <Link href="/dashboard/robots" className="hover:text-cyan-300">

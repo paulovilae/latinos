@@ -1,0 +1,115 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Latinos Financial Tools",
+    "description": "Calculates technical indicators for market data.",
+    "version": "v1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://apilatinos.paulovila.org"
+    }
+  ],
+  "paths": {
+    "/api/dify/tools/rsi": {
+      "post": {
+        "description": "Calculates the Relative Strength Index (RSI)",
+        "operationId": "CalculateRSI",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "description": "Calculation period (e.g. 14)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 14
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "close_prices": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "description": "Array of historical close prices"
+                  }
+                },
+                "required": ["close_prices"]
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/dify/tools/macd": {
+      "post": {
+        "description": "Calculates the MACD",
+        "operationId": "CalculateMACD",
+        "parameters": [
+          {
+            "name": "fast_period",
+            "in": "query",
+            "description": "Fast EMA period",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 12
+            }
+          },
+          {
+            "name": "slow_period",
+            "in": "query",
+            "description": "Slow EMA period",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 26
+            }
+          },
+          {
+            "name": "signal_period",
+            "in": "query",
+            "description": "Signal line EMA period",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 9
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "close_prices": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "required": ["close_prices"]
+              }
+            }
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {}
+  }
+}

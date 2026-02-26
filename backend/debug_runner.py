@@ -32,7 +32,9 @@ result = engine.run(
     days=365,
     take_profit=0,
     stop_loss=0,
-    initial_capital=10000
+    initial_capital=10000,
+    is_wasm=bot.is_wasm,
+    wasm_base64=bot.wasm_base64
 )
 
 print(f"Total Return: {result.total_return_pct}%")

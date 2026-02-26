@@ -24,8 +24,15 @@ services:
       - ./backend/users.db:/app/users.db
     networks:
       - latinos-network
+      - imaginos-bridge
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -34,3 +41,5 @@ services:
 networks:
   latinos-network:
     driver: bridge
+  imaginos-bridge:
+    external: true

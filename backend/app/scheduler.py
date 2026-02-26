@@ -53,7 +53,9 @@ def run_daily_backtests():
                                 days=days,
                                 take_profit=0, 
                                 stop_loss=0,
-                                initial_capital=10000
+                                initial_capital=10000,
+                                is_wasm=bot.is_wasm,
+                                wasm_base64=bot.wasm_base64
                             )
                             new_metrics[asset][period_label] = {
                                 "sharpe": result.sharpe_ratio,

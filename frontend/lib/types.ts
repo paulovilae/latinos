@@ -17,6 +17,12 @@ export interface Bot {
   live_trading?: boolean;
   live_trading_connection_id?: number | null;
   live_metrics?: Record<string, any>;
+  // Bean (WASM) integration
+  wasm_base64?: string;
+  wasm_size_bytes?: number;
+  dify_app_id?: string;
+  indicator?: string;
+  condition?: string;
 }
 
 export interface Formula {

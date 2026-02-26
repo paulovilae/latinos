@@ -90,6 +90,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from .routers import auth, users, bots, signals, dashboard, billing, trades, brokers, dify_tools
+
+# ... (omitted for brevity, we can just replace the Include Routers block)
+
 # Include Routers
 app.include_router(auth.router)
 app.include_router(users.router)
@@ -99,10 +103,30 @@ app.include_router(dashboard.router)
 app.include_router(billing.router)
 app.include_router(trades.router)
 app.include_router(brokers.router)
+app.include_router(dify_tools.router)
 
 @app.get("/openapi.json")
 def openapi_spec():
     return app.openapi()
+
+from fastapi.openapi.utils import get_openapi
+from app.routers import dify_tools
+
+@app.get("/api/dify/openapi.json", tags=["Dify Custom Tools"])
+def dify_openapi_spec():
+    # Generate an isolated OpenAPI schema ONLY for the Dify routes
+    # This prevents Dify from choking on 100+ unrelated backend schemas
+    dify_schema = get_openapi(
+        title="Latinos Strategies",
+        version="v2.0.0",
+        description="Native, high-performance quantitative indicators running in WASM or Python.",
+        routes=dify_tools.router.routes,
+    )
+    
+    # Cleanly set the server URL back to the internal bridge
+    dify_schema["servers"] = [{"url": "http://latinos-backend:8000"}]
+    
+    return dify_schema
 
 @app.get("/health")
 def health_check():

@@ -49,6 +49,8 @@ class Bot(Base):
     status = Column(String, default="draft")
     owner_id = Column(Integer, ForeignKey("users.id"))
     tags = Column(JSON, default=list)
+    is_wasm = Column(Boolean, default=False)
+    wasm_base64 = Column(String, nullable=True)
 
     owner = relationship("User", back_populates="bots")
     formulas = relationship("FormulaVersion", back_populates="bot", cascade="all, delete-orphan")

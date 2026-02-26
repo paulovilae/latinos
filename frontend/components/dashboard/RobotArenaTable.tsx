@@ -28,26 +28,9 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
     }
   };
 
-  // Filter bots: Only show bots that have at least one valid, non-zero return for the selected timeframe.
-  // (A bot with all 0.00% returns across all assets means it didn't trade or has no data, so we hide it).
-  const validArenaBots = bots.filter(bot => {
-      let metrics = bot.live_metrics as any;
-      if (typeof metrics === 'string') {
-          try { metrics = JSON.parse(metrics); } catch (e) { return false; }
-      }
-      
-      if (!metrics) return false;
-
-      let hasValidData = false;
-      for (const asset of SUPPORTED_ASSETS) {
-          const targetMetrics = metrics?.[asset]?.[selectedTimeframe];
-          if (targetMetrics && targetMetrics.total_return !== 0) {
-              hasValidData = true;
-              break;
-          }
-      }
-      return hasValidData;
-  });
+  // Remove the zero-return filter so newly created bots (like Golden Gooses) appear immediately
+  // before their first nightly backtest finishes computing metrics.
+  const validArenaBots = bots;
 
   // Sort bots alphabetically
   const sortedArenaBots = [...validArenaBots].sort((a, b) => a.name.localeCompare(b.name));

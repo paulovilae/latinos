@@ -45,13 +45,18 @@ def run_backtest_endpoint(
     
     # 4. Run Backtest
     # This is synchronous for now - should be async/background for real heavy loads
+    is_wasm = bot.is_wasm if bot else False
+    wasm_base64 = bot.wasm_base64 if bot else None
+    
     result = engine.run(
         stack_ids=stack_ids,
         symbol=request.market,
         days=365,
         take_profit=request.take_profit,
         stop_loss=request.stop_loss,
-        initial_capital=request.initial_capital
+        initial_capital=request.initial_capital,
+        is_wasm=is_wasm,
+        wasm_base64=wasm_base64
     )
     
     # 5. Store Result (Optional)

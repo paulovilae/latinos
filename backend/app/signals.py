@@ -231,13 +231,17 @@ class SignalEvaluator:
         if self.logs is not None: self.logs.append(message)
         else: print(message)
 
-    def evaluate(self, context: pd.DataFrame, db: Session, candle_idx: int = -1, debug: bool = False, is_active: bool = False) -> Optional[bool]:
+    def evaluate(self, context: pd.DataFrame, db: Session, candle_idx: int = -1, debug: bool = False, is_active: bool = False, is_wasm: bool = False, wasm_base64: str = None) -> Optional[bool]:
         sig_type = self.signal.type.upper()
         if debug:
-            self.log(f"   🔎 Eval Sig {self.signal.id} (Type: {sig_type})")
+            self.log(f"   🔎 Eval Sig {self.signal.id} (Type: {sig_type}, WASM: {is_wasm})")
 
         result = False
-        if sig_type == "FORMULA":
+        
+        # Branch out for native WASM execution
+        if is_wasm and wasm_base64:
+            result = self._eval_wasm(context, candle_idx, debug, wasm_base64)
+        elif sig_type == "FORMULA":
             result = self._eval_formula(context, candle_idx, debug)
         elif sig_type in ["PYTHON", "BUY", "SELL"]:
             result = self._eval_python(context, candle_idx, debug, is_active)
@@ -253,6 +257,43 @@ class SignalEvaluator:
             self._trigger_alpaca_order(context, db)
             
         return result
+
+    def _eval_wasm(self, df: pd.DataFrame, idx: int, debug: bool, wasm_base64: str) -> Optional[bool]:
+        """ Executes the compiled high-speed Rust WebAssembly target """
+        import base64
+        import wasmtime
+        
+        if debug:
+            self.log(f"   ⚡ Evaluating High-Speed WASM Target {self.signal.id}")
+            
+        try:
+            # Prepare current candle state
+            row = df.iloc[idx]
+            o, h, l, c, v = float(row['open']), float(row['high']), float(row['low']), float(row['close']), float(row['volume'])
+            
+            # Reconstruct the WebAssembly Payload
+            wasm_binary = base64.b64decode(wasm_base64)
+            
+            # Spin up the Engine Context (Sandboxed)
+            engine = wasmtime.Engine()
+            store = wasmtime.Store(engine)
+            module = wasmtime.Module(engine, wasm_binary)
+            instance = wasmtime.Instance(store, module, [])
+            
+            # Locate the exported function 'evaluate' matching our Rust template
+            eval_func = instance.exports(store)["evaluate"]
+            
+            # WebAssembly expects floats (f64). It returns 0 (false) or 1 (true)
+            res = eval_func(store, o, h, l, c, v)
+            val = bool(res == 1)
+            
+            if debug:
+                self.log(f"   👉 WASM Result: {val} (raw {res})")
+                
+            return val
+        except Exception as e:
+            self.log(f"❌ WASM Error (Sig {self.signal.id}): {e}")
+            return None
 
     def _trigger_alpaca_order(self, df: pd.DataFrame, db: Session):
         """
@@ -446,7 +487,9 @@ class BacktestEngine:
             days: int = 365,
             take_profit: float = 5.0,
             stop_loss: float = 3.0,
-            initial_capital: float = 10000.0) -> BacktestResult:
+            initial_capital: float = 10000.0,
+            is_wasm: bool = False,
+            wasm_base64: str = None) -> BacktestResult:
         
         self.logs = [] # Reset logs
         self.log(f"🎬 Starting Backtest for {symbol} ({days}d)")
@@ -550,7 +593,7 @@ class BacktestEngine:
             # Evaluate (Safety check: don't trade on last candle, just close)
             is_green = False
             if i < len(df) - 1:
-                is_green = self._evaluate_stack(signals, df, self.db, i, stack_config, debug, in_position)
+                is_green = self._evaluate_stack(signals, df, self.db, i, stack_config, debug, in_position, is_wasm, wasm_base64)
 
             # Recalc Equity
             current_equity = current_capital
@@ -673,11 +716,11 @@ class BacktestEngine:
             logs=self.logs
         )
 
-    def _evaluate_stack(self, signals, df: pd.DataFrame, db: Session, idx: int, config: Dict, debug: bool = False, is_active: bool = False) -> bool:
+    def _evaluate_stack(self, signals, df: pd.DataFrame, db: Session, idx: int, config: Dict, debug: bool = False, is_active: bool = False, is_wasm: bool = False, wasm_base64: str = None) -> bool:
         final_result = True
         for sig in signals:
             evaluator = SignalEvaluator(sig, self.logs)
-            res = evaluator.evaluate(df, db, idx, debug, is_active)
+            res = evaluator.evaluate(df, db, idx, debug, is_active, is_wasm, wasm_base64)
 
             # Check Inversion
             cfg = config.get(str(sig.id), {})

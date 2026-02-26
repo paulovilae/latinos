@@ -119,6 +119,8 @@ class BotOut(BotBase):
     id: int
     status: str
     owner_id: Optional[int] = None
+    is_wasm: Optional[bool] = False
+    wasm_base64: Optional[str] = None
     signal_manifest: Optional[List[Union[int, str, Dict]]] = []
     signals: Optional[List["SignalOut"]] = None
 
