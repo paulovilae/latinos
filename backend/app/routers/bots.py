@@ -40,6 +40,53 @@ def create_bot(payload: schemas.BotCreate, user: models.User = Depends(get_curre
 
     return crud.create_bot(db, payload, user.id)
 
+@router.get("/canvas")
+def list_canvas_bots(user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Read bots directly from Dify Canvas (source of truth) and enrich with Latinos execution data."""
+    import psycopg2
+    import os
+
+    dify_db_url = os.getenv("DIFY_DATABASE_URL", "postgresql://postgres:difyai123456@db:5432/dify")
+
+    try:
+        conn = psycopg2.connect(dify_db_url, connect_timeout=5)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, name, description, mode, created_at, updated_at
+            FROM apps
+            WHERE mode = 'workflow'
+            ORDER BY created_at DESC
+        """)
+        canvas_apps = cur.fetchall()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Cannot read Canvas DB: {e}")
+
+    # Get Latinos execution data for linked bots
+    latinos_bots = {b.name: b for b in db.query(models.Bot).all()}
+
+    result = []
+    for app_id, name, desc, mode, created_at, updated_at in canvas_apps:
+        # Find matching Latinos bot by name or dify_app_id
+        latinos_bot = latinos_bots.get(name)
+        result.append({
+            "dify_app_id": str(app_id),
+            "name": name,
+            "description": desc or "",
+            "mode": mode,
+            "status": latinos_bot.status if latinos_bot else "unlinked",
+            "is_wasm": bool(latinos_bot and latinos_bot.is_wasm) if latinos_bot else False,
+            "wasm_size_bytes": getattr(latinos_bot, 'wasm_size_bytes', None) if latinos_bot else None,
+            "latinos_bot_id": latinos_bot.id if latinos_bot else None,
+            "tags": latinos_bot.tags if latinos_bot else [],
+            "canvas_url": f"https://dify.imaginos.ai/app/{app_id}/workflow",
+            "created_at": str(created_at),
+            "updated_at": str(updated_at),
+        })
+
+    return result
+
 @router.get("/", response_model=List[schemas.BotOut])
 def list_bots(user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     if user.role == "admin":
