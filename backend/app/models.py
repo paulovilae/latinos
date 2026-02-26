@@ -51,6 +51,10 @@ class Bot(Base):
     tags = Column(JSON, default=list)
     is_wasm = Column(Boolean, default=False)
     wasm_base64 = Column(String, nullable=True)
+    wasm_size_bytes = Column(Integer, default=0)
+    wasm_hash = Column(String, default=None)
+    dify_app_id = Column(String, nullable=True)
+    python_validated = Column(Boolean, default=False)
 
     owner = relationship("User", back_populates="bots")
     formulas = relationship("FormulaVersion", back_populates="bot", cascade="all, delete-orphan")

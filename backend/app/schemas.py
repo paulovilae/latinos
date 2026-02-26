@@ -121,6 +121,10 @@ class BotOut(BotBase):
     owner_id: Optional[int] = None
     is_wasm: Optional[bool] = False
     wasm_base64: Optional[str] = None
+    wasm_size_bytes: Optional[int] = 0
+    wasm_hash: Optional[str] = None
+    dify_app_id: Optional[str] = None
+    python_validated: Optional[bool] = False
     signal_manifest: Optional[List[Union[int, str, Dict]]] = []
     signals: Optional[List["SignalOut"]] = None
 

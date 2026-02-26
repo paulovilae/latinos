@@ -120,7 +120,8 @@ def main():
         
     print(f"Loading Dify DSL from {args.dsl_file}...")
     dsl = load_dify_dsl(args.dsl_file)
-    nodes = dsl.get('workflow', {}).get('graph', {}).get('nodes', [])
+    # Handle both formats: direct {nodes:[...]} and nested {workflow:{graph:{nodes:[...]}}}
+    nodes = dsl.get('nodes', []) or dsl.get('workflow', {}).get('graph', {}).get('nodes', [])
     
     print("Extracting variables from Start Node...")
     variables = extract_variables(nodes)

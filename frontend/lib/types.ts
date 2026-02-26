@@ -20,7 +20,9 @@ export interface Bot {
   // Bean (WASM) integration
   wasm_base64?: string;
   wasm_size_bytes?: number;
+  wasm_hash?: string;
   dify_app_id?: string;
+  python_validated?: boolean;
   indicator?: string;
   condition?: string;
 }

@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
+import logging
 
 from .. import schemas, models, crud, worker
 from ..db import get_db
 from ..dependencies import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/api/bots",
@@ -58,6 +61,17 @@ def list_canvas_bots(user: models.User = Depends(get_current_user), db: Session 
             ORDER BY created_at DESC
         """)
         canvas_apps = cur.fetchall()
+
+        # Read Dify tags: JOIN tag_bindings → tags to get tag names per app
+        cur.execute("""
+            SELECT tb.target_id, t.name
+            FROM tag_bindings tb
+            JOIN tags t ON t.id = tb.tag_id
+        """)
+        dify_tags_map: dict = {}
+        for target_id, tag_name in cur.fetchall():
+            dify_tags_map.setdefault(str(target_id), []).append(tag_name)
+
         cur.close()
         conn.close()
     except Exception as e:
@@ -65,11 +79,37 @@ def list_canvas_bots(user: models.User = Depends(get_current_user), db: Session 
 
     # Get Latinos execution data for linked bots
     latinos_bots = {b.name: b for b in db.query(models.Bot).all()}
+    # Also index by dify_app_id for linking
+    latinos_by_dify_id = {b.dify_app_id: b for b in db.query(models.Bot).all() if b.dify_app_id}
 
     result = []
     for app_id, name, desc, mode, created_at, updated_at in canvas_apps:
-        # Find matching Latinos bot by name or dify_app_id
-        latinos_bot = latinos_bots.get(name)
+        # Find matching Latinos bot by dify_app_id first, then by name
+        latinos_bot = latinos_by_dify_id.get(str(app_id)) or latinos_bots.get(name)
+        
+        # Auto-create Latinos bot for unlinked Canvas apps
+        if not latinos_bot:
+            new_bot = models.Bot(
+                name=name,
+                description=desc or "",
+                owner_id=user.id,
+                status="canvas",
+                dify_app_id=str(app_id),
+            )
+            db.add(new_bot)
+            db.commit()
+            db.refresh(new_bot)
+            latinos_bot = new_bot
+            latinos_bots[name] = new_bot
+        elif not latinos_bot.dify_app_id:
+            # Link existing bot to Canvas if not already linked
+            latinos_bot.dify_app_id = str(app_id)
+            db.commit()
+
+        # Merge tags: Dify tags + Latinos tags (deduplicated)
+        dify_tags = dify_tags_map.get(str(app_id), [])
+        latinos_tags = latinos_bot.tags if latinos_bot and latinos_bot.tags else []
+        merged_tags = list(dict.fromkeys(dify_tags + latinos_tags))  # Dedupe preserving order
         result.append({
             "dify_app_id": str(app_id),
             "name": name,
@@ -78,9 +118,12 @@ def list_canvas_bots(user: models.User = Depends(get_current_user), db: Session 
             "status": latinos_bot.status if latinos_bot else "unlinked",
             "is_wasm": bool(latinos_bot and latinos_bot.is_wasm) if latinos_bot else False,
             "wasm_size_bytes": getattr(latinos_bot, 'wasm_size_bytes', None) if latinos_bot else None,
+            "wasm_hash": getattr(latinos_bot, 'wasm_hash', None) if latinos_bot else None,
+            "python_validated": getattr(latinos_bot, 'python_validated', False) if latinos_bot else False,
             "latinos_bot_id": latinos_bot.id if latinos_bot else None,
-            "tags": latinos_bot.tags if latinos_bot else [],
+            "tags": merged_tags,
             "canvas_url": f"https://dify.imaginos.ai/app/{app_id}/workflow",
+            "live_metrics": latinos_bot.live_metrics if latinos_bot else {},
             "created_at": str(created_at),
             "updated_at": str(updated_at),
         })
@@ -180,16 +223,111 @@ def pause_bot(bot_id: int, user: models.User = Depends(get_current_user), db: Se
     db.commit()
     return bot
 
+# In-memory Arena progress tracker
+_arena_progress = {
+    "running": False,
+    "done": 0,
+    "total": 0,
+    "current_bot": "",
+    "current_asset": "",
+    "started_at": 0,
+    "bots_completed": 0,
+    "bots_total": 0,
+}
+
+@router.get("/arena_status")
+def get_arena_status():
+    """Returns live progress of the Arena recalculation."""
+    import time
+    p = _arena_progress
+    elapsed = (time.time() - p["started_at"]) if p["running"] and p["started_at"] else 0
+    rate = p["done"] / elapsed if elapsed > 0 else 0
+    pct = (p["done"] / p["total"] * 100) if p["total"] > 0 else 0
+    eta = ((p["total"] - p["done"]) / rate) if rate > 0 else 0
+    return {
+        "running": p["running"],
+        "done": p["done"],
+        "total": p["total"],
+        "pct": round(pct, 1),
+        "current_bot": p["current_bot"],
+        "current_asset": p["current_asset"],
+        "bots_completed": p["bots_completed"],
+        "bots_total": p["bots_total"],
+        "elapsed_s": round(elapsed, 1),
+        "rate": round(rate, 2),
+        "eta_s": round(eta, 0),
+    }
+
 @router.post("/refresh_arena_all")
 def refresh_all_arena(
     background_tasks: BackgroundTasks,
     user: models.User = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
-    """Manually triggers a Robot Arena matrix recalculation for ALL bots globally."""
-    from ..scheduler import run_daily_backtests
-    background_tasks.add_task(run_daily_backtests)
-    return {"status": "queued", "message": "Global Matrix Backtest Queued."}
+    """Triggers Robot Arena matrix recalculation using WASM for roasted bots."""
+    if _arena_progress["running"]:
+        return {"status": "already_running", "message": "🏟️ Arena is already running!"}
+    
+    def _run_wasm_arena():
+        """Background task: run all WASM bots through the Arena."""
+        import time
+        from ..arena import run_arena_for_bot
+        from ..constants import SUPPORTED_ASSETS
+        from ..db import SessionLocal
+        
+        _arena_progress["running"] = True
+        _arena_progress["started_at"] = time.time()
+        _arena_progress["done"] = 0
+        _arena_progress["bots_completed"] = 0
+        
+        arena_db = SessionLocal()
+        try:
+            bots = arena_db.query(models.Bot).filter(
+                models.Bot.is_wasm == True,
+                models.Bot.wasm_base64 != None
+            ).all()
+            
+            timeframes = ["7d", "15d", "30d", "90d", "180d", "365d"]
+            _arena_progress["total"] = len(bots) * len(SUPPORTED_ASSETS) * len(timeframes)
+            _arena_progress["bots_total"] = len(bots)
+            
+            for bot in bots:
+                _arena_progress["current_bot"] = bot.name
+                metrics = bot.live_metrics or {}
+                if isinstance(metrics, str):
+                    import json
+                    metrics = json.loads(metrics)
+                
+                for asset in SUPPORTED_ASSETS:
+                    _arena_progress["current_asset"] = asset
+                    if asset not in metrics:
+                        metrics[asset] = {}
+                    for tf in timeframes:
+                        result = run_arena_for_bot(
+                            bot_name=bot.name,
+                            wasm_base64=bot.wasm_base64,
+                            asset=asset,
+                            timeframe=tf,
+                        )
+                        if result:
+                            metrics[asset][tf] = result
+                        _arena_progress["done"] += 1
+                
+                bot.live_metrics = metrics
+                arena_db.add(bot)
+                arena_db.commit()
+                _arena_progress["bots_completed"] += 1
+            
+            elapsed = time.time() - _arena_progress["started_at"]
+            logger.info(f"🏟️ Arena complete: {_arena_progress['done']}/{_arena_progress['total']} backtests in {elapsed:.1f}s")
+        except Exception as e:
+            logger.error(f"Arena failed: {e}")
+        finally:
+            _arena_progress["running"] = False
+            arena_db.close()
+    
+    background_tasks.add_task(_run_wasm_arena)
+    return {"status": "queued", "message": "🏟️ WASM Arena Matrix Recalculation Queued."}
 
 @router.post("/{bot_id}/refresh_arena", response_model=schemas.BotOut)
 def refresh_arena_metrics(
@@ -216,20 +354,150 @@ import tempfile
 import json
 from .. import schemas
 
-@router.post("/{bot_id}/compile/wasm", response_model=schemas.BotOut)
-def compile_bot_to_wasm(
-    bot_id: int, 
-    payload: dict, # Accepts raw Dify JSON DAG
-    user: models.User = Depends(get_current_user), 
-    db: Session = Depends(get_db)
+@router.post("/{bot_id}/validate", response_model=schemas.BotOut)
+def validate_bot_python(
+    bot_id: int,
+    user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """
-    Accepts a Dify Strategy JSON via the UI, transpiles the visual logic down to Rust, 
-    compiles it into a Native WebAssembly Binary using a sandbox, and saves the blob to the DB.
+    Validates a Canvas workflow by dry-running the strategy logic in Python.
+    This is the 'Green Bean' step — confirms the workflow is logically sound
+    before attempting Rust compilation.
     """
     bot = crud.get_bot(db, bot_id)
     if not bot or (user.role != "admin" and bot.owner_id != user.id):
         raise HTTPException(status_code=404, detail="Bot not found")
+
+    # If no dify_app_id, try to find it by name in Dify
+    dify_app_id = bot.dify_app_id
+    if not dify_app_id:
+        import psycopg2
+        dify_db_url = os.getenv("DIFY_DATABASE_URL", "postgresql://postgres:difyai123456@docker-db_postgres-1:5432/dify")
+        try:
+            conn = psycopg2.connect(dify_db_url, connect_timeout=5)
+            cur = conn.cursor()
+            cur.execute("SELECT id FROM apps WHERE name = %s AND mode = 'workflow' LIMIT 1", (bot.name,))
+            row = cur.fetchone()
+            if row:
+                dify_app_id = str(row[0])
+                bot.dify_app_id = dify_app_id
+            cur.close()
+            conn.close()
+        except Exception:
+            pass
+
+    if not dify_app_id:
+        raise HTTPException(status_code=400, detail="No Canvas workflow linked to this bot")
+
+    # Read the workflow graph from Dify and validate it can be parsed
+    import psycopg2
+    dify_db_url = os.getenv("DIFY_DATABASE_URL", "postgresql://postgres:difyai123456@docker-db_postgres-1:5432/dify")
+    try:
+        conn = psycopg2.connect(dify_db_url, connect_timeout=5)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT graph, features FROM workflows
+            WHERE app_id = %s
+            ORDER BY created_at DESC LIMIT 1
+        """, (dify_app_id,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Cannot read Canvas DB: {e}")
+
+    if not row:
+        raise HTTPException(status_code=404, detail="No workflow found for this Canvas app")
+
+    graph_data = row[0]  # JSON graph (may be string or dict)
+
+    # Parse if it's a string
+    if isinstance(graph_data, str):
+        try:
+            graph_data = json.loads(graph_data)
+        except (json.JSONDecodeError, TypeError):
+            graph_data = None
+
+    # Validate: check the graph has the required node types
+    validation_errors = []
+    if not graph_data or not isinstance(graph_data, dict):
+        validation_errors.append("Workflow graph is empty or unparseable")
+    else:
+        nodes = graph_data.get("nodes", [])
+        edges = graph_data.get("edges", [])
+
+        # Must have a start node
+        node_types = [n.get("data", {}).get("type", "") for n in nodes]
+        if "start" not in node_types:
+            validation_errors.append("Missing START node")
+        if "end" not in node_types:
+            validation_errors.append("Missing END node")
+        if "if-else" not in node_types and "code" not in node_types:
+            validation_errors.append("No decision logic (IF/ELSE or CODE node) found")
+        if len(nodes) < 3:
+            validation_errors.append(f"Workflow too simple: only {len(nodes)} nodes")
+        if len(edges) < 2:
+            validation_errors.append(f"Insufficient connections: only {len(edges)} edges")
+
+    if validation_errors:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Validation failed: {'; '.join(validation_errors)}"
+        )
+
+    # Mark as validated
+    bot.python_validated = True
+    db.commit()
+    db.refresh(bot)
+    return bot
+
+@router.post("/{bot_id}/compile/wasm", response_model=schemas.BotOut)
+def compile_bot_to_wasm(
+    bot_id: int, 
+    payload: dict = None, # Optional: auto-fetches from Dify Canvas if not provided
+    user: models.User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """
+    Transpiles a Dify Canvas workflow to Rust, compiles to WebAssembly.
+    If no payload is provided, auto-fetches the workflow graph from Dify.
+    """
+    bot = crud.get_bot(db, bot_id)
+    if not bot or (user.role != "admin" and bot.owner_id != user.id):
+        raise HTTPException(status_code=404, detail="Bot not found")
+
+    # Auto-validate Python first if not already validated (Seedling → Green Bean)
+    if not bot.python_validated:
+        try:
+            validate_bot_python(bot_id, user, db)
+            db.refresh(bot)
+        except HTTPException as ve:
+            raise HTTPException(
+                status_code=ve.status_code,
+                detail=f"Bean not ripe! Python validation failed: {ve.detail}"
+            )
+
+    # Auto-fetch workflow from Dify if no payload provided
+    if not payload:
+        import psycopg2
+        dify_db_url = os.getenv("DIFY_DATABASE_URL", "postgresql://postgres:difyai123456@docker-db_postgres-1:5432/dify")
+        dify_app_id = bot.dify_app_id
+        if not dify_app_id:
+            raise HTTPException(status_code=400, detail="No Canvas workflow linked — cannot auto-fetch")
+        try:
+            conn = psycopg2.connect(dify_db_url, connect_timeout=5)
+            cur = conn.cursor()
+            cur.execute("SELECT graph FROM workflows WHERE app_id = %s ORDER BY created_at DESC LIMIT 1", (dify_app_id,))
+            row = cur.fetchone()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Cannot read Canvas DB: {e}")
+        if not row or not row[0]:
+            raise HTTPException(status_code=404, detail="No workflow graph found in Canvas")
+        graph_raw = row[0]
+        payload = json.loads(graph_raw) if isinstance(graph_raw, str) else graph_raw
         
     try:
         # 1. Write the incoming Dify JSON to a temporary file
@@ -255,22 +523,21 @@ def compile_bot_to_wasm(
         # For this execution environment we will shell out to local rustc if available, or try docker.
         
         try:
-             # Attempt to compile locally first
-             compile_cmd = ["cargo", "build", "--target", "wasm32-unknown-unknown", "--release"]
-             subprocess.run(compile_cmd, cwd=compiler_dir, check=True, capture_output=True, text=True)
-        except Exception:
-             # Fallback to Docker via sock (assuming it exists)
+             # Compile via Docker: install wasm32 target, then build
              docker_cmd = [
                  "docker", "run", "--rm", 
                  "-v", f"{host_compiler_dir}:/usr/src/app", 
                  "-w", "/usr/src/app", 
                  "rust:latest", 
-                 "cargo", "build", "--target", "wasm32-unknown-unknown", "--release"
+                 "bash", "-c",
+                 "rustup target add wasm32-unknown-unknown && cargo build --target wasm32-unknown-unknown --release"
              ]
-             subprocess.run(docker_cmd, check=True, capture_output=True, text=True)
+             result = subprocess.run(docker_cmd, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+             raise Exception(f"{e.stderr}")
 
         # 5. Read the compiled WASM binary
-        wasm_file_path = f"{compiler_dir}/target/wasm32-unknown-unknown/release/strategy.wasm"
+        wasm_file_path = "/app/wasm_test/target/wasm32-unknown-unknown/release/strategy.wasm"
         if not os.path.exists(wasm_file_path):
              raise Exception(f"Compilation finished but no WASM found at {wasm_file_path}")
              
@@ -280,8 +547,11 @@ def compile_bot_to_wasm(
         encoded_wasm = base64.b64encode(wasm_binary).decode('utf-8')
         
         # 6. Save to database
+        import hashlib
         bot.is_wasm = True
         bot.wasm_base64 = encoded_wasm
+        bot.wasm_size_bytes = len(wasm_binary)
+        bot.wasm_hash = hashlib.md5(wasm_binary).hexdigest()[:8]
         bot.status = "standby" # Ready to trade
         
         db.commit()

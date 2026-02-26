@@ -13,9 +13,12 @@ interface CanvasBot {
   status: string;
   is_wasm: boolean;
   wasm_size_bytes: number | null;
+  wasm_hash: string | null;
   latinos_bot_id: number | null;
   tags: string[];
   canvas_url: string;
+  live_metrics?: Record<string, any>;
+  python_validated?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -47,8 +50,11 @@ export default async function RobotsPage() {
     owner_id: 0,
     tags: cb.tags,
     is_wasm: cb.is_wasm,
-    wasm_size_bytes: cb.wasm_size_bytes,
+    wasm_size_bytes: cb.wasm_size_bytes ?? undefined,
+    wasm_hash: cb.wasm_hash ?? undefined,
     dify_app_id: cb.dify_app_id,
+    python_validated: cb.python_validated || false,
+    live_metrics: cb.live_metrics || {},
   }));
 
   return (
@@ -57,11 +63,11 @@ export default async function RobotsPage() {
         <h1 className="text-2xl font-bold text-white flex items-center gap-3">
           🤖 Robot Studio
           <span className="text-sm font-normal text-emerald-400 font-mono">
-            powered by Canvas
+            powered by imaginOS Studio
           </span>
         </h1>
         <p className="text-slate-400">
-          Strategies from Dify Canvas — compile to WASM and deploy to the trade
+          Strategies from imaginOS Studio Canvas — compile to WASM and deploy to the trade
           engine.
         </p>
       </div>

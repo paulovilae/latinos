@@ -17,15 +17,10 @@ pub unsafe extern "C" fn process_batch(
     for i in 0..num_candles {
         let base_idx = i * 2;
         
-        let close = inputs[base_idx + 0];
-        let rsi = inputs[base_idx + 1];
+        let ticker = inputs[base_idx + 0];
+        let news_text = inputs[base_idx + 1];
 
-
-        if rsi < 30.0 {
-            outputs[i] = 1; // True condition (BUY)
-        } else {
-            outputs[i] = 0; // False condition (HOLD)
-        }
+        outputs[i] = 0; // Default HOLD
     }
 }
 

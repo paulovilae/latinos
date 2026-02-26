@@ -25,7 +25,8 @@ dependencies = [
     "alpaca-trade-api",
     "slowapi",
     "boto3",
-    "apscheduler"
+    "apscheduler",
+    "wasmtime"
 ]
 
 [tool.setuptools]
