@@ -46,7 +46,7 @@ def list_canvas_bots(user: models.User = Depends(get_current_user), db: Session 
     import psycopg2
     import os
 
-    dify_db_url = os.getenv("DIFY_DATABASE_URL", "postgresql://postgres:difyai123456@db:5432/dify")
+    dify_db_url = os.getenv("DIFY_DATABASE_URL", "postgresql://postgres:difyai123456@docker-db_postgres-1:5432/dify")
 
     try:
         conn = psycopg2.connect(dify_db_url, connect_timeout=5)

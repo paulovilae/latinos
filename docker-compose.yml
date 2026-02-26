@@ -25,6 +25,7 @@ services:
     networks:
       - latinos-network
       - imaginos-bridge
+      - docker_default
     healthcheck:
       test:
         [
@@ -42,4 +43,6 @@ networks:
   latinos-network:
     driver: bridge
   imaginos-bridge:
+    external: true
+  docker_default:
     external: true
