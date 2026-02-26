@@ -113,11 +113,19 @@ export function TradingViewChart({ data, height = 400 }: TradingViewChartProps) 
 
   // Update data if it changes without remounting the entire chart
   useEffect(() => {
-      if (seriesRef.current && data && data.length > 0) {
+      if (seriesRef.current && chartRef.current && data && data.length > 0) {
           try {
-             const sortedUniqueData = Array.from(new Map(data.map(item => [item.time, item])).values())
+             const validData = data.filter(item => !isNaN(item.open) && !isNaN(item.high) && !isNaN(item.low) && !isNaN(item.close));
+             const sortedUniqueData = Array.from(new Map(validData.map(item => [item.time, item])).values())
                 .sort((a, b) => (a.time as number) - (b.time as number));
+             
              seriesRef.current.setData(sortedUniqueData);
+             
+             // Force the chart to gracefully zoom and fill the container whenever data changes
+             setTimeout(() => {
+                 chartRef.current?.timeScale().fitContent();
+             }, 50);
+             
           } catch(e) {
              console.error("Error setting TV chart data:", e);
           }
