@@ -444,12 +444,12 @@ export function StackBuilder() {
                              
                              {/* Expanded Code View */}
                              {viewingCodeIdx === idx && (
-                                <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-slate-900 border border-indigo-500/40 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-4 cursor-text overflow-hidden" onClick={e => e.stopPropagation()}>
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 w-[500px] max-w-[90vw] mt-2 z-50 bg-slate-900 border border-indigo-500/40 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-4 cursor-text overflow-hidden" onClick={e => e.stopPropagation()}>
                                      <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-800">
                                          <span className="text-xs font-bold text-indigo-400 font-mono">def {sig.payload?.name?.replace(/[^a-zA-Z0-9_]/g, '') || 'signal_logic'}():</span>
                                          <button onClick={(e) => { e.stopPropagation(); setViewingCodeIdx(null); }} className="text-slate-500 hover:text-white font-bold p-1">✕</button>
                                      </div>
-                                     <pre className="text-[10px] sm:text-xs font-mono whitespace-pre-wrap text-emerald-300 bg-slate-950 p-4 rounded-lg border border-slate-800 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                     <pre className="text-[10px] sm:text-[11px] font-mono whitespace-pre-wrap text-emerald-300 bg-slate-950 p-4 rounded-lg border border-slate-800 max-h-[300px] overflow-y-auto custom-scrollbar leading-relaxed">
                                         {sig.payload?.code || JSON.stringify(sig.payload, null, 2)}
                                      </pre>
                                 </div>
