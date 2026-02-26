@@ -145,31 +145,48 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
                                         );
                                     }
 
-                                    const ret = targetMetrics.total_return;
-                                    const sharpe = targetMetrics.sharpe;
+                                    const ret = targetMetrics.total_return || 0;
+                                    const sharpe = targetMetrics.sharpe || 0;
+                                    const winRate = targetMetrics.win_rate || 0;
+                                    const maxDd = targetMetrics.max_drawdown || 0;
+
+                                    // If no trades happened, treat as empty cell
+                                    const isEmpty = ret === 0 && winRate === 0;
+
+                                    if (isEmpty) {
+                                        return (
+                                            <td key={`${bot.id}-${asset}`} className="p-0 border-r border-slate-800/30">
+                                                <div className="h-full w-full p-4 flex items-center justify-center bg-transparent text-slate-700 font-mono text-xs">
+                                                    -
+                                                </div>
+                                            </td>
+                                        );
+                                    }
                                     
-                                    // Heatmap Color Logic
-                                    // We use a scale based on Total Return percentage
-                                    let bgColor = "bg-slate-800";
-                                    let textColor = "text-slate-400";
+                                    // Heatmap Color Logic: Continuous Interpolation
+                                    // Opacity scales from 0.15 to 0.9 based on absolute return (cap at 40%)
+                                    const intensity = Math.min(0.9, Math.max(0.15, Math.abs(ret) / 40));
+                                    const bgStyle = ret > 0 
+                                        ? `rgba(16, 185, 129, ${intensity})` // Emerald
+                                        : `rgba(244, 63, 94, ${intensity})`; // Rose
                                     
-                                    if (ret >= 50) { bgColor = "bg-emerald-400"; textColor = "text-emerald-950 font-black"; }
-                                    else if (ret >= 20) { bgColor = "bg-emerald-500"; textColor = "text-white font-black"; }
-                                    else if (ret >= 10) { bgColor = "bg-emerald-600"; textColor = "text-white font-bold"; }
-                                    else if (ret >= 5) { bgColor = "bg-emerald-700"; textColor = "text-emerald-50"; }
-                                    else if (ret > 0) { bgColor = "bg-emerald-900/60"; textColor = "text-emerald-400 font-medium"; }
-                                    else if (ret === 0) { bgColor = "bg-slate-800/50"; textColor = "text-slate-500"; }
-                                    else if (ret <= -50) { bgColor = "bg-rose-500"; textColor = "text-white font-black"; }
-                                    else if (ret <= -20) { bgColor = "bg-rose-600"; textColor = "text-white font-bold"; }
-                                    else if (ret <= -10) { bgColor = "bg-rose-700"; textColor = "text-rose-50"; }
-                                    else if (ret <= -5) { bgColor = "bg-rose-800"; textColor = "text-rose-200"; }
-                                    else if (ret < 0) { bgColor = "bg-rose-950/60"; textColor = "text-rose-400 font-medium"; }
+                                    const textColor = intensity > 0.4 ? "text-white drop-shadow-md" : (ret > 0 ? "text-emerald-400" : "text-rose-400");
+                                    
+                                    // Format huge numbers gracefully (e.g. 666B%)
+                                    const formattedRet = Intl.NumberFormat('en-US', { 
+                                        notation: "compact", 
+                                        maximumFractionDigits: 1,
+                                        signDisplay: "exceptZero"
+                                    }).format(ret) + '%';
                                     
                                     return (
                                         <td key={`${bot.id}-${asset}`} className={`p-0 border-r border-slate-800/30 align-middle relative`}>
-                                            <div className={`h-16 w-full px-2 py-3 flex flex-col items-center justify-center ${bgColor} ${textColor} transition-all hover:brightness-125 cursor-help group relative hover:z-30 hover:shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:scale-105 hover:rounded-md`}>
+                                            <div 
+                                                style={{ backgroundColor: bgStyle }}
+                                                className={`h-16 w-full px-2 py-3 flex flex-col items-center justify-center ${textColor} font-bold transition-all hover:brightness-125 cursor-help group relative hover:z-30 hover:shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:scale-105 hover:rounded-md`}
+                                            >
                                                 <span className="text-sm tracking-tight tabular-nums">
-                                                    {ret === 0 ? "0.0%" : `${ret > 0 ? "+" : ""}${ret.toFixed(1)}%`}
+                                                    {formattedRet}
                                                 </span>
                                                 {/* Tooltip */}
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-900 text-white text-xs p-4 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] border border-slate-700 pointer-events-none w-56 z-50 transition-opacity whitespace-normal text-left">
@@ -177,10 +194,10 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
                                                         <span>{asset}</span>
                                                         <span className="text-slate-400 text-[10px] bg-slate-800 px-2 py-0.5 rounded">{selectedTimeframe}</span>
                                                     </div>
-                                                    <div className="flex justify-between mb-1.5"><span className="text-slate-400 font-medium">Total Return:</span> <span className={`font-mono font-bold ${ret > 0 ? "text-emerald-400" : ret < 0 ? "text-rose-400" : "text-slate-400"}`}>{ret === 0 ? "0.0%" : `${ret > 0 ? "+" : ""}${ret.toFixed(1)}%`}</span></div>
-                                                    <div className="flex justify-between mb-1.5"><span className="text-slate-400">Win Rate:</span> <span className="font-mono">{(targetMetrics.win_rate || 0).toFixed(1)}%</span></div>
-                                                    <div className="flex justify-between mb-1.5"><span className="text-slate-400">Max DD:</span> <span className="font-mono text-rose-400">{(targetMetrics.max_drawdown || 0).toFixed(1)}%</span></div>
-                                                    <div className="flex justify-between pt-2 mt-2 border-t border-slate-800"><span className="text-slate-400 font-bold">Sharpe Ratio:</span> <span className={`font-mono font-black ${(sharpe || 0) >= 1.0 ? "text-cyan-400" : "text-slate-300"}`}>{(sharpe || 0).toFixed(2)}</span></div>
+                                                    <div className="flex justify-between mb-1.5"><span className="text-slate-400 font-medium">Total Return:</span> <span className={`font-mono font-bold ${ret > 0 ? "text-emerald-400" : ret < 0 ? "text-rose-400" : "text-slate-400"}`}>{formattedRet}</span></div>
+                                                    <div className="flex justify-between mb-1.5"><span className="text-slate-400">Win Rate:</span> <span className="font-mono">{winRate.toFixed(1)}%</span></div>
+                                                    <div className="flex justify-between mb-1.5"><span className="text-slate-400">Max DD:</span> <span className="font-mono text-rose-400">{maxDd.toFixed(1)}%</span></div>
+                                                    <div className="flex justify-between pt-2 mt-2 border-t border-slate-800"><span className="text-slate-400 font-bold">Sharpe Ratio:</span> <span className={`font-mono font-black ${sharpe >= 1.0 ? "text-cyan-400" : "text-slate-300"}`}>{sharpe.toFixed(2)}</span></div>
                                                 </div>
                                             </div>
                                         </td>
