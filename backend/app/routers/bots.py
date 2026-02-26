@@ -133,6 +133,17 @@ def pause_bot(bot_id: int, user: models.User = Depends(get_current_user), db: Se
     db.commit()
     return bot
 
+@router.post("/refresh_arena_all")
+def refresh_all_arena(
+    background_tasks: BackgroundTasks,
+    user: models.User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Manually triggers a Robot Arena matrix recalculation for ALL bots globally."""
+    from ..scheduler import run_daily_backtests
+    background_tasks.add_task(run_daily_backtests)
+    return {"status": "queued", "message": "Global Matrix Backtest Queued."}
+
 @router.post("/{bot_id}/refresh_arena", response_model=schemas.BotOut)
 def refresh_arena_metrics(
     bot_id: int, 
