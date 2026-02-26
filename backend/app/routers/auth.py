@@ -43,7 +43,7 @@ def social_login(payload: schemas.SocialLoginRequest, db: Session = Depends(get_
     user = crud.get_user_by_email(db, payload.email)
     if not user:
         # Use a short fixed password for OAuth users (they never use password login anyway)
-        oauth_password = "google-oauth-user"
+        oauth_password = "GoogleOAuth1"
         reg_payload = schemas.RegisterRequest(
             email=payload.email,
             name=payload.name,
