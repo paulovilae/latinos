@@ -1,0 +1,11 @@
+import sys
+import os
+
+# Add backend directory to sys.path so imports work correctly
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'backend')))
+
+from app.scheduler import run_daily_backtests
+
+print("Forcing manual matrix recalculation...")
+run_daily_backtests()
+print("Global matrix recalculation completed.")

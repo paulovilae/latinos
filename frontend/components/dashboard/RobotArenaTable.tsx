@@ -12,15 +12,14 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
     setIsRefreshing(true);
     try {
         const res = await fetch(`/api/bots/refresh_arena_all`, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${localStorage.getItem("token")}`
-            }
+            method: "POST"
+            // No manual Authorization header needed, NextAuth cookies handle it
         });
+
         if (res.ok) {
             alert("Global Matrix Backtest Queued. Refresh the page in a few minutes to see updated results across all assets and robots.");
         } else {
-            alert("Failed to queue global refresh.");
+            alert("Failed to queue global refresh. Please ensure you are logged in.");
         }
     } catch(e) {
         console.error(e);
@@ -118,12 +117,15 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
                     <tbody>
                         {sortedArenaBots.map(bot => (
                             <tr key={bot.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors group/row">
-                                <td className="sticky left-0 z-10 bg-slate-900 p-4 font-bold text-white shadow-[4px_0_8px_-4px_rgba(0,0,0,0.5)] border-r border-slate-800 max-w-[250px] truncate group-hover/row:bg-slate-800 transition-colors" title={bot.name}>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                                <td className="sticky left-0 z-10 bg-slate-900 p-4 font-bold text-white shadow-[4px_0_8px_-4px_rgba(0,0,0,0.5)] border-r border-slate-800 max-w-[250px] group-hover/row:bg-slate-800 transition-colors" title={bot.name}>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></div>
                                         <span className="truncate">{bot.name}</span>
+                                        {bot.script && bot.script.length > 0 && (
+                                            <span className="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700 ml-1 shrink-0" title="External Python or Webhook Strategy">EXTERNAL</span>
+                                        )}
                                     </div>
-                                    <div className="text-[10px] text-slate-500 font-mono mt-1 ml-4 truncate">
+                                    <div className="text-[10px] text-slate-500 font-mono ml-4 truncate">
                                         {bot.description ? bot.description.substring(0, 40) + "..." : "No description"}
                                     </div>
                                 </td>
@@ -136,10 +138,16 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
                                     const targetMetrics = metrics?.[asset]?.[selectedTimeframe];
                                     
                                     if (!targetMetrics) {
+                                        const isExternal = bot.script && bot.script.length > 0;
                                         return (
-                                            <td key={`${bot.id}-${asset}`} className="p-0 border-r border-slate-800/30">
+                                            <td key={`${bot.id}-${asset}`} className="p-0 border-r border-slate-800/30 group/empty relative cursor-help">
                                                 <div className="h-full w-full p-4 flex items-center justify-center bg-transparent text-slate-700 font-mono text-xs">
                                                     -
+                                                </div>
+                                                <div className="absolute opacity-0 group-hover/empty:opacity-100 bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-900 text-slate-300 text-[10px] p-3 rounded shadow-lg border border-slate-700 pointer-events-none w-48 z-40 transition-opacity">
+                                                    {isExternal 
+                                                        ? "External script/webhook bots cannot be historically simulated. They only show data for assets they actively trade live." 
+                                                        : "No trades occurred for this asset in the selected timeframe."}
                                                 </div>
                                             </td>
                                         );
