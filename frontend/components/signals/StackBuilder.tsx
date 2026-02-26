@@ -22,6 +22,7 @@ interface SavedRobot {
   live_trading?: boolean;
   live_trading_connection_id?: number | null;
   tags?: string[];
+  script?: string;
 }
 
 export function StackBuilder() {
@@ -60,6 +61,7 @@ export function StackBuilder() {
   // Selected stack item for keyboard delete
   const [selectedStackIdx, setSelectedStackIdx] = useState<number | null>(null);
   const [viewingCodeIdx, setViewingCodeIdx] = useState<number | null>(null);
+  const [expandedScriptId, setExpandedScriptId] = useState<number | null>(null);
 
   // Keyboard Delete/Backspace handler
   useEffect(() => {
@@ -122,7 +124,8 @@ export function StackBuilder() {
             status: b.status || "draft",
             live_trading: b.live_trading || false,
             live_trading_connection_id: b.live_trading_connection_id || null,
-            tags: b.tags || []
+            tags: b.tags || [],
+            script: b.script || ""
         };
       }));
     } catch (e) {
@@ -1018,25 +1021,48 @@ export function StackBuilder() {
                                 <h5 className="text-[10px] uppercase tracking-wider text-amber-500/70 font-bold mb-2">{t("legacyRobots", "Legacy Script Robots")}</h5>
                                 <div className="space-y-2 opacity-70">
                                     {savedRobots.filter(r => r.signal_ids.length === 0).map(robot => (
-                                        <div 
-                                            key={robot.id} 
-                                            className="flex justify-between items-center p-3 bg-slate-950/50 rounded-lg border border-slate-800 hover:border-red-500/30 cursor-pointer transition-all"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-slate-300 text-sm font-medium">{robot.name}</span>
-                                                <span className="text-xs text-red-400 font-bold bg-red-900/20 px-1 rounded">
-                                                    RAW MANIFEST: {JSON.stringify(robot.signal_ids)}
-                                                </span>
+                                        <div key={robot.id} className="flex flex-col bg-slate-950/50 rounded-lg border border-slate-800 transition-all overflow-hidden">
+                                            <div 
+                                                className="flex justify-between items-center p-3 hover:bg-slate-900 cursor-pointer"
+                                                onClick={() => setExpandedScriptId(expandedScriptId === robot.id ? null : robot.id)}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-slate-300 text-sm font-medium">{robot.name}</span>
+                                                    {robot.script && robot.script.length > 0 && (
+                                                        <span className="text-[10px] text-indigo-400 font-bold bg-indigo-900/20 px-1.5 py-0.5 rounded border border-indigo-500/30 uppercase tracking-wider">
+                                                            {robot.script.trim().startsWith('{') ? 'JSON/N8N' : 'PYTHON'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {robot.script && robot.script.length > 0 && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setExpandedScriptId(expandedScriptId === robot.id ? null : robot.id); }}
+                                                            className="text-xs text-indigo-400 hover:text-indigo-300 font-mono flex items-center gap-1"
+                                                        >
+                                                            {expandedScriptId === robot.id ? "Hide Code" : "View Code"} {expandedScriptId === robot.id ? "▲" : "▼"}
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={(e) => deleteBot(robot, e)}
+                                                        className="p-2 rounded bg-red-500/10 text-red-500 active:bg-red-500/30 hover:bg-red-500/20 transition-colors ml-2"
+                                                        title="Delete Legacy"
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={(e) => deleteBot(robot, e)}
-                                                    className="p-2 rounded bg-red-500/10 text-red-500 active:bg-red-500/30 transition-colors"
-                                                    title="Delete Legacy"
-                                                >
-                                                    🗑️
-                                                </button>
-                                            </div>
+                                            {/* Code Viewer Panel */}
+                                            {expandedScriptId === robot.id && robot.script && robot.script.length > 0 && (
+                                                <div className="p-4 bg-slate-950 border-t border-slate-800">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                         <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Read-Only Strategy Engine Code</span>
+                                                    </div>
+                                                    <pre className="text-[10px] sm:text-xs font-mono whitespace-pre-wrap text-emerald-300 bg-black/50 p-4 rounded-lg border border-slate-800 max-h-[400px] overflow-y-auto custom-scrollbar">
+                                                        {robot.script}
+                                                    </pre>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
