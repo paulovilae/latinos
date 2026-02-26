@@ -29,8 +29,29 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
     }
   };
 
-  // Sort bots alphabetically or by some default metric to keep row order stable
-  const sortedArenaBots = [...bots].sort((a, b) => a.name.localeCompare(b.name));
+  // Filter bots: Only show bots that have at least one valid, non-zero return for the selected timeframe.
+  // (A bot with all 0.00% returns across all assets means it didn't trade or has no data, so we hide it).
+  const validArenaBots = bots.filter(bot => {
+      let metrics = bot.live_metrics as any;
+      if (typeof metrics === 'string') {
+          try { metrics = JSON.parse(metrics); } catch (e) { return false; }
+      }
+      
+      if (!metrics) return false;
+
+      let hasValidData = false;
+      for (const asset of SUPPORTED_ASSETS) {
+          const targetMetrics = metrics?.[asset]?.[selectedTimeframe];
+          if (targetMetrics && targetMetrics.total_return !== 0) {
+              hasValidData = true;
+              break;
+          }
+      }
+      return hasValidData;
+  });
+
+  // Sort bots alphabetically
+  const sortedArenaBots = [...validArenaBots].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
@@ -148,7 +169,7 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
                                         <td key={`${bot.id}-${asset}`} className={`p-0 border-r border-slate-800/30 align-middle relative`}>
                                             <div className={`h-16 w-full px-2 py-3 flex flex-col items-center justify-center ${bgColor} ${textColor} transition-all hover:brightness-125 cursor-help group relative hover:z-30 hover:shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:scale-105 hover:rounded-md`}>
                                                 <span className="text-sm tracking-tight tabular-nums">
-                                                    {ret > 0 ? "+" : ""}{ret.toFixed(2)}%
+                                                    {ret === 0 ? "0.0%" : `${ret > 0 ? "+" : ""}${ret.toFixed(1)}%`}
                                                 </span>
                                                 {/* Tooltip */}
                                                 <div className="absolute opacity-0 group-hover:opacity-100 bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-900 text-white text-xs p-4 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] border border-slate-700 pointer-events-none w-56 z-50 transition-opacity whitespace-normal text-left">
@@ -156,9 +177,9 @@ export function RobotArenaTable({ bots }: { bots: Bot[] }) {
                                                         <span>{asset}</span>
                                                         <span className="text-slate-400 text-[10px] bg-slate-800 px-2 py-0.5 rounded">{selectedTimeframe}</span>
                                                     </div>
-                                                    <div className="flex justify-between mb-1.5"><span className="text-slate-400 font-medium">Total Return:</span> <span className={`font-mono font-bold ${ret > 0 ? "text-emerald-400" : "text-rose-400"}`}>{ret > 0 ? "+" : ""}{ret.toFixed(2)}%</span></div>
+                                                    <div className="flex justify-between mb-1.5"><span className="text-slate-400 font-medium">Total Return:</span> <span className={`font-mono font-bold ${ret > 0 ? "text-emerald-400" : ret < 0 ? "text-rose-400" : "text-slate-400"}`}>{ret === 0 ? "0.0%" : `${ret > 0 ? "+" : ""}${ret.toFixed(1)}%`}</span></div>
                                                     <div className="flex justify-between mb-1.5"><span className="text-slate-400">Win Rate:</span> <span className="font-mono">{(targetMetrics.win_rate || 0).toFixed(1)}%</span></div>
-                                                    <div className="flex justify-between mb-1.5"><span className="text-slate-400">Max DD:</span> <span className="font-mono text-rose-400">{(targetMetrics.max_drawdown || 0).toFixed(2)}%</span></div>
+                                                    <div className="flex justify-between mb-1.5"><span className="text-slate-400">Max DD:</span> <span className="font-mono text-rose-400">{(targetMetrics.max_drawdown || 0).toFixed(1)}%</span></div>
                                                     <div className="flex justify-between pt-2 mt-2 border-t border-slate-800"><span className="text-slate-400 font-bold">Sharpe Ratio:</span> <span className={`font-mono font-black ${(sharpe || 0) >= 1.0 ? "text-cyan-400" : "text-slate-300"}`}>{(sharpe || 0).toFixed(2)}</span></div>
                                                 </div>
                                             </div>
