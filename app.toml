@@ -1,0 +1,23 @@
+# Latinos App Manifest
+# Read by Memento and the OS to discover this app's data and services.
+
+[app]
+name = "Latinos"
+slug = "latinos"
+description = "Workflow automation and government compliance platform — handles business registrations, document processing, and regulatory workflows."
+domain = "latinos.vilaros.ai"
+port = 3305
+
+[database]
+type = "postgres"
+url_env = "LATINOS_DATABASE_URL"
+schema_prefix = "latinos_"
+key_tables = []                      # populate when schema is defined
+
+[bot]
+# name = "Ala"                       # future: dedicated Latinos support bot
+# persona = "ala"
+# permissions = ["hera_search"]
+
+[media]
+output_dir = "var/media"
