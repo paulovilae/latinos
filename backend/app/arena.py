@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import ctypes
 import logging
+import os
 import time
 from typing import Dict, List, Optional, Tuple
 
@@ -20,6 +21,15 @@ from .signals import TechnicalAnalysis
 from .market import fetch_market_series
 
 logger = logging.getLogger(__name__)
+
+ENTRY_COMMISSION_PCT = float(os.getenv("ARENA_ENTRY_COMMISSION_PCT", "0.05"))
+EXIT_COMMISSION_PCT = float(os.getenv("ARENA_EXIT_COMMISSION_PCT", "0.05"))
+ENTRY_SLIPPAGE_PCT = float(os.getenv("ARENA_ENTRY_SLIPPAGE_PCT", "0.10"))
+EXIT_SLIPPAGE_PCT = float(os.getenv("ARENA_EXIT_SLIPPAGE_PCT", "0.10"))
+STOP_LOSS_PCT = float(os.getenv("ARENA_STOP_LOSS_PCT", "8.0"))
+TAKE_PROFIT_PCT = float(os.getenv("ARENA_TAKE_PROFIT_PCT", "25.0"))
+TRAILING_STOP_PCT = float(os.getenv("ARENA_TRAILING_STOP_PCT", "12.0"))
+INITIAL_CAPITAL = float(os.getenv("ARENA_INITIAL_CAPITAL", "10000.0"))
 
 # ──────────────────────────────────────────────────────────────
 # Indicator Mapping: bot name pattern → indicator function
@@ -146,7 +156,9 @@ def run_wasm_backtest(
 def simulate_trades(
     signals: List[int],
     closes: List[float],
-    initial_capital: float = 10000.0,
+    highs: Optional[List[float]] = None,
+    lows: Optional[List[float]] = None,
+    initial_capital: float = INITIAL_CAPITAL,
 ) -> Dict:
     """
     Simulate trades from WASM signals.
@@ -156,33 +168,76 @@ def simulate_trades(
     capital = initial_capital
     position = 0  # 0 = flat, 1 = long
     entry_price = 0.0
+    reference_entry_price = 0.0
+    trailing_peak_price = 0.0
     trades = []
     equity_curve = [initial_capital]
     peak_equity = initial_capital
     max_drawdown = 0.0
+    stop_exits = 0
+    take_profit_exits = 0
+    trailing_stop_exits = 0
+
+    highs = highs or closes
+    lows = lows or closes
     
     for i, (signal, price) in enumerate(zip(signals, closes)):
         if price <= 0:
             equity_curve.append(equity_curve[-1])
             continue
-            
+
+        high_price = highs[i] if i < len(highs) else price
+        low_price = lows[i] if i < len(lows) else price
+
         if signal == 1 and position == 0:
             # ENTER long
             position = 1
-            entry_price = price
-        elif signal != 1 and position == 1:
-            # EXIT: signal dropped from 1 → 0 (or -1)
-            pnl_pct = (price - entry_price) / entry_price * 100
-            trades.append(pnl_pct)
-            capital *= (1 + pnl_pct / 100)
-            position = 0
-        
+            reference_entry_price = price
+            entry_price = price * (
+                1 + (ENTRY_SLIPPAGE_PCT + ENTRY_COMMISSION_PCT) / 100
+            )
+            trailing_peak_price = high_price
+        elif position == 1:
+            trailing_peak_price = max(trailing_peak_price, high_price)
+
+            stop_price = reference_entry_price * (1 - STOP_LOSS_PCT / 100)
+            take_profit_price = reference_entry_price * (1 + TAKE_PROFIT_PCT / 100)
+            trailing_stop_price = trailing_peak_price * (1 - TRAILING_STOP_PCT / 100)
+
+            exit_reason = None
+            exit_price = price
+            if low_price <= stop_price:
+                exit_reason = "stop_loss"
+                exit_price = stop_price
+                stop_exits += 1
+            elif high_price >= take_profit_price:
+                exit_reason = "take_profit"
+                exit_price = take_profit_price
+                take_profit_exits += 1
+            elif low_price <= trailing_stop_price and trailing_peak_price > reference_entry_price:
+                exit_reason = "trailing_stop"
+                exit_price = trailing_stop_price
+                trailing_stop_exits += 1
+            elif signal != 1:
+                exit_reason = "signal_exit"
+                exit_price = price
+
+            if exit_reason is not None:
+                exit_price *= (1 - (EXIT_SLIPPAGE_PCT + EXIT_COMMISSION_PCT) / 100)
+                pnl_pct = (exit_price - entry_price) / entry_price * 100
+                trades.append(pnl_pct)
+                capital *= (1 + pnl_pct / 100)
+                position = 0
+                reference_entry_price = 0.0
+                trailing_peak_price = 0.0
+
         # Track equity
         if position == 1 and entry_price > 0:
-            equity_curve.append(capital * (price / entry_price))
+            mark_price = price * (1 - (EXIT_SLIPPAGE_PCT + EXIT_COMMISSION_PCT) / 100)
+            equity_curve.append(capital * (mark_price / entry_price))
         else:
             equity_curve.append(capital)
-        
+
         # Track drawdown
         current_equity = equity_curve[-1]
         if current_equity > peak_equity:
@@ -191,18 +246,26 @@ def simulate_trades(
             dd = (peak_equity - current_equity) / peak_equity * 100
             if dd > max_drawdown:
                 max_drawdown = dd
-    
+
     # Close any open position at end
     if position == 1 and closes and entry_price > 0:
-        pnl_pct = (closes[-1] - entry_price) / entry_price * 100
+        final_exit = closes[-1] * (1 - (EXIT_SLIPPAGE_PCT + EXIT_COMMISSION_PCT) / 100)
+        pnl_pct = (final_exit - entry_price) / entry_price * 100
         trades.append(pnl_pct)
         capital *= (1 + pnl_pct / 100)
-    
+
+    buy_hold_return = 0.0
+    if closes and closes[0] > 0 and closes[-1] > 0:
+        buy_hold_entry = closes[0] * (1 + (ENTRY_SLIPPAGE_PCT + ENTRY_COMMISSION_PCT) / 100)
+        buy_hold_exit = closes[-1] * (1 - (EXIT_SLIPPAGE_PCT + EXIT_COMMISSION_PCT) / 100)
+        buy_hold_return = ((buy_hold_exit - buy_hold_entry) / buy_hold_entry) * 100
+
     # Compute metrics
     total_return = ((capital - initial_capital) / initial_capital) * 100
+    excess_return = total_return - buy_hold_return
     winning_trades = [t for t in trades if t > 0]
     win_rate = (len(winning_trades) / len(trades) * 100) if trades else 0.0
-    
+
     # Sharpe ratio (annualized)
     if len(equity_curve) > 2:
         returns = pd.Series(equity_curve).pct_change().dropna()
@@ -213,18 +276,32 @@ def simulate_trades(
             sharpe = 0.0
     else:
         sharpe = 0.0
-    
+
     buy_count = sum(1 for s in signals if s == 1)
     sell_count = sum(1 for s in signals if s == -1)
-    
+
     return {
         "total_return": round(total_return, 2),
+        "buy_hold_return": round(buy_hold_return, 2),
+        "excess_return": round(excess_return, 2),
         "win_rate": round(win_rate, 1),
         "max_drawdown": round(max_drawdown, 2),
         "sharpe": round(sharpe, 2),
         "num_trades": len(trades),
         "buy_signals": buy_count,
         "sell_signals": sell_count,
+        "stop_loss_exits": stop_exits,
+        "take_profit_exits": take_profit_exits,
+        "trailing_stop_exits": trailing_stop_exits,
+        "fee_model": {
+            "entry_commission_pct": ENTRY_COMMISSION_PCT,
+            "exit_commission_pct": EXIT_COMMISSION_PCT,
+            "entry_slippage_pct": ENTRY_SLIPPAGE_PCT,
+            "exit_slippage_pct": EXIT_SLIPPAGE_PCT,
+            "stop_loss_pct": STOP_LOSS_PCT,
+            "take_profit_pct": TAKE_PROFIT_PCT,
+            "trailing_stop_pct": TRAILING_STOP_PCT,
+        },
     }
 
 

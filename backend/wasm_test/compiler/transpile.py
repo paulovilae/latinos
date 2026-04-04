@@ -2,6 +2,7 @@ import yaml
 import json
 import sys
 import os
+import re
 
 def load_dify_dsl(filepath):
     """Loads and parses the Dify YAML DSL."""
@@ -36,6 +37,33 @@ def extract_conditions(nodes):
                             "operator": op,
                             "value": val
                         })
+    return conditions
+
+def extract_code_conditions(nodes):
+    """Extracts simple buy conditions from CODE nodes like `if rsi < 30: buy()`."""
+    conditions = []
+    pattern = re.compile(
+        r"if\s+(?P<variable>[A-Za-z_][A-Za-z0-9_]*)\s*(?P<operator>>=|<=|==|>|<)\s*(?P<value>-?\d+(?:\.\d+)?)\s*:\s*buy\(\)",
+        re.IGNORECASE | re.DOTALL,
+    )
+
+    for node in nodes:
+        if node.get("data", {}).get("type") != "code":
+            continue
+        code = (node.get("data", {}).get("code") or "").strip()
+        if not code:
+            continue
+        match = pattern.search(code.replace("\n", " "))
+        if not match:
+            continue
+        conditions.append(
+            {
+                "variable": match.group("variable"),
+                "operator": match.group("operator"),
+                "value": match.group("value"),
+            }
+        )
+
     return conditions
 
 def generate_rust_code(variables, conditions):
@@ -129,6 +157,8 @@ def main():
     
     print("Extracting logic from If/Else Nodes...")
     conditions = extract_conditions(nodes)
+    if not conditions:
+        conditions = extract_code_conditions(nodes)
     print(f"Found conditions: {conditions}")
     
     print("Generating optimized Rust code...")
