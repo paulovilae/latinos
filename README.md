@@ -1,5 +1,7 @@
 # Latinos Trading Platform
 
+Reference-only status: This directory is retained as historical/source material for `Apps/Latinos-rust`. It is not the canonical runtime target in this repo and should not receive new platform integration work unless explicitly requested for migration analysis.
+
 A comprehensive algorithmic trading platform featuring a public CMS-driven website, a user dashboard for strategy management, and a Python-based trading engine.
 
 ## 📂 Project Structure
