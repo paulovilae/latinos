@@ -1,0 +1,6 @@
+{% extends "base.html.tera" %}
+{% block title %}{% if locale == "es" %}Política de Privacidad{% else %}Privacy Policy{% endif %} — {{ app_name | default(value="Latinos Trading") }}{% endblock %}
+{% block meta_description %}{% if locale == "es" %}Política de privacidad de {{ app_name }}.{% else %}Privacy policy for {{ app_name }}.{% endif %}{% endblock %}
+{% block content %}
+{% include "shared/privacy.html.tera" %}
+{% endblock %}

@@ -1,0 +1,6 @@
+{% extends "base.html.tera" %}
+{% block title %}{% if locale == "es" %}Términos y Condiciones{% else %}Terms & Conditions{% endif %} — {{ app_name | default(value="Latinos Trading") }}{% endblock %}
+{% block meta_description %}{% if locale == "es" %}Términos y condiciones de uso de {{ app_name }}.{% else %}Terms and conditions of use for {{ app_name }}.{% endif %}{% endblock %}
+{% block content %}
+{% include "shared/terms.html.tera" %}
+{% endblock %}

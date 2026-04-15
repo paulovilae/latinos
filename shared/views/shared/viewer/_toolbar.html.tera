@@ -1,0 +1,64 @@
+<div class="flex flex-col gap-4 rounded-2xl border border-outline-variant/20 bg-surface-container p-4">
+  <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <div>
+      <p class="font-headline text-xl font-bold text-primary">{{ dataset.title }}</p>
+      {% if dataset.description %}
+      <p class="mt-1 text-sm text-on-surface-variant">{{ dataset.description }}</p>
+      {% endif %}
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      {% for view_name in dataset.available_views %}
+      <button
+        type="button"
+        hx-get="{{ endpoint_url }}&view={{ view_name }}{% if query.q %}&q={{ query.q | urlencode }}{% endif %}{% if query.sort %}&sort={{ query.sort }}{% endif %}{% if query.direction %}&direction={{ query.direction }}{% endif %}"
+        hx-target="#viewer-shell"
+        hx-swap="outerHTML"
+        class="rounded-lg border px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] transition-colors {% if current_view == view_name %}border-secondary bg-secondary text-on-secondary{% else %}border-outline-variant/20 bg-surface-container-low text-on-surface-variant hover:border-secondary/40 hover:text-primary{% endif %}"
+      >
+        {{ view_name }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+    <form
+      hx-get="{{ endpoint_url }}"
+      hx-target="#viewer-shell"
+      hx-swap="outerHTML"
+      class="flex flex-1 items-center gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-3"
+    >
+      <input type="hidden" name="view" value="{{ current_view }}"/>
+      {% if query.sort %}<input type="hidden" name="sort" value="{{ query.sort }}"/>{% endif %}
+      {% if query.direction %}<input type="hidden" name="direction" value="{{ query.direction }}"/>{% endif %}
+      <span class="material-symbols-outlined text-on-surface-variant">search</span>
+      <input
+        type="search"
+        name="q"
+        value="{{ query.q | default(value="") }}"
+        placeholder="Buscar por código, nombre o grupo genético"
+        class="flex-1 border-none bg-transparent text-sm font-body outline-none"
+        hx-trigger="keyup changed delay:250ms, search"
+      />
+    </form>
+    {% if dataset.sort_options | length > 0 %}
+    <form
+      hx-get="{{ endpoint_url }}"
+      hx-target="#viewer-shell"
+      hx-swap="outerHTML"
+      class="flex items-center gap-2"
+    >
+      <input type="hidden" name="view" value="{{ current_view }}"/>
+      {% if query.q %}<input type="hidden" name="q" value="{{ query.q }}"/>{% endif %}
+      <select name="sort" class="rounded-lg border border-outline-variant/20 bg-surface-container-low px-3 py-2 text-sm text-primary" hx-trigger="change">
+        {% for option in dataset.sort_options %}
+        <option value="{{ option.key }}" {% if query.sort == option.key or (not query.sort and loop.first) %}selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
+      </select>
+      <select name="direction" class="rounded-lg border border-outline-variant/20 bg-surface-container-low px-3 py-2 text-sm text-primary" hx-trigger="change">
+        <option value="asc" {% if query.direction != "desc" %}selected{% endif %}>Asc</option>
+        <option value="desc" {% if query.direction == "desc" %}selected{% endif %}>Desc</option>
+      </select>
+    </form>
+    {% endif %}
+  </div>
+</div>

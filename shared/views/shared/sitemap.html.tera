@@ -1,0 +1,33 @@
+{# ─── Shared Sitemap Content Partial ───
+   This is a content-only partial. Include it inside a page that extends base.html.tera.
+   Required context: app_name, locale, public_routes, auth_routes, anchors
+#}
+
+<div class="sitemap-page">
+    <h1 class="sitemap-page-title">{% if locale == "es" %}🗺️ Mapa del Sitio{% else %}🗺️ Sitemap{% endif %}</h1>
+    <p class="sitemap-subtitle">{% if locale == "es" %}Todas las rutas disponibles en {{ app_name }}.{% else %}All available routes in {{ app_name }}.{% endif %}</p>
+
+    {% if public_routes is defined and public_routes | length > 0 %}
+    <div class="route-group">
+        <h2>{% if locale == "es" %}🌐 Rutas Públicas{% else %}🌐 Public Routes{% endif %}</h2>
+        {% for route in public_routes %}
+        <div class="route-row">
+            <span class="route-path"><a href="{{ route.path }}">{{ route.path }}</a></span>
+            <span class="route-desc">{{ route.description }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if auth_routes is defined and auth_routes | length > 0 %}
+    <div class="route-group">
+        <h2>{% if locale == "es" %}🔐 Rutas Autenticadas{% else %}🔐 Authenticated Routes{% endif %}</h2>
+        {% for route in auth_routes %}
+        <div class="route-row">
+            <span class="route-path"><a href="{{ route.path }}">{{ route.path }}</a></span>
+            <span class="route-desc">{{ route.description }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>

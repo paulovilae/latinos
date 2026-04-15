@@ -1,0 +1,566 @@
+{# Universal Concierge Overlay — OS-v3 Platform Component
+   ─────────────────────────────────────────────────────
+   Include in any app:  {% include "shared/concierge_overlay.html.tera" %}
+
+   App-Local Configuration Contract
+   ─────────────────────────────────
+   The hosting app MUST set a `data-concierge-config` attribute on <body>
+   (or any ancestor of this component) with the following JSON schema:
+
+   {
+     "app_id": "vetra",                    // required
+     "expert_id": "vetra",                 // default expert for this page
+     "locale": "es",                       // "en" or "es"
+     "form_selector": "#onboarding-form",  // CSS selector for the target form
+     "branding": {
+       "assistant_name": "Vetra",          // shown in chat header
+       "accent_color": "#f59e0b",          // amber-ish
+       "greeting": "¡Hola! ..."           // first message
+     },
+     "fields": [                           // form fields the overlay can fill
+       { "name": "company_name", "label": "Empresa", "required": true, "icon": "business" }
+     ],
+     "quick_prompts": [                    // optional quick-action buttons
+       { "label": "Fill basic profile", "prompt": "Mi empresa es ..." }
+     ]
+   }
+
+   If no config is provided, the overlay runs in "Ava-only" chat mode
+   with no form awareness.
+
+   The hosting page SHOULD also set data-page-descriptor on the form
+   (the machine-readable contract for the concierge routing engine).
+#}
+
+<div id="concierge-overlay" class="concierge-overlay concierge-collapsed" role="dialog" aria-label="Concierge Assistant">
+  {# Collapsed FAB #}
+  <button id="concierge-fab" class="concierge-fab" title="Open Concierge" aria-expanded="false">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  </button>
+
+  {# Expanded panel #}
+  <div id="concierge-panel" class="concierge-panel">
+    {# Header — identity adapts to active expert #}
+    <div class="concierge-header">
+      <div class="concierge-header-left">
+        <span class="concierge-avatar">✨</span>
+        <div class="concierge-identity">
+          <span id="concierge-active-name" class="concierge-name">Ava</span>
+          <span id="concierge-active-role" class="concierge-role">Personal Assistant</span>
+          <span id="concierge-origin-badge" class="concierge-origin-badge concierge-origin-unknown">UNKNOWN</span>
+        </div>
+      </div>
+      <div class="concierge-header-actions">
+        <select id="concierge-expert-switcher" class="concierge-expert-select" title="Switch expert">
+          <option value="ava" selected>Ava (Assistant)</option>
+        </select>
+        <button id="concierge-minimize" class="concierge-btn-icon" title="Minimize">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="4 14 10 14 10 20"/>
+            <polyline points="20 10 14 10 14 4"/>
+            <line x1="14" y1="10" x2="21" y2="3"/>
+            <line x1="3" y1="21" x2="10" y2="14"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    {# Mode tabs #}
+    <div class="concierge-modes">
+      <button class="concierge-mode active" data-mode="chat">Chat</button>
+      <button class="concierge-mode" data-mode="suggest">Suggest</button>
+      <button class="concierge-mode" data-mode="fill">Fill</button>
+      <button class="concierge-mode" data-mode="act">Act</button>
+    </div>
+
+    {# Status bar — form progress (only shown when form-aware) #}
+    <div id="concierge-status-bar" class="concierge-status-bar" style="display:none">
+      <span id="concierge-status-text" class="concierge-status-text"></span>
+      <div id="concierge-progress" class="concierge-progress">
+        <div id="concierge-progress-fill" class="concierge-progress-fill"></div>
+      </div>
+    </div>
+
+    {# Messages area #}
+    <div id="concierge-messages" class="concierge-messages">
+      <div class="concierge-message concierge-msg-assistant">
+        <span class="concierge-msg-content" id="concierge-greeting">¡Hola! Soy Ava, tu asistente personal. ¿En qué puedo ayudarte?</span>
+      </div>
+    </div>
+
+    {# Field chips (only shown when form-aware) #}
+    <div id="concierge-field-chips" class="concierge-field-chips" style="display:none"></div>
+
+    {# Input area #}
+    <form id="concierge-input-form" class="concierge-input-area">
+      <input
+        id="concierge-input"
+        type="text"
+        class="concierge-input"
+        placeholder="Ask Ava anything..."
+        autocomplete="off"
+        aria-label="Message input"
+      />
+      <button type="button" id="concierge-dictate" class="concierge-btn-icon" title="Dictate" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
+      <button type="submit" class="concierge-send-btn" title="Send">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </form>
+
+    {# Quick prompts (only shown when configured) #}
+    <div id="concierge-quick-prompts" class="concierge-quick-prompts" style="display:none"></div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="/static/css/concierge_overlay.css" />
+
+<script>
+(function() {
+  'use strict';
+
+  // ── DOM refs ──
+  const overlay = document.getElementById('concierge-overlay');
+  const fab = document.getElementById('concierge-fab');
+  const minimizeBtn = document.getElementById('concierge-minimize');
+  const form = document.getElementById('concierge-input-form');
+  const input = document.getElementById('concierge-input');
+  const msgArea = document.getElementById('concierge-messages');
+  const expertSwitcher = document.getElementById('concierge-expert-switcher');
+  const activeName = document.getElementById('concierge-active-name');
+  const activeRole = document.getElementById('concierge-active-role');
+  const originBadge = document.getElementById('concierge-origin-badge');
+  const modeBtns = document.querySelectorAll('.concierge-mode');
+  const statusBar = document.getElementById('concierge-status-bar');
+  const statusText = document.getElementById('concierge-status-text');
+  const progressFill = document.getElementById('concierge-progress-fill');
+  const fieldChips = document.getElementById('concierge-field-chips');
+  const quickPromptsEl = document.getElementById('concierge-quick-prompts');
+  const dictateBtn = document.getElementById('concierge-dictate');
+  const greeting = document.getElementById('concierge-greeting');
+
+  let currentMode = 'chat';
+  let currentExpert = 'ava';
+  let isExpanded = false;
+  let appConfig = null; // injected by hosting app
+
+  function setOriginBadge(origin, model) {
+    const normalized = (origin || 'unknown').toLowerCase();
+    originBadge.textContent = normalized.toUpperCase();
+    originBadge.className = `concierge-origin-badge concierge-origin-${normalized}`;
+    originBadge.title = model ? `Hera origin: ${normalized} (${model})` : `Hera origin: ${normalized}`;
+  }
+
+  // ── Load app config from data attribute ──
+  function loadAppConfig() {
+    try {
+      const raw = document.body.getAttribute('data-concierge-config');
+      if (raw) appConfig = JSON.parse(raw);
+    } catch { appConfig = null; }
+
+    if (appConfig) {
+      // Apply branding
+      if (appConfig.branding) {
+        if (appConfig.branding.greeting) greeting.textContent = appConfig.branding.greeting;
+        if (appConfig.branding.assistant_name) {
+          input.placeholder = appConfig.locale === 'es'
+            ? `Pregúntale a ${appConfig.branding.assistant_name}...`
+            : `Ask ${appConfig.branding.assistant_name} anything...`;
+        }
+        if (appConfig.branding.accent_color) {
+          overlay.style.setProperty('--concierge-accent', appConfig.branding.accent_color);
+        }
+      }
+
+      // Set default expert
+      if (appConfig.expert_id) currentExpert = appConfig.expert_id;
+
+      // Enable form-aware features
+      if (appConfig.fields && appConfig.fields.length > 0) {
+        statusBar.style.display = '';
+        fieldChips.style.display = '';
+        renderFieldChips();
+        updateFormProgress();
+        // Listen for form changes
+        observeForm();
+      }
+
+      // Render quick prompts
+      if (appConfig.quick_prompts && appConfig.quick_prompts.length > 0) {
+        quickPromptsEl.style.display = '';
+        appConfig.quick_prompts.forEach(qp => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'concierge-quick-btn';
+          btn.textContent = qp.label;
+          btn.addEventListener('click', () => {
+            input.value = qp.prompt;
+            form.requestSubmit();
+          });
+          quickPromptsEl.appendChild(btn);
+        });
+      }
+
+      // Enable dictation if supported
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        dictateBtn.style.display = '';
+        setupDictation();
+      }
+    }
+  }
+
+  // ── Toggle overlay ──
+  function toggleOverlay() {
+    isExpanded = !isExpanded;
+    overlay.classList.toggle('concierge-collapsed', !isExpanded);
+    overlay.classList.toggle('concierge-expanded', isExpanded);
+    fab.setAttribute('aria-expanded', isExpanded);
+    if (isExpanded) {
+      input.focus();
+      loadExperts();
+    }
+  }
+
+  fab.addEventListener('click', toggleOverlay);
+  minimizeBtn.addEventListener('click', toggleOverlay);
+
+  // ── Mode switching ──
+  modeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      modeBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentMode = btn.dataset.mode;
+    });
+  });
+
+  // ── Expert switcher ──
+  expertSwitcher.addEventListener('change', (e) => {
+    currentExpert = e.target.value;
+    const option = e.target.options[e.target.selectedIndex];
+    activeName.textContent = option.dataset.name || option.text.split(' (')[0];
+    activeRole.textContent = option.dataset.domain || 'Personal Assistant';
+  });
+
+  // ── Load experts from API ──
+  async function loadExperts() {
+    try {
+      const res = await fetch('/api/platform/experts');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.experts) return;
+
+      expertSwitcher.innerHTML = '<option value="ava" data-name="Ava" data-domain="Personal Assistant" selected>Ava (Assistant)</option>';
+      data.experts.forEach(expert => {
+        const opt = document.createElement('option');
+        opt.value = expert.manifest.id;
+        opt.dataset.name = expert.manifest.name;
+        opt.dataset.domain = expert.manifest.domain;
+        opt.textContent = `${expert.manifest.name} (${expert.manifest.domain.split(',')[0].trim()})`;
+        expertSwitcher.appendChild(opt);
+      });
+
+      // Auto-select app's default expert
+      if (appConfig?.expert_id) {
+        expertSwitcher.value = appConfig.expert_id;
+        const sel = expertSwitcher.options[expertSwitcher.selectedIndex];
+        if (sel) {
+          activeName.textContent = sel.dataset.name || sel.text.split(' (')[0];
+          activeRole.textContent = sel.dataset.domain || '';
+        }
+      }
+    } catch (err) {
+      console.warn('Could not load experts:', err);
+    }
+  }
+
+  // ── Read page descriptor ──
+  function getPageDescriptor() {
+    try {
+      // Check form first, then body
+      const formEl = appConfig?.form_selector ? document.querySelector(appConfig.form_selector) : null;
+      const raw = (formEl && formEl.getAttribute('data-page-descriptor'))
+        || document.body.getAttribute('data-page-descriptor');
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  // ── Add message to chat ──
+  function addMessage(content, role) {
+    const div = document.createElement('div');
+    div.className = `concierge-message concierge-msg-${role}`;
+    const span = document.createElement('span');
+    span.className = 'concierge-msg-content';
+    span.textContent = content;
+    div.appendChild(span);
+    msgArea.appendChild(div);
+    msgArea.scrollTop = msgArea.scrollHeight;
+  }
+
+  // ── Form field helpers (only active when form-aware) ──
+  function getTargetForm() {
+    if (!appConfig?.form_selector) return null;
+    return document.querySelector(appConfig.form_selector);
+  }
+
+  function formField(name) {
+    const f = getTargetForm();
+    return f ? f.elements[name] || f.querySelector(`[name="${name}"]`) : null;
+  }
+
+  function setFieldValue(name, value, source) {
+    const field = formField(name);
+    if (!field || !value) return false;
+    const clean = value.replace(/\s+/g, ' ').trim();
+    if (!clean) return false;
+    const previous = field.value;
+    field.value = clean;
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    field.dispatchEvent(new Event('change', { bubbles: true }));
+    // Highlight
+    field.classList.add('concierge-autofilled');
+    setTimeout(() => field.classList.remove('concierge-autofilled'), 1800);
+    // Structured event
+    const meta = (appConfig?.fields || []).find(f => f.name === name);
+    document.dispatchEvent(new CustomEvent(previous.trim() ? 'concierge:field:update' : 'concierge:field:fill', {
+      bubbles: true,
+      detail: { field_id: name, label: meta?.label || name, value: clean, previous_value: previous, source: source || 'manual', required: meta?.required || false, timestamp: new Date().toISOString() }
+    }));
+    return true;
+  }
+
+  // ── Render field status chips ──
+  function renderFieldChips() {
+    if (!fieldChips || !appConfig?.fields) return;
+    fieldChips.innerHTML = '';
+    const locale = appConfig.locale || 'en';
+    appConfig.fields.forEach(f => {
+      const field = formField(f.name);
+      const val = field?.value?.trim() || '';
+      const filled = val.length > 0;
+      const chip = document.createElement('span');
+      chip.className = `concierge-chip${filled ? ' ready' : ''}`;
+      chip.textContent = `${f.label} · ${filled ? (locale === 'es' ? 'listo' : 'ready') : (locale === 'es' ? 'pendiente' : 'missing')}`;
+      fieldChips.appendChild(chip);
+    });
+  }
+
+  // ── Update form progress bar ──
+  function updateFormProgress() {
+    if (!appConfig?.fields || !statusBar) return;
+    const locale = appConfig.locale || 'en';
+    const total = appConfig.fields.filter(f => f.required).length;
+    const done = appConfig.fields.filter(f => f.required).filter(f => {
+      const el = formField(f.name);
+      return el?.value?.trim()?.length > 0;
+    }).length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    statusText.textContent = locale === 'es'
+      ? `${done} de ${total} campos completos`
+      : `${done} of ${total} fields complete`;
+    progressFill.style.width = `${pct}%`;
+    progressFill.style.background = pct === 100 ? '#10b981' : '#3b82f6';
+
+    // Emit form state event
+    document.dispatchEvent(new CustomEvent('concierge:form:state', {
+      bubbles: true, detail: { completed: done, total, pct, ready: pct === 100 }
+    }));
+  }
+
+  // ── Observe form changes ──
+  function observeForm() {
+    const f = getTargetForm();
+    if (!f) return;
+    f.addEventListener('input', () => {
+      renderFieldChips();
+      updateFormProgress();
+    });
+    // HTMX swap resilience
+    document.body.addEventListener('htmx:afterSwap', (ev) => {
+      if (ev.detail.target?.id === f.id || ev.detail.target?.querySelector?.(`#${f.id}`)) {
+        renderFieldChips();
+        updateFormProgress();
+      }
+    });
+  }
+
+  // ── Extract structured data from free text ──
+  function extractFields(text) {
+    if (!appConfig?.fields) return {};
+    const extracted = {};
+    // Generic email extraction
+    const emailMatch = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    if (emailMatch) {
+      const emailField = appConfig.fields.find(f => f.name.includes('email'));
+      if (emailField) extracted[emailField.name] = emailMatch[0];
+    }
+    return extracted;
+  }
+
+  // ── Dictation ──
+  function setupDictation() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = appConfig?.locale === 'es' ? 'es-CO' : 'en-US';
+
+    let listening = false;
+    let dictationBase = '';
+
+    recognition.onstart = () => { listening = true; dictateBtn.classList.add('active'); };
+    recognition.onend = () => { listening = false; dictateBtn.classList.remove('active'); };
+    recognition.onerror = () => { listening = false; dictateBtn.classList.remove('active'); };
+
+    recognition.onresult = (event) => {
+      let interim = '', final = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const t = event.results[i][0].transcript;
+        event.results[i].isFinal ? (final += t) : (interim += t);
+      }
+      if (final) {
+        dictationBase = (dictationBase + ' ' + final).replace(/\s+/g, ' ').trim();
+        // Auto-extract fields from final segments
+        const extracted = extractFields(final);
+        Object.entries(extracted).forEach(([name, val]) => {
+          if (val) setFieldValue(name, val, appConfig?.locale === 'es' ? 'dictado' : 'dictation');
+        });
+      }
+      input.value = interim ? (dictationBase + ' ' + interim).trim() : dictationBase;
+    };
+
+    dictateBtn.addEventListener('click', () => {
+      listening ? recognition.stop() : recognition.start();
+    });
+  }
+
+  // ── Send message ──
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMessage(text, 'user');
+    input.value = '';
+    input.disabled = true;
+
+    // Local field extraction (instant, works offline)
+    const extracted = extractFields(text);
+    let localCount = 0;
+    Object.entries(extracted).forEach(([name, val]) => {
+      if (val && setFieldValue(name, val, appConfig?.locale === 'es' ? 'análisis local' : 'local parse')) localCount++;
+    });
+    if (localCount > 0) { renderFieldChips(); updateFormProgress(); }
+
+    const pageDescriptor = getPageDescriptor();
+    const locale = appConfig?.locale || 'en';
+
+    try {
+      const res = await fetch('/api/platform/concierge/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          expert_id: currentExpert,
+          mode: currentMode,
+          page_descriptor: pageDescriptor,
+          context: {
+            app_id: appConfig?.app_id || 'os',
+            route: window.location.pathname,
+            locale
+          }
+        }),
+      });
+
+      if (!res.ok) {
+        addMessage(locale === 'es'
+          ? `Error del servidor (${res.status}). Tus datos están seguros.`
+          : `Server error (${res.status}). Your data is safe.`, 'assistant');
+        document.dispatchEvent(new CustomEvent('concierge:error', {
+          bubbles: true, detail: { type: 'http', status: res.status }
+        }));
+        return;
+      }
+
+      const data = await res.json();
+      const reply = data.reply || data.error || (locale === 'es' ? 'Sin respuesta' : 'No response');
+      setOriginBadge(data.hera_origin, data.hera_model);
+
+      // Detect Hera offline
+      const offline = reply.toLowerCase().includes('offline') || reply.toLowerCase().includes('reasoning engine');
+      if (offline) {
+        const bubble = document.createElement('div');
+        bubble.className = 'concierge-message concierge-msg-assistant';
+        bubble.innerHTML = `<span class="concierge-msg-content">${reply}</span>
+          <button class="concierge-retry-btn" style="margin-top:6px;padding:3px 12px;border-radius:6px;border:1px solid #d4d4d8;background:#fafafa;cursor:pointer;font-size:0.75rem">
+            ${locale === 'es' ? '↻ Reintentar' : '↻ Retry'}
+          </button>`;
+        bubble.querySelector('.concierge-retry-btn').addEventListener('click', function() {
+          this.remove();
+          input.value = text;
+          form.requestSubmit();
+        });
+        msgArea.appendChild(bubble);
+        msgArea.scrollTop = msgArea.scrollHeight;
+        document.dispatchEvent(new CustomEvent('concierge:error', {
+          bubbles: true, detail: { type: 'hera_offline' }
+        }));
+      } else {
+        addMessage(reply, 'assistant');
+
+        // Expert auto-switch from routing decision
+        if (data.routing_decision?.expert_id && data.routing_decision.expert_id !== currentExpert) {
+          currentExpert = data.routing_decision.expert_id;
+          expertSwitcher.value = currentExpert;
+          const sel = expertSwitcher.options[expertSwitcher.selectedIndex];
+          if (sel) {
+            activeName.textContent = sel.dataset.name || currentExpert;
+            activeRole.textContent = sel.dataset.domain || '';
+          }
+        }
+
+        // Capability denial indicator
+        if (data.routing_decision?.decision_type === 'capability_denied') {
+          statusText.textContent = locale === 'es'
+            ? 'Acción requiere permisos más altos'
+            : 'Action requires higher permissions';
+        }
+      }
+    } catch (err) {
+      addMessage(locale === 'es'
+        ? 'No se pudo conectar. El análisis local sigue activo.'
+        : 'Cannot reach server. Local parsing still active.', 'assistant');
+      document.dispatchEvent(new CustomEvent('concierge:error', {
+        bubbles: true, detail: { type: 'network', message: err.message }
+      }));
+    } finally {
+      input.disabled = false;
+      input.focus();
+    }
+  });
+
+  // ── Keyboard shortcut: Ctrl+Shift+A ──
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+      e.preventDefault();
+      toggleOverlay();
+    }
+  });
+
+  // ── Initialize ──
+  loadAppConfig();
+})();
+</script>

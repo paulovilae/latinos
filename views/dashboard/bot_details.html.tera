@@ -1,0 +1,324 @@
+{% extends "base.html.tera" %}
+
+{% block title %}{{ bot_name }} — Bot Studio{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-main { padding-bottom: 4rem; }
+.page-title { margin-top: 0; margin-bottom: 2rem; color: white; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.page-title h1 { margin: 0; font-size: 2rem; display: flex; align-items: center; gap: 0.75rem; }
+.back-btn { text-decoration: none; color: #94a3b8; font-size: 1.25rem; transition: color 0.2s; }
+.back-btn:hover { color: white; }
+
+.content-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+@media(min-width: 1024px) {
+    .content-grid { grid-template-columns: 1fr 2fr; }
+}
+
+.card { background: rgba(15,23,42,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; overflow: hidden; }
+.card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); }
+.card-header h3 { margin: 0; font-size: 1.25rem; color: white; }
+.card-body { padding: 1.5rem; }
+
+.form-group { margin-bottom: 1.5rem; }
+.form-group:last-child { margin-bottom: 0; }
+.form-label { display: block; color: rgba(255,255,255,0.7); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight: 700; }
+.form-value { color: white; font-size: 1rem; background: rgba(0,0,0,0.2); padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.05); text-wrap: pretty; }
+.form-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0.75rem 1rem; border-radius: 0.5rem; font-family: monospace; font-size: 0.9rem; resize: vertical; min-height: 400px; transition: border-color 0.2s; }
+.form-input:focus { outline: none; border-color: #4f46e5; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 700; font-size: 1rem; border: none; cursor: pointer; text-decoration: none; transition: all 0.2s; color: white; width: 100%; box-sizing: border-box; }
+.btn-indigo { background: #4f46e5; border: 1px solid rgba(255,255,255,0.1); }
+.btn-indigo:hover { background: #4338ca; box-shadow: 0 0 15px rgba(79,70,229,0.4); }
+.inline-form { display: flex; gap: 0.75rem; }
+.inline-form input { flex: 1; min-width: 0; box-sizing: border-box; padding: 0.75rem 1rem; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 0.5rem; outline: none; font-weight: 700; text-transform: uppercase; }
+.inline-form button { width: auto; white-space: nowrap; }
+
+/* ── Webhook copy rows ─────────────────────────────────────── */
+.copy-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 0.6rem;
+    overflow: hidden;
+}
+.copy-row--block { align-items: flex-start; }
+.copy-value {
+    flex: 1;
+    padding: 0.7rem 1rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.82rem;
+    color: #a5f3fc;
+    word-break: break-all;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    display: block;
+}
+.copy-value--pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 0;
+    line-height: 1.5;
+    font-size: 0.78rem;
+    color: #86efac;
+}
+.token-value { letter-spacing: 0.05em; color: #fbbf24; }
+.copy-btn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0 1rem;
+    min-height: 2.75rem;
+    background: rgba(16,185,129,0.15);
+    border: none;
+    border-left: 1px solid rgba(16,185,129,0.2);
+    color: #6ee7b7;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+.copy-btn--top { align-self: stretch; }
+.copy-btn:hover { background: rgba(16,185,129,0.3); }
+.copy-btn.copied { background: rgba(16,185,129,0.4); color: #fff; }
+.copy-icon { font-size: 1rem; }
+</style>
+
+<script>
+function copyField(elemId, btn) {
+    const el = document.getElementById(elemId);
+    const text = el.innerText || el.textContent;
+    navigator.clipboard.writeText(text.trim()).then(() => {
+        const label = btn.querySelector('.copy-label');
+        const orig = label ? label.textContent : 'Copy';
+        btn.classList.add('copied');
+        if (label) label.textContent = '✓ Copied!';
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            if (label) label.textContent = orig;
+        }, 2000);
+    }).catch(() => {
+        // Fallback for old browsers
+        const range = document.createRange();
+        range.selectNode(el);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand('copy');
+        window.getSelection().removeAllRanges();
+    });
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    {% include "dashboard/_sidebar.html.tera" %}
+    
+    <div class="dashboard-main">
+        <div class="page-title">
+            <h1>
+                <a href="/dashboard/bots" class="back-btn" title="Back to bots">←</a>
+                {{ bot_name }}
+            </h1>
+        </div>
+
+        <div class="content-grid">
+            <!-- Properties Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Bot Details</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">Name</label>
+                        <div class="form-value">{{ bot_name }}</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <div class="form-value" style="text-transform: capitalize;">{{ bot_status }}</div>
+                    </div>
+                    
+                    {% if bot_description %}
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <div class="form-value">{{ bot_description }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="form-group">
+                        <label class="form-label">Live Trading</label>
+                        <div class="form-value">{% if bot_live_trading %}🟢 Active{% else %}🔴 Inactive{% endif %}</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">WASM Status</label>
+                        <div class="form-value">{% if bot_is_wasm %}💎 Compiled{% else %}🍒 Unroasted{% endif %}</div>
+                    </div>
+                    
+                    {% if bot_dify_app_id %}
+                    <div class="form-group">
+                        <label class="form-label">Dify Studio Link</label>
+                        <a href="https://dify.imaginos.ai/app/{{ bot_dify_app_id }}/workflow" target="_blank" class="form-value" style="display: block; color: #818cf8; text-decoration: none;">
+                            ✨ Open in Visual Studio
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card" id="webhook-card">
+                <div class="card-header" style="background: rgba(16,185,129,0.15); border-bottom-color: rgba(16,185,129,0.25);">
+                    <h3 style="color: #6ee7b7; display:flex; align-items:center; gap:0.5rem;">
+                        🔗 Webhook Integration
+                        {% if bot_type == "trading" %}
+                        <span style="font-size:0.7rem; background: rgba(16,185,129,0.2); color: #6ee7b7; padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid rgba(16,185,129,0.3); text-transform:uppercase; letter-spacing:0.05em;">ACTIVE</span>
+                        {% else %}
+                        <span style="font-size:0.7rem; background: rgba(100,116,139,0.2); color: #94a3b8; padding: 0.2rem 0.6rem; border-radius: 999px; border: 1px solid rgba(100,116,139,0.3); text-transform:uppercase; letter-spacing:0.05em;">UTILITY BOT</span>
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="card-body" style="display:flex; flex-direction:column; gap:1.25rem;">
+                    <p style="color:rgba(255,255,255,0.55); font-size:0.83rem; margin:0; line-height:1.6;">
+                        Send signals from <strong style="color:#e2e8f0;">TradingView</strong>, <strong style="color:#e2e8f0;">Alpaca</strong>, or any custom tool using this bot's private endpoint. TradingView should use the full URL below, which already includes the private token as a query parameter.
+                    </p>
+
+                    {% set tradingview_webhook_url = webhook_url %}
+                    {% if webhook_token and webhook_token != "" and ("token=" not in webhook_url) %}
+                        {% set tradingview_webhook_url = webhook_url ~ "?token=" ~ webhook_token %}
+                    {% endif %}
+
+                    <!-- Endpoint URL -->
+                    <div>
+                        <label class="form-label" style="margin-bottom:0.5rem;">📡 Webhook Endpoint</label>
+                        <div class="copy-row" id="copy-url-row">
+                            <code class="copy-value" id="copy-url-value">{{ tradingview_webhook_url }}</code>
+                            <button class="copy-btn" onclick="copyField('copy-url-value', this)" title="Copy URL">
+                                <span class="copy-icon">⧉</span>
+                                <span class="copy-label">Copy</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Secret Token -->
+                    <div>
+                        <label class="form-label" style="margin-bottom:0.5rem;">🔑 Secret Token <span style="font-weight:400; text-transform:none; letter-spacing:0; color:rgba(255,255,255,0.4); font-size:0.78rem;">(for custom clients or header-based auth)</span></label>
+                        <div class="copy-row" id="copy-token-row">
+                            <code class="copy-value token-value" id="copy-token-value">{{ webhook_token }}</code>
+                            <button class="copy-btn" onclick="copyField('copy-token-value', this)" title="Copy Token">
+                                <span class="copy-icon">⧉</span>
+                                <span class="copy-label">Copy</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TradingView Example -->
+                    <div>
+                        <label class="form-label" style="margin-bottom:0.5rem;">📡 TradingView Copy-Paste URL</label>
+                        <div class="copy-row" id="copy-tv-url-row">
+                            <code class="copy-value" id="copy-tv-url-value">{{ tradingview_webhook_url }}</code>
+                            <button class="copy-btn" onclick="copyField('copy-tv-url-value', this)" title="Copy TradingView URL">
+                                <span class="copy-icon">⧉</span>
+                                <span class="copy-label">Copy</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="margin-bottom:0.5rem;">📋 TradingView Alert Message</label>
+                        <div class="copy-row copy-row--block" id="copy-tv-row">
+                            <pre class="copy-value copy-value--pre" id="copy-tv-value">{"action":"{% raw %}{{strategy.order.action}}{% endraw %}","symbol":"{% raw %}{{ticker}}{% endraw %}","price":{% raw %}{{close}}{% endraw %},"qty":1,"comment":"{% raw %}{{strategy.order.comment}}{% endraw %}"}</pre>
+                            <button class="copy-btn copy-btn--top" onclick="copyField('copy-tv-value', this)" title="Copy TradingView JSON">
+                                <span class="copy-icon">⧉</span>
+                                <span class="copy-label">Copy</span>
+                            </button>
+                        </div>
+                        <p style="color:rgba(255,255,255,0.35); font-size:0.75rem; margin:0.4rem 0 0;">Copy the TradingView URL into TradingView → Alert → Webhook URL, then copy the JSON below into TradingView → Alert → Message.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header" style="background: rgba(30, 41, 59, 0.4);">
+                    <h3 style="color: #6ee7b7;">🧪 Sandbox Testing</h3>
+                </div>
+                <div class="card-body">
+                    <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-top: 0; margin-bottom: 1rem;">Run this logic against historical data.</p>
+                    <form action="/dashboard/backtests/run" method="POST" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <input type="hidden" name="bot_id" value="{{ bot_id }}">
+                        
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; margin-bottom: 0.4rem; color: #94a3b8;">Market Pair / Asset</label>
+                            <select name="market" required style="width: 100%; box-sizing: border-box; padding: 0.75rem; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 0.5rem; outline: none;">
+                                <option value="" disabled selected>-- Select an Asset --</option>
+                                <optgroup label="Criptomonedas">
+                                    <option value="BTC/USDT">Bitcoin (BTC/USDT)</option>
+                                    <option value="ETH/USDT">Ethereum (ETH/USDT)</option>
+                                    <option value="SOL/USDT">Solana (SOL/USDT)</option>
+                                </optgroup>
+                                <optgroup label="Acciones (Stocks)">
+                                    <option value="AAPL">Apple Inc. (AAPL)</option>
+                                    <option value="TSLA">Tesla, Inc. (TSLA)</option>
+                                    <option value="NVDA">Nvidia Corp. (NVDA)</option>
+                                </optgroup>
+                                <optgroup label="Materias Primas">
+                                    <option value="XAU/USD">Oro (XAU/USD)</option>
+                                    <option value="USOIL">Petróleo (USOIL)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; margin-bottom: 0.4rem; color: #94a3b8;">Interval</label>
+                            <select name="range" required style="width: 100%; box-sizing: border-box; padding: 0.75rem; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 0.5rem; outline: none;">
+                                <option value="15m">15m</option>
+                                <option value="1h" selected>1h</option>
+                                <option value="4h">4h</option>
+                                <option value="1d">1d</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-indigo" style="background: #059669; margin-top: 0.5rem;">▶️ Run Backtest</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header" style="background: rgba(14, 116, 144, 0.22);">
+                    <h3 style="color: #7dd3fc;">Research for This Bot</h3>
+                </div>
+                <div class="card-body">
+                    <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-top: 0; margin-bottom: 1rem;">Guarda una investigación asociada a este bot para reutilizar contexto en el desk de análisis.</p>
+                    <form action="/dashboard/consultant/analyze" method="POST" class="inline-form">
+                        <input type="hidden" name="bot_id" value="{{ bot_id }}">
+                        <input type="text" name="ticker" placeholder="AAPL" required autocomplete="off" spellcheck="false">
+                        <button type="submit" class="btn btn-indigo" style="background:#0284c7;">Save Research</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Formula Editor Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Raw Formula / Signal Manifest</h3>
+                </div>
+                <div class="card-body">
+                    <form action="/dashboard/bots/{{ bot_id }}/edit" method="POST">
+                        <div class="form-group">
+                            <label class="form-label" for="signal_manifest">JSON Configuration</label>
+                            <textarea id="signal_manifest" name="signal_manifest" class="form-input" placeholder="Enter valid JSON manifesting the trading formula...">{{ bot_signal_manifest }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-indigo">💾 Save Formula</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+<div class="sidebar">
+    <div class="logo-sidebar"><span>📈</span> {{ app_name }}</div>
+    <nav>
+        <a href="/dashboard" class="{% if active_page is defined and active_page == 'dashboard' %}active{% endif %}">🏠 Dashboard</a>
+        <a href="/dashboard/bots" class="{% if active_page is defined and active_page == 'bots' %}active{% endif %}">🤖 Mis Robots</a>
+        <a href="/dashboard/backtests" class="{% if active_page is defined and active_page == 'backtests' %}active{% endif %}">🧪 Backtests</a>
+        <a href="/dashboard/consultant" class="{% if active_page is defined and active_page == 'consultant' %}active{% endif %}">👁️‍🗨️ Consultant</a>
+        <a href="/dashboard/arena" class="{% if active_page is defined and active_page == 'arena' %}active{% endif %}">⚔️ Arena</a>
+        <a href="/dashboard/opportunities" class="{% if active_page is defined and active_page == 'opportunities' %}active{% endif %}">📊 Opportunities</a>
+        <a href="/dashboard/trades" class="{% if active_page is defined and active_page == 'trades' %}active{% endif %}">💱 Trades</a>
+        <a href="/dashboard/settings" class="{% if active_page is defined and active_page == 'settings' %}active{% endif %}">⚙️ Settings</a>
+    </nav>
+    <div class="user-section">
+        <div class="user-info">
+            {% if user_picture %}
+            <img src="{{ user_picture }}" alt="avatar" class="user-avatar" style="width:48px;height:48px;border-radius:999px;object-fit:cover;display:block;box-shadow:0 10px 24px rgba(15,23,42,.14);">
+            {% else %}
+            <div class="user-avatar-placeholder">{{ user_email | truncate(length=1, end="") | upper | default(value="U") }}</div>
+            {% endif %}
+            <div class="email">{{ user_email }}</div>
+        </div>
+    </div>
+</div>
+
+<nav class="mobile-nav">
+    <a href="/dashboard" class="{% if active_page is defined and active_page == 'dashboard' %}active{% endif %}"><span class="icon">🏠</span><span class="label">Home</span></a>
+    <a href="/dashboard/bots" class="{% if active_page is defined and active_page == 'bots' %}active{% endif %}"><span class="icon">🤖</span><span class="label">Bots</span></a>
+    <a href="/dashboard/consultant" class="{% if active_page is defined and active_page == 'consultant' %}active{% endif %}"><span class="icon">👁️‍🗨️</span><span class="label">Consult</span></a>
+    <a href="/dashboard/arena" class="{% if active_page is defined and active_page == 'arena' %}active{% endif %}"><span class="icon">⚔️</span><span class="label">Arena</span></a>
+    <a href="/dashboard/opportunities" class="{% if active_page is defined and active_page == 'opportunities' %}active{% endif %}"><span class="icon">📊</span><span class="label">Opps</span></a>
+    <a href="/dashboard/trades" class="{% if active_page is defined and active_page == 'trades' %}active{% endif %}"><span class="icon">💱</span><span class="label">Trades</span></a>
+    <a href="/dashboard/settings" class="{% if active_page is defined and active_page == 'settings' %}active{% endif %}"><span class="icon">⚙️</span><span class="label">Settings</span></a>
+</nav>

@@ -1,0 +1,10 @@
+slug = "latinos"
+name = "Latinos Trading"
+tag = "Trading / Research"
+vision = "To give traders a sovereign, agentic environment for strategy design, backtesting, market analysis, and execution workflows on a Rust-first runtime."
+features = [
+    "Bot and Signal Management",
+    "Backtesting and Market Analysis",
+    "Rust-Native Trading Runtime"
+]
+summary = "Algorithmic trading platform for research, backtesting, signal evaluation, and bot operations, running on the shared Rust-first OS architecture."

@@ -1,0 +1,13 @@
+{# ─── Shared API Docs Content Partial ───
+   This is a content-only partial. Include it inside a page that extends base.html.tera.
+   Required context: app_name, locale
+   Note: Swagger UI CSS and JS must be loaded by the caller's extra_head/extra_scripts blocks.
+#}
+
+<div class="api-docs-header">
+    <h1>📡 API Reference</h1>
+    <p>{% if locale == "es" %}Documentación interactiva auto-generada desde el código fuente de {{ app_name }}. Cada endpoint se puede probar directamente.{% else %}Interactive documentation auto-generated from {{ app_name }} source code. Every endpoint can be tested directly.{% endif %}</p>
+    <div class="api-badge">Auto-Generated</div>
+</div>
+
+<div id="swagger-ui"></div>

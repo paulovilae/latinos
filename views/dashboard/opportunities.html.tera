@@ -1,0 +1,313 @@
+{% extends "base.html.tera" %}
+
+{% block title %}Opportunities — {{ app_name }}{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-main { 
+    padding-bottom: 4rem; 
+    background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.05) 0%, transparent 50%);
+    min-height: 100vh;
+}
+.page-title { margin-top: 0; margin-bottom: 2rem; color: white; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.page-title h1 { 
+    margin: 0; 
+    font-size: 2.5rem; 
+    font-weight: 800;
+    background: linear-gradient(135deg, #a78bfa, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Opportunity Cards Grid */
+.opp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+
+.opp-card {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 1.5rem;
+    padding: 1.75rem;
+    display: flex; flex-direction: column; gap: 1.25rem;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.opp-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 15px 40px rgba(139, 92, 246, 0.15), 0 0 15px rgba(139, 92, 246, 0.2) inset;
+}
+
+.opp-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.opp-ticker { font-size: 1.5rem; font-weight: 900; color: white; letter-spacing: 0.03em; }
+.opp-date { font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; }
+
+/* Score Ring */
+.score-ring {
+    position: relative;
+    width: 56px; height: 56px;
+    flex-shrink: 0;
+}
+.score-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.score-ring .ring-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 4; }
+.score-ring .ring-fg { fill: none; stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+.score-ring .score-text {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 900; color: white;
+}
+
+/* Stance Badges */
+.stance-badge {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.3rem 0.7rem; border-radius: 999px;
+    font-size: 0.72rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.08em;
+}
+.stance-strong_buy { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+.stance-buy { background: rgba(34,197,94,0.12); color: #86efac; border: 1px solid rgba(34,197,94,0.25); }
+.stance-hold { background: rgba(245,158,11,0.12); color: #fcd34d; border: 1px solid rgba(245,158,11,0.25); }
+.stance-underperform { background: rgba(239,68,68,0.1); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
+.stance-sell { background: rgba(220,38,38,0.15); color: #fca5a5; border: 1px solid rgba(220,38,38,0.3); }
+
+.opp-thesis {
+    color: #cbd5e1; font-size: 0.88rem; line-height: 1.55;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+.opp-metrics-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.5rem;
+}
+.opp-metric {
+    padding: 0.6rem 0.5rem;
+    background: rgba(2,6,23,0.5);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 0.6rem;
+    text-align: center;
+}
+.opp-metric .label { display: block; font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.2rem; }
+.opp-metric .value { display: block; font-size: 0.85rem; font-weight: 800; color: white; }
+.opp-metric .value.up { color: #34d399; }
+.opp-metric .value.down { color: #f87171; }
+
+.opp-catalysts { display: flex; flex-direction: column; gap: 0.35rem; }
+.opp-catalyst {
+    padding: 0.45rem 0.65rem;
+    background: rgba(14,116,144,0.08);
+    border-left: 2px solid rgba(56,189,248,0.5);
+    border-radius: 0 0.4rem 0.4rem 0;
+    color: #bae6fd; font-size: 0.78rem; line-height: 1.35;
+}
+
+.opp-risks { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.opp-risk {
+    padding: 0.3rem 0.6rem;
+    background: rgba(127,29,29,0.12);
+    border: 1px solid rgba(239,68,68,0.15);
+    border-radius: 999px;
+    color: #fecaca; font-size: 0.7rem; font-weight: 600;
+}
+
+.opp-footer { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.75rem; }
+.opp-link { color: #818cf8; font-weight: 700; font-size: 0.85rem; text-decoration: none; }
+.opp-link:hover { color: #a5b4fc; text-decoration: underline; }
+
+.empty-state { padding: 4rem 2rem; text-align: center; background: rgba(15,23,42,0.4); border: 1px dashed rgba(255,255,255,0.1); border-radius: 1.25rem; }
+.empty-state h4 { color: white; font-size: 1.25rem; margin: 0 0 0.5rem 0; }
+.empty-state p { color: rgba(255,255,255,0.5); margin: 0; }
+
+/* Stats */
+.stats-strip { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.stat-pill {
+    padding: 0.6rem 1rem;
+    background: rgba(30,41,59,0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 0.75rem;
+    display: flex; align-items: center; gap: 0.5rem;
+}
+.stat-pill .label { color: #94a3b8; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.stat-pill .value { color: white; font-weight: 900; font-size: 1.1rem; }
+
+.disclaimer-bar {
+    background: rgba(234,179,8,0.08);
+    border: 1px solid rgba(234,179,8,0.2);
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    color: #fbbf24;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .opp-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    {% include "dashboard/_sidebar.html.tera" %}
+
+    <div class="dashboard-main">
+        <div class="page-title">
+            <h1>📊 Global Platform Scanner</h1>
+            <span style="background: rgba(139, 92, 246, 0.2); color: #a78bfa; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; border: 1px solid rgba(139, 92, 246, 0.3);">
+                🌐 Ecosystem Wide
+            </span>
+        </div>
+
+        <div class="disclaimer-bar">
+            ⚠️ <strong>Global Educational Tool:</strong> These opportunities are surfaced by the platform scanner across all users. Opportunity scores are algorithm-generated from research data and do not constitute investment advice. Always perform your own due diligence.
+        </div>
+
+        <div class="stats-strip">
+            <div class="stat-pill">
+                <span class="label">Screened</span>
+                <span class="value">{{ total_opportunities }}</span>
+            </div>
+            {% set buy_count = 0 %}
+            {% for group in grouped_opportunities %}
+                {% if group.latest.stance == "strong_buy" or group.latest.stance == "buy" %}
+                    {% set_global buy_count = buy_count + 1 %}
+                {% endif %}
+            {% endfor %}
+            <div class="stat-pill">
+                <span class="label">Bullish</span>
+                <span class="value" style="color: #34d399;">{{ buy_count }}</span>
+            </div>
+        </div>
+
+        {% if total_opportunities == 0 %}
+        <div class="empty-state">
+            <h4>No opportunities yet</h4>
+            <p>Run research analyses in the <a href="/dashboard/consultant" style="color: #818cf8;">Consultant</a> to generate opportunity scores.</p>
+        </div>
+        {% else %}
+        <div class="opp-grid">
+            {% for group in grouped_opportunities %}
+            {% set opp = group.latest %}
+            <div class="opp-card">
+                <div class="opp-header">
+                    <div>
+                        <div class="opp-ticker">{{ opp.ticker }}</div>
+                        <div class="opp-date">{{ opp.research_date }}</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span class="stance-badge stance-{{ opp.stance }}">
+                            {% if opp.stance == "strong_buy" %}🟢 Strong Buy
+                            {% elif opp.stance == "buy" %}🟡 Buy
+                            {% elif opp.stance == "hold" %}🟠 Hold
+                            {% elif opp.stance == "underperform" %}🔴 Underperform
+                            {% else %}⛔ Sell
+                            {% endif %}
+                        </span>
+                        <div class="score-ring">
+                            <svg viewBox="0 0 36 36">
+                                <circle class="ring-bg" cx="18" cy="18" r="15.5"></circle>
+                                <circle class="ring-fg"
+                                    cx="18" cy="18" r="15.5"
+                                    stroke-dasharray="97.4"
+                                    stroke-dashoffset="{{ 97.4 - (opp.score * 97.4 / 100) }}"
+                                    style="stroke: {% if opp.score >= 70 %}#10b981{% elif opp.score >= 50 %}#f59e0b{% else %}#ef4444{% endif %};">
+                                </circle>
+                            </svg>
+                            <div class="score-text">{{ opp.score }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="opp-thesis">{{ opp.thesis }}</div>
+
+                {% if opp.key_metrics.current_price or opp.key_metrics.pe_ratio or opp.key_metrics.market_cap or opp.key_metrics.beta %}
+                <div class="opp-metrics-row">
+                    {% if opp.key_metrics.current_price %}
+                    <div class="opp-metric">
+                        <span class="label">Price</span>
+                        <span class="value">${{ opp.key_metrics.current_price | round(precision=2) }}</span>
+                    </div>
+                    {% endif %}
+                    {% if opp.key_metrics.pe_ratio %}
+                    <div class="opp-metric">
+                        <span class="label">P/E</span>
+                        <span class="value">{{ opp.key_metrics.pe_ratio | round(precision=1) }}</span>
+                    </div>
+                    {% endif %}
+                    {% if opp.key_metrics.market_cap %}
+                    <div class="opp-metric">
+                        <span class="label">Mkt Cap</span>
+                        <span class="value">{{ opp.key_metrics.market_cap }}</span>
+                    </div>
+                    {% endif %}
+                    {% if opp.key_metrics.beta %}
+                    <div class="opp-metric">
+                        <span class="label">Beta</span>
+                        <span class="value">{{ opp.key_metrics.beta | round(precision=2) }}</span>
+                    </div>
+                    {% endif %}
+                    {% if opp.key_metrics.analyst_rating %}
+                    <div class="opp-metric">
+                        <span class="label">Analyst</span>
+                        <span class="value">{{ opp.key_metrics.analyst_rating }}</span>
+                    </div>
+                    {% endif %}
+                    {% if opp.key_metrics.target_price %}
+                    <div class="opp-metric">
+                        <span class="label">Target</span>
+                        <span class="value up">${{ opp.key_metrics.target_price | round(precision=2) }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if opp.catalysts | length > 0 %}
+                <div class="opp-catalysts">
+                    {% for catalyst in opp.catalysts %}
+                    <div class="opp-catalyst">{{ catalyst }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if opp.risks | length > 0 %}
+                <div class="opp-risks">
+                    {% for risk in opp.risks %}
+                    <span class="opp-risk">⚠ {{ risk }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if group.history_count > 0 %}
+                <div class="opp-history" style="margin-top: 0.5rem; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 0.75rem;">
+                    <h5 style="margin: 0 0 0.5rem 0; color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Prior Investigations ({{ group.history_count }})</h5>
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                        {% for past_opp in group.history %}
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25); padding: 0.4rem 0.6rem; border-radius: 0.4rem; font-size: 0.75rem;">
+                            <span style="color: #cbd5e1;">{{ past_opp.research_date }}</span>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <span class="stance-badge stance-{{ past_opp.stance }}" style="font-size: 0.6rem; padding: 0.2rem 0.5rem;">
+                                    {% if past_opp.stance == "strong_buy" %}🟢 Strong Buy
+                                    {% elif past_opp.stance == "buy" %}🟡 Buy
+                                    {% elif past_opp.stance == "hold" %}🟠 Hold
+                                    {% elif past_opp.stance == "underperform" %}🔴 Underperform
+                                    {% else %}⛔ Sell
+                                    {% endif %}
+                                </span>
+                                <span style="font-weight: 800; color: {% if past_opp.score >= 70 %}#10b981{% elif past_opp.score >= 50 %}#f59e0b{% else %}#ef4444{% endif %};">{{ past_opp.score }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="opp-footer">
+                    <a href="/dashboard/consultant" class="opp-link">View Full Research →</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

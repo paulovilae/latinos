@@ -1,0 +1,23 @@
+{# ─── Shared FAQ Content Partial ───
+   This is a content-only partial. Include it inside a page that extends base.html.tera.
+   Required context: app_name, locale, faq_items (optional array of {question, answer})
+#}
+
+<div class="faq-page">
+    <h1 class="faq-page-title">{% if locale == "es" %}❓ Preguntas Frecuentes{% else %}❓ FAQ{% endif %}</h1>
+    <p class="faq-page-subtitle">{% if locale == "es" %}Respuestas a las preguntas más comunes sobre {{ app_name }}.{% else %}Answers to the most common questions about {{ app_name }}.{% endif %}</p>
+
+    {% if faq_items is defined and faq_items | length > 0 %}
+        {% for item in faq_items %}
+        <div class="faq-item">
+            <div class="faq-q" onclick="this.querySelector('.faq-chevron').classList.toggle('open'); this.nextElementSibling.classList.toggle('open')">
+                <span>{{ item.question }}</span>
+                <span class="faq-chevron">›</span>
+            </div>
+            <div class="faq-a">{{ item.answer }}</div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-faq">{% if locale == "es" %}Las preguntas frecuentes se están preparando. Vuelve pronto.{% else %}FAQ items are being prepared. Check back soon.{% endif %}</div>
+    {% endif %}
+</div>

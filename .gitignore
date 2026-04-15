@@ -1,23 +1,13 @@
-__pycache__/
-*.pyc
-.venv/
-.env.local
+target/
+**/target/
 .env
-
-# Dependencies
-**/node_modules/
-
-# Build Outputs
-**/.next/
-**/dist/
-**/build/
-*.egg-info/
-
-# Logs and System
-*.log
-**/.DS_Store
-
-# Untracked/Deprecated
-deprecated/
-docs/general/
+.env.*
+*.sqlite
 *.db
+check_err*.txt
+check_output.txt
+tera_test
+tera_test.rs
+test_axum.rs
+test_plotly.rs
+test_plotly_html.rs

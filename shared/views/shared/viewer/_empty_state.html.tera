@@ -1,0 +1,4 @@
+<div class="rounded-2xl border border-dashed border-outline-variant/20 bg-surface-container p-10 text-center">
+  <p class="font-headline text-2xl font-bold text-primary">Sin resultados</p>
+  <p class="mt-2 text-sm text-on-surface-variant">Ajusta la búsqueda o cambia el orden para explorar otros registros.</p>
+</div>

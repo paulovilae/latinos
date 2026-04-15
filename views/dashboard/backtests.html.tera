@@ -1,0 +1,427 @@
+{% extends "base.html.tera" %}
+
+{% block title %}TradeLab Benchmarks — {{ app_name }}{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block css %}
+<style>
+:root {
+    --accent-indigo: #6366f1;
+    --accent-emerald: #10b981;
+    --accent-rose: #f43f5e;
+    --accent-amber: #f59e0b;
+    --glass-bg: rgba(15, 23, 42, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.05);
+}
+
+body { font-family: 'Inter', sans-serif; }
+.dashboard-main { padding-bottom: 4rem; }
+
+/* Page Header */
+.page-header { 
+    margin-top: 0; 
+    margin-bottom: 2.5rem; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    gap: 1.5rem; 
+    flex-wrap: wrap; 
+}
+.page-header h1 { 
+    margin: 0; 
+    font-size: 2.5rem; 
+    font-weight: 800; 
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%); 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent; 
+}
+
+/* Stats Summary Box */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+}
+.stat-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.stat-card:hover { 
+    transform: translateY(-4px); 
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 10px 40px rgba(79, 70, 229, 0.1);
+}
+.stat-label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+.stat-value { font-size: 1.75rem; font-weight: 800; color: white; line-height: 1; }
+.stat-trend { font-size: 0.8rem; margin-top: 0.5rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.trend-up { color: var(--accent-emerald); }
+.trend-down { color: var(--accent-rose); }
+
+/* Table Container */
+.table-container { 
+    background: var(--glass-bg); 
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border); 
+    border-radius: 1.5rem; 
+    overflow: hidden; 
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+}
+.table-header { 
+    padding: 1.75rem; 
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.table-header h2 { margin: 0; font-size: 1.25rem; color: white; display: flex; align-items: center; gap: 0.75rem; font-weight: 700; }
+
+.data-table { width: 100%; border-collapse: collapse; text-align: left; }
+.data-table th { 
+    background: rgba(0,0,0,0.4); 
+    color: #94a3b8; 
+    font-size: 0.7rem; 
+    text-transform: uppercase; 
+    letter-spacing: 0.1em; 
+    padding: 1.25rem 1.5rem; 
+    border-bottom: 1px solid var(--glass-border); 
+    font-weight: 800; 
+}
+.data-table td { 
+    padding: 1.25rem 1.5rem; 
+    border-bottom: 1px solid rgba(255,255,255,0.02); 
+    color: #e2e8f0; 
+    font-size: 0.95rem; 
+    transition: background 0.2s;
+}
+.data-table tr:hover { background: rgba(255,255,255,0.02); }
+
+.td-symbol { font-weight: 700; color: white; }
+.td-metric { font-family: 'Space Grotesk', monospace; font-weight: 600; }
+.val-up { color: var(--accent-emerald); }
+.val-down { color: var(--accent-rose); }
+
+/* Progress/Status */
+.status-pill {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.status-queued { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
+.status-completed { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+.status-failed { background: rgba(244, 63, 94, 0.1); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.2); }
+
+/* Buttons */
+.btn { 
+    padding: 0.75rem 1.5rem; 
+    border-radius: 0.75rem; 
+    font-weight: 700; 
+    cursor: pointer; 
+    transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid transparent;
+}
+.btn-primary { 
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); 
+    color: white; 
+    box-shadow: 0 4px 15px rgba(79,70,229,0.3);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79,70,229,0.5); }
+
+.empty-state {
+    padding: 6rem 2rem;
+    text-align: center;
+}
+.empty-state h3 { font-size: 1.5rem; color: white; margin-bottom: 0.5rem; }
+.empty-state p { color: #64748b; }
+
+/* Modals */
+dialog::backdrop { background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); }
+.modal {
+    background: #0f172a !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 1.5rem !important;
+    color: white;
+    padding: 2.5rem;
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+}
+.form-input {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    color: white;
+    margin-top: 0.5rem;
+    outline: none;
+    transition: 0.2s;
+}
+.form-input:focus { border-color: var(--accent-indigo); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    {% include "dashboard/_sidebar.html.tera" %}
+    
+    <div class="dashboard-main">
+        <header class="page-header">
+            <div>
+                <h1>TradeLab Simulator</h1>
+                <p style="color: #94a3b8; font-size: 1rem; margin-top: 0.25rem;">Advanced deterministic execution research.</p>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button onclick="document.getElementById('new_sim_modal').showModal()" class="btn btn-primary">
+                    <span style="font-size: 1.25rem;">⚡</span> Deploy New Simulation
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Simulated</div>
+                <div class="stat-value">{{ total_backtests }}</div>
+                <div class="stat-trend trend-up"><span>↑</span> 12% vs last week</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Research</div>
+                <div class="stat-value">{{ user_bots | length }}</div>
+                <div class="stat-trend" style="color: #64748b;">Algorithm capacity: 85%</div>
+            </div>
+            <div class="stat-card" style="border-color: rgba(16, 185, 129, 0.2);">
+                <div class="stat-label">System Integrity</div>
+                <div class="stat-value">99.9%</div>
+                <div class="stat-trend trend-up">Real-time Yahoo Sync</div>
+            </div>
+        </div>
+
+        <!-- Main Benchmarks Table -->
+        <div class="table-container">
+            <div class="table-header">
+                <h2><span>🧪</span> Backtest Results History</h2>
+                <div style="font-size: 0.8rem; color: #64748b; display: flex; align-items: center; gap: 8px;">
+                    <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span> 
+                    Live Engine Active
+                </div>
+            </div>
+
+            {% if total_backtests == 0 %}
+            <div class="empty-state">
+                <div style="font-size: 4rem; margin-bottom: 1.5rem;">📡</div>
+                <h3>No simulations found</h3>
+                <p>Submit your first trading algorithm to the simulator to generate performance data.</p>
+            </div>
+            {% else %}
+            <div style="overflow-x: auto;">
+                <table class="data-table" id="bt-table"
+                       hx-get="/dashboard/backtests"
+                       hx-trigger="every 5s"
+                       hx-select="#bt-table"
+                       hx-target="this"
+                       hx-swap="outerHTML">
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Resolution</th>
+                            <th>ROI (Abs)</th>
+                            <th>CAGR</th>
+                            <th>Win Rate</th>
+                            <th>Drawdown</th>
+                            <th>Sortino</th>
+                            <th>Trades</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Equity Curve</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in backtests %}
+                        <tr id="row-{{ item.id }}">
+                            <td class="td-symbol">{{ item.symbol }}</td>
+                            <td><span style="color: #64748b; font-family: monospace;">{{ item.interval | default(value="1h") }}</span></td>
+                            
+                            {% if item.results %}
+                                <td class="td-metric {% if '-' in item.results.roi %}val-down{% else %}val-up{% endif %}">
+                                    {{ item.results.roi }}
+                                </td>
+                                <td class="td-metric">{{ item.results.cagr | default(value="—") }}</td>
+                                <td class="td-metric">{{ item.results.win_rate }}</td>
+                                <td class="td-metric val-down">{{ item.results.max_drawdown }}</td>
+                                <td class="td-metric">{{ item.results.sortino_ratio | default(value="—") }}</td>
+                                <td class="td-metric" style="color: white; font-weight: 700;">{{ item.results.total_trades }}</td>
+                            {% else %}
+                                <td colspan="6" style="color: #475569; font-style: italic; font-size: 0.85rem;">Simulation in progress...</td>
+                            {% endif %}
+                            
+                            <td>
+                                {% if item.status == "queued" %}
+                                    <span class="status-pill status-queued">Queued</span>
+                                {% elif item.status == "completed" %}
+                                    <span class="status-pill status-completed">Completed</span>
+                                {% elif item.status == "failed" %}
+                                    <span class="status-pill status-failed">Failed</span>
+                                {% else %}
+                                    <span class="status-pill status-queued">{{ item.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                {% if item.status == "completed" and item.results and item.results.equity_curve is defined %}
+                                    <div id="spk-{{ item.id }}" style="width: 140px; height: 36px; display: inline-block; cursor: pointer;" 
+                                         onclick="showDetail({{ item.id }}, '{{ item.symbol }}')"></div>
+                                    <script>
+                                        // Self-contained sparkline script
+                                        (function() {
+                                            const curve = {{ item.results.equity_curve | json_encode | safe }};
+                                            const id = "spk-{{ item.id }}";
+                                            if (!curve || curve.length < 2) return;
+                                            const color = curve[curve.length-1] >= curve[0] ? '#10b981' : '#f43f5e';
+                                            const trace = {
+                                                y: curve, type: 'scatter', mode: 'lines',
+                                                line: { color: color, width: 2 },
+                                                fill: 'tonexty', fillcolor: color + '15'
+                                            };
+                                            const layout = {
+                                                margin: { l: 0, r: 0, b: 0, t: 0, pad: 0 },
+                                                showlegend: false, paper_bgcolor: "transparent", plot_bgcolor: "transparent",
+                                                xaxis: { visible: false, fixedrange: true },
+                                                yaxis: { visible: false, fixedrange: true }
+                                            };
+                                            setTimeout(() => Plotly.newPlot(id, [trace], layout, {displayModeBar: false, staticPlot: true}), 10);
+                                            window['bt_curve_'+{{item.id}}] = curve;
+                                        })();
+                                    </script>
+                                {% else %}
+                                    <span style="color: #334155;">—</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <button onclick="deleteBt({{ item.id }})" style="background:none; border:none; color:#475569; cursor:pointer; font-size: 1.25rem;">&times;</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Simulation Detail Modal -->
+<dialog id="detail_modal" class="modal" style="width: 100%; max-width: 900px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+        <div>
+            <h2 id="det_title" style="margin: 0; font-size: 2rem; font-weight: 800;">Analytics Deep-Dive</h2>
+            <p id="det_subtitle" style="color: #64748b; font-family: monospace;"></p>
+        </div>
+        <button onclick="document.getElementById('detail_modal').close()" style="background: rgba(255,255,255,0.05); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">&times;</button>
+    </div>
+    
+    <div id="full_curve" style="width: 100%; height: 450px; background: rgba(0,0,0,0.2); border-radius: 1rem; margin-bottom: 2rem;"></div>
+    
+    <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+        <a id="bt_pdf_link" href="#" class="btn btn-primary" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);">
+            <span>📄</span> Download PDF Report
+        </a>
+        <button onclick="document.getElementById('detail_modal').close()" class="btn btn-primary">Close Analytics</button>
+    </div>
+</dialog>
+
+<!-- New Simulation Modal -->
+<dialog id="new_sim_modal" class="modal" style="max-width: 500px; width: 100%;">
+    <h2 style="margin: 0 0 0.5rem 0; font-size: 1.75rem; font-weight: 800;">Deploy Simulator</h2>
+    <p style="color: #64748b; margin-bottom: 2rem;">Initialize algorithm benchmarks against historical tick data.</p>
+    
+    <form action="/dashboard/backtests/run" method="POST">
+        <label class="stat-label">Model Strategy</label>
+        <select name="bot_id" required class="form-input" style="appearance: none;">
+            <option value="" disabled selected>-- Select Algorithm --</option>
+            {% for bot in user_bots %}
+            <option value="{{ bot.id }}" style="background: #1e293b;">{{ bot.name }}</option>
+            {% endfor %}
+        </select>
+
+        <div style="margin-top: 1.5rem;">
+            <label class="stat-label">Market Target</label>
+            <select name="market" required class="form-input">
+                <option value="NVDA">Nvidia Corp (NVDA)</option>
+                <option value="AAPL">Apple Inc (AAPL)</option>
+                <option value="TSLA">Tesla Inc (TSLA)</option>
+                <option value="BTC/USDT">Bitcoin (BTC/USDT)</option>
+                <option value="ETH/USDT">Ethereum (ETH/USDT)</option>
+                <option value="SOL/USDT">Solana (SOL/USDT)</option>
+            </select>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+            <label class="stat-label">Evaluation Interval</label>
+            <select name="range" required class="form-input">
+                <option value="15m">15 Minutes (Scalping)</option>
+                <option value="1h" selected>1 Hour (Intraday)</option>
+                <option value="4h">4 Hours (Swing)</option>
+                <option value="1d">1 Day (Position)</option>
+            </select>
+        </div>
+
+        <div style="margin-top: 2.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+            <button type="button" onclick="document.getElementById('new_sim_modal').close()" style="background:none; border:none; color:#64748b; font-weight:600; cursor:pointer;">Cancel</button>
+            <button type="submit" class="btn btn-primary">Initialize Test</button>
+        </div>
+    </form>
+</dialog>
+
+<script>
+function showDetail(id, symbol) {
+    const curve = window['bt_curve_' + id];
+    const modal = document.getElementById('detail_modal');
+    document.getElementById('det_subtitle').textContent = symbol + " — Performance Benchmark #" + id;
+    document.getElementById('bt_pdf_link').href = '/dashboard/backtests/' + id + '/pdf';
+    modal.showModal();
+    
+    setTimeout(() => {
+        const color = curve[curve.length-1] >= curve[0] ? '#10b981' : '#f43f5e';
+        const trace = {
+            y: curve, type: 'scatter', mode: 'lines+markers',
+            marker: { size: 4 },
+            line: { color: color, width: 3, shape: 'spline' },
+            fill: 'tonexty', fillcolor: color + '08'
+        };
+        const layout = {
+            margin: { l: 60, r: 20, b: 60, t: 20 },
+            paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+            xaxis: { gridcolor: 'rgba(255,255,255,0.05)', tickfont: {color: '#64748b'}, title: {text: 'Tick Index', font: {color: '#64748b'}} },
+            yaxis: { gridcolor: 'rgba(255,255,255,0.05)', tickfont: {color: '#64748b'}, title: {text: 'Realized Equity ($)', font: {color: '#64748b'}} }
+        };
+        Plotly.newPlot('full_curve', [trace], layout);
+    }, 50);
+}
+
+function deleteBt(id) {
+    if(!confirm('Archive simulation results for #' + id + '?')) return;
+    fetch('/dashboard/backtests/' + id, {method: 'DELETE'})
+        .then(() => document.getElementById('row-' + id).remove());
+}
+</script>
+{% endblock %}

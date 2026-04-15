@@ -1,0 +1,18 @@
+{% macro render_viewer(dataset, endpoint_url, current_view, query) %}
+<section id="viewer-shell" class="space-y-4">
+  {% include "shared/viewer/_toolbar.html.tera" %}
+  <div id="viewer-canvas">
+    {% if dataset.records | length == 0 %}
+      {% include "shared/viewer/_empty_state.html.tera" %}
+    {% elif current_view == "list" %}
+      {% include "shared/viewer/_list.html.tera" %}
+    {% elif current_view == "table" %}
+      {% include "shared/viewer/_table.html.tera" %}
+    {% elif current_view == "tree" %}
+      {% include "shared/viewer/_tree.html.tera" %}
+    {% else %}
+      {% include "shared/viewer/_grid.html.tera" %}
+    {% endif %}
+  </div>
+</section>
+{% endmacro %}

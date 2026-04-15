@@ -1,0 +1,80 @@
+{% if viewer_ui.total_pages > 1 %}
+<div class="flex flex-col gap-3 rounded-2xl border border-outline-variant/15 bg-surface-container p-4 lg:flex-row lg:items-center lg:justify-between">
+  <p class="text-sm text-on-surface-variant">
+    Página <strong class="text-primary">{{ viewer_ui.current_page }}</strong> de <strong class="text-primary">{{ viewer_ui.total_pages }}</strong>
+    · {{ viewer_ui.total_records }} registros
+  </p>
+  <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+    <div class="flex flex-wrap gap-2">
+      <button type="button" {% if viewer_ui.current_page > 1 %}hx-get="{{ viewer_endpoint_url }}&view={{ current_view }}&page=1&per_page={{ viewer_ui.per_page }}{% if viewer_query.q %}&q={{ viewer_query.q | urlencode }}{% endif %}&sort={{ viewer_query.sort | default(value='title') }}&direction={{ viewer_query.direction | default(value='asc') }}&sexo={{ viewer_query.sexo | default(value='ALL') }}&grupo={{ viewer_query.grupo | default(value='ALL') | urlencode }}&raza={{ viewer_query.raza | default(value='ALL') | urlencode }}&has_image={{ viewer_query.has_image | default(value='all') }}&peso_min={{ viewer_query.peso_min | default(value='') }}&peso_max={{ viewer_query.peso_max | default(value='') }}&columns={{ viewer_query.columns | default(value='') }}" hx-target="#viewer-content" hx-swap="innerHTML"{% else %}disabled{% endif %} class="rounded-lg border border-outline-variant/20 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] {% if viewer_ui.current_page > 1 %}text-on-surface-variant{% else %}cursor-not-allowed opacity-40 text-on-surface-variant{% endif %}">
+        Inicio
+      </button>
+      <button type="button" {% if viewer_ui.current_page > 1 %}hx-get="{{ viewer_endpoint_url }}&view={{ current_view }}&page={{ viewer_ui.current_page - 1 }}&per_page={{ viewer_ui.per_page }}{% if viewer_query.q %}&q={{ viewer_query.q | urlencode }}{% endif %}&sort={{ viewer_query.sort | default(value='title') }}&direction={{ viewer_query.direction | default(value='asc') }}&sexo={{ viewer_query.sexo | default(value='ALL') }}&grupo={{ viewer_query.grupo | default(value='ALL') | urlencode }}&raza={{ viewer_query.raza | default(value='ALL') | urlencode }}&has_image={{ viewer_query.has_image | default(value='all') }}&peso_min={{ viewer_query.peso_min | default(value='') }}&peso_max={{ viewer_query.peso_max | default(value='') }}&columns={{ viewer_query.columns | default(value='') }}" hx-target="#viewer-content" hx-swap="innerHTML"{% else %}disabled{% endif %} class="rounded-lg border border-outline-variant/20 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] {% if viewer_ui.current_page > 1 %}text-on-surface-variant{% else %}cursor-not-allowed opacity-40 text-on-surface-variant{% endif %}">
+        Anterior
+      </button>
+      <button type="button" {% if viewer_ui.current_page < viewer_ui.total_pages %}hx-get="{{ viewer_endpoint_url }}&view={{ current_view }}&page={{ viewer_ui.current_page + 1 }}&per_page={{ viewer_ui.per_page }}{% if viewer_query.q %}&q={{ viewer_query.q | urlencode }}{% endif %}&sort={{ viewer_query.sort | default(value='title') }}&direction={{ viewer_query.direction | default(value='asc') }}&sexo={{ viewer_query.sexo | default(value='ALL') }}&grupo={{ viewer_query.grupo | default(value='ALL') | urlencode }}&raza={{ viewer_query.raza | default(value='ALL') | urlencode }}&has_image={{ viewer_query.has_image | default(value='all') }}&peso_min={{ viewer_query.peso_min | default(value='') }}&peso_max={{ viewer_query.peso_max | default(value='') }}&columns={{ viewer_query.columns | default(value='') }}" hx-target="#viewer-content" hx-swap="innerHTML"{% else %}disabled{% endif %} class="rounded-lg border border-secondary/30 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] {% if viewer_ui.current_page < viewer_ui.total_pages %}bg-secondary text-on-secondary{% else %}cursor-not-allowed opacity-40 text-on-surface-variant{% endif %}">
+        Siguiente
+      </button>
+      <button type="button" {% if viewer_ui.current_page < viewer_ui.total_pages %}hx-get="{{ viewer_endpoint_url }}&view={{ current_view }}&page={{ viewer_ui.total_pages }}&per_page={{ viewer_ui.per_page }}{% if viewer_query.q %}&q={{ viewer_query.q | urlencode }}{% endif %}&sort={{ viewer_query.sort | default(value='title') }}&direction={{ viewer_query.direction | default(value='asc') }}&sexo={{ viewer_query.sexo | default(value='ALL') }}&grupo={{ viewer_query.grupo | default(value='ALL') | urlencode }}&raza={{ viewer_query.raza | default(value='ALL') | urlencode }}&has_image={{ viewer_query.has_image | default(value='all') }}&peso_min={{ viewer_query.peso_min | default(value='') }}&peso_max={{ viewer_query.peso_max | default(value='') }}&columns={{ viewer_query.columns | default(value='') }}" hx-target="#viewer-content" hx-swap="innerHTML"{% else %}disabled{% endif %} class="rounded-lg border border-outline-variant/20 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] {% if viewer_ui.current_page < viewer_ui.total_pages %}text-on-surface-variant{% else %}cursor-not-allowed opacity-40 text-on-surface-variant{% endif %}">
+        Final
+      </button>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      {% set start_page = viewer_ui.current_page - 2 %}
+      {% if start_page < 1 %}{% set start_page = 1 %}{% endif %}
+      {% set end_page = start_page + 4 %}
+      {% if end_page > viewer_ui.total_pages %}{% set end_page = viewer_ui.total_pages %}{% endif %}
+      {% for page_number in range(start=start_page, end=end_page + 1) %}
+      <button
+        type="button"
+        hx-get="{{ viewer_endpoint_url }}&view={{ current_view }}&page={{ page_number }}&per_page={{ viewer_ui.per_page }}{% if viewer_query.q %}&q={{ viewer_query.q | urlencode }}{% endif %}&sort={{ viewer_query.sort | default(value='title') }}&direction={{ viewer_query.direction | default(value='asc') }}&sexo={{ viewer_query.sexo | default(value='ALL') }}&grupo={{ viewer_query.grupo | default(value='ALL') | urlencode }}&raza={{ viewer_query.raza | default(value='ALL') | urlencode }}&has_image={{ viewer_query.has_image | default(value='all') }}&peso_min={{ viewer_query.peso_min | default(value='') }}&peso_max={{ viewer_query.peso_max | default(value='') }}&columns={{ viewer_query.columns | default(value='') }}"
+        hx-target="#viewer-content"
+        hx-swap="innerHTML"
+        class="rounded-lg border px-3 py-2 text-xs font-bold {% if page_number == viewer_ui.current_page %}border-secondary bg-secondary text-on-secondary{% else %}border-outline-variant/20 text-on-surface-variant{% endif %}"
+      >
+        {{ page_number }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <form
+      hx-get="{{ viewer_endpoint_url }}"
+      hx-target="#viewer-content"
+      hx-swap="innerHTML"
+      class="flex flex-wrap items-center gap-2"
+    >
+      <input type="hidden" name="view" value="{{ current_view }}"/>
+      {% if viewer_query.q %}<input type="hidden" name="q" value="{{ viewer_query.q }}"/>{% endif %}
+      <input type="hidden" name="sort" value="{{ viewer_query.sort | default(value='title') }}"/>
+      <input type="hidden" name="direction" value="{{ viewer_query.direction | default(value='asc') }}"/>
+      <input type="hidden" name="sexo" value="{{ viewer_query.sexo | default(value='ALL') }}"/>
+      <input type="hidden" name="grupo" value="{{ viewer_query.grupo | default(value='ALL') }}"/>
+      <input type="hidden" name="raza" value="{{ viewer_query.raza | default(value='ALL') }}"/>
+      <input type="hidden" name="has_image" value="{{ viewer_query.has_image | default(value='all') }}"/>
+      <input type="hidden" name="peso_min" value="{{ viewer_query.peso_min | default(value='') }}"/>
+      <input type="hidden" name="peso_max" value="{{ viewer_query.peso_max | default(value='') }}"/>
+      <input type="hidden" name="columns" value="{{ viewer_query.columns | default(value='') }}"/>
+      <label class="text-xs font-bold uppercase tracking-[0.18em] text-on-surface-variant">Ir a</label>
+      <input
+        type="number"
+        name="page"
+        min="1"
+        max="{{ viewer_ui.total_pages }}"
+        value="{{ viewer_ui.current_page }}"
+        class="w-20 rounded-lg border border-outline-variant/20 bg-surface-container-low px-3 py-2 text-sm text-primary"
+      />
+      <label class="text-xs font-bold uppercase tracking-[0.18em] text-on-surface-variant">por página</label>
+      <select name="per_page" class="rounded-lg border border-outline-variant/20 bg-surface-container-low px-3 py-2 text-sm text-primary">
+        <option value="12" {% if viewer_ui.per_page == 12 %}selected{% endif %}>12</option>
+        <option value="24" {% if viewer_ui.per_page == 24 %}selected{% endif %}>24</option>
+        <option value="48" {% if viewer_ui.per_page == 48 %}selected{% endif %}>48</option>
+        <option value="96" {% if viewer_ui.per_page == 96 %}selected{% endif %}>96</option>
+      </select>
+      <button type="submit" class="rounded-lg border border-outline-variant/20 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+        Ir
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}

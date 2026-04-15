@@ -1,0 +1,181 @@
+{% set app_name = app_name | default(value="ImagineOS") %}
+{% set locale = locale | default(value="es") %}
+{% set contact_email = contact_email | default(value="security@vilaros.com") %}
+<!DOCTYPE html>
+<html lang="{{ locale }}" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if locale == "es" %}Centro de Seguridad{% else %}Security Center{% endif %} — {{ app_name }}</title>
+    <meta name="description" content="{% if locale == 'es' %}Centro de Seguridad de {{ app_name }}: 12 Centros de Comando. ISO 27001, PCI DSS, SOC 2, NIST, OWASP.{% else %}{{ app_name }} Security Center: 12 Command Centers. ISO 27001, PCI DSS, SOC 2, NIST, OWASP.{% endif %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Design tokens — apps override these via their own base */
+        :root,[data-theme="light"]{--primary:#1e3a5f;--bg:#ffffff;--bg-alt:#f1f5f9;--text:#1e293b;--text-muted:#64748b;--border:#e2e8f0;--shadow:rgba(0,0,0,0.08);--success:#22c55e;--error:#ef4444;}
+        [data-theme="dark"]{--primary:#60a5fa;--bg:#0f172a;--bg-alt:#1e293b;--text:#f1f5f9;--text-muted:#94a3b8;--border:#334155;--shadow:rgba(0,0,0,0.3);--success:#34d399;--error:#f87171;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);transition:background .3s,color .3s;}
+
+        .sec-page{max-width:1000px;margin:0 auto;padding:3rem 1.5rem 5rem;}
+
+        /* Hero */
+        .sec-hero{background:linear-gradient(135deg,#0f172a 0%,var(--primary) 100%);border-radius:1rem;padding:3rem 2.5rem;margin-bottom:2.5rem;color:white;position:relative;overflow:hidden;}
+        .sec-hero::before{content:'';position:absolute;top:-50%;right:-30%;width:60%;height:200%;background:radial-gradient(ellipse,rgba(99,102,241,0.15) 0%,transparent 70%);}
+        .sec-hero h1{font-size:2rem;font-weight:800;margin-bottom:0.75rem;position:relative;letter-spacing:-0.03em;}
+        .sec-hero p{opacity:0.85;font-size:0.92rem;line-height:1.7;max-width:700px;position:relative;}
+        .sec-badges{display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1.25rem;position:relative;}
+        .sec-badge{display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.75rem;border-radius:2rem;font-size:0.7rem;font-weight:600;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);}
+        .sec-badge-live{background:rgba(16,185,129,0.2);border-color:rgba(16,185,129,0.4);}
+        .sec-badge-live::before{content:'';width:6px;height:6px;border-radius:50%;background:#10b981;animation:sec-pulse 2s infinite;}
+        @keyframes sec-pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+        /* Command Center grid */
+        .cc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:2.5rem;}
+        .cc-card{background:var(--bg-alt);border:1px solid var(--border);border-radius:0.75rem;padding:1.5rem;transition:all 0.25s;position:relative;overflow:hidden;}
+        .cc-card:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:0 8px 24px var(--shadow);}
+        .cc-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--cc-color,var(--primary)),transparent);}
+        .cc-head{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;}
+        .cc-icon{font-size:1.4rem;width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:0.5rem;border:1px solid var(--border);}
+        .cc-num{font-size:0.6rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;}
+        .cc-title{font-weight:700;font-size:0.92rem;}
+        .cc-desc{color:var(--text-muted);font-size:0.8rem;line-height:1.65;}
+        .cc-tags{display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.65rem;}
+        .cc-tag{font-size:0.62rem;padding:0.12rem 0.45rem;border-radius:1rem;background:var(--bg);border:1px solid var(--border);color:var(--text-muted);font-weight:500;}
+
+        /* Sections */
+        .sec-section{margin-bottom:2.5rem;}
+        .sec-h2{font-size:1.1rem;font-weight:700;color:var(--primary);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:2px solid var(--border);}
+        .sec-section p,.sec-section li{color:var(--text-muted);font-size:0.85rem;line-height:1.7;margin-bottom:0.5rem;}
+        .sec-section ul{padding-left:1.5rem;}
+
+        /* DR metrics */
+        .dr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin:1rem 0;}
+        .dr-item{background:var(--bg-alt);border:1px solid var(--border);border-radius:0.5rem;padding:1rem;text-align:center;}
+        .dr-val{font-size:1.4rem;font-weight:800;color:var(--success);letter-spacing:-0.03em;}
+        .dr-lbl{font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;}
+        .dr-sev{font-size:0.6rem;padding:0.12rem 0.4rem;border-radius:1rem;font-weight:600;display:inline-block;margin-top:0.25rem;}
+        .sev-crit{background:rgba(239,68,68,0.12);color:var(--error);}
+        .sev-high{background:rgba(245,158,11,0.12);color:#f59e0b;}
+
+        /* Compliance */
+        .comp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.6rem;margin:1rem 0;}
+        .comp-card{background:var(--bg-alt);border:1px solid var(--border);border-radius:0.5rem;padding:0.75rem;text-align:center;transition:border-color 0.2s;}
+        .comp-card:hover{border-color:var(--primary);}
+        .comp-name{font-weight:700;font-size:0.8rem;margin-bottom:0.15rem;}
+        .comp-desc{color:var(--text-muted);font-size:0.68rem;line-height:1.4;}
+
+        /* CTA */
+        .sec-cta{background:linear-gradient(135deg,var(--primary),#7c3aed);color:white;border-radius:0.75rem;padding:2rem;text-align:center;margin-top:2rem;}
+        .sec-cta h3{font-weight:700;margin-bottom:0.5rem;}
+        .sec-cta p{opacity:0.9;font-size:0.85rem;}
+        .sec-cta a{color:white;font-weight:700;text-decoration:underline;}
+
+        @media(max-width:768px){.cc-grid,.comp-grid,.dr-grid{grid-template-columns:1fr;}.sec-hero{padding:2rem 1.5rem;}.sec-hero h1{font-size:1.5rem;}}
+    </style>
+</head>
+<body>
+    {% include "shared/public_header.html.tera" %}
+
+    <div class="sec-page">
+
+        <div class="sec-hero">
+            <h1>🛡️ {% if locale == "es" %}Centro de Seguridad{% else %}Security Center{% endif %}</h1>
+            <p>{% if locale == "es" %}Nuestra infraestructura soberana protege tu información con 12 Centros de Comando, alineados con los estándares más exigentes de la industria.{% else %}Our sovereign infrastructure protects your data with 12 Command Centers, aligned with the most demanding industry standards.{% endif %}</p>
+            <div class="sec-badges">
+                <span class="sec-badge sec-badge-live">{% if locale == "es" %}Monitoreo 24/7{% else %}24/7 Monitoring{% endif %}</span>
+                <span class="sec-badge">🔐 TLS 1.3</span>
+                <span class="sec-badge">🛡️ Zero-Trust</span>
+                <span class="sec-badge">🤖 AI Security</span>
+                <span class="sec-badge">📋 11 Frameworks</span>
+            </div>
+        </div>
+
+        <h2 class="sec-h2">{% if locale == "es" %}Centros de Comando{% else %}Command Centers{% endif %}</h2>
+        <div class="cc-grid">
+            <div class="cc-card" style="--cc-color:#3b82f6;"><div class="cc-head"><div class="cc-icon">🏗️</div><div><div class="cc-num">CC-01</div><div class="cc-title">Infrastructure Shield</div></div></div><div class="cc-desc">{% if locale == "es" %}Infraestructura soberana bare-metal. Networking zero-trust con malla WireGuard cifrada. Sin dependencia de terceros.{% else %}Sovereign bare-metal infrastructure. Zero-trust networking with encrypted WireGuard mesh. No third-party dependency.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Bare-Metal</span><span class="cc-tag">WireGuard</span><span class="cc-tag">Zero-Trust</span></div></div>
+
+            <div class="cc-card" style="--cc-color:#10b981;"><div class="cc-head"><div class="cc-icon">🔐</div><div><div class="cc-num">CC-02</div><div class="cc-title">Cryptographic Barrier</div></div></div><div class="cc-desc">{% if locale == "es" %}TLS 1.3 obligatorio con HSTS Preload (2 años). Cifrado en reposo. JWT con validación de audiencia e issuer.{% else %}Mandatory TLS 1.3 with HSTS Preload (2 years). Encryption at rest. JWT with audience and issuer validation.{% endif %}</div><div class="cc-tags"><span class="cc-tag">TLS 1.3</span><span class="cc-tag">HSTS Preload</span><span class="cc-tag">JWT</span></div></div>
+
+            <div class="cc-card" style="--cc-color:#f59e0b;"><div class="cc-head"><div class="cc-icon">🔑</div><div><div class="cc-num">CC-03</div><div class="cc-title">Identity & Access</div></div></div><div class="cc-desc">{% if locale == "es" %}SSO via Authentik OIDC. Control de acceso basado en roles (RBAC) por endpoint. Separación de privilegios.{% else %}SSO via Authentik OIDC. Role-Based Access Control (RBAC) per endpoint. Privilege separation.{% endif %}</div><div class="cc-tags"><span class="cc-tag">OIDC SSO</span><span class="cc-tag">RBAC</span><span class="cc-tag">Sovereign</span></div></div>
+
+            <div class="cc-card" style="--cc-color:#ef4444;"><div class="cc-head"><div class="cc-icon">🛡️</div><div><div class="cc-num">CC-04</div><div class="cc-title">Network Defense</div></div></div><div class="cc-desc">{% if locale == "es" %}Blacklist/Whitelist con recarga en caliente. Rate limiting por IP. Detección adaptativa de anomalías. Mitigación DDoS.{% else %}Hot-reloadable Blacklist/Whitelist. Per-IP rate limiting. Adaptive anomaly detection. DDoS mitigation.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Blacklist</span><span class="cc-tag">Rate Limit</span><span class="cc-tag">Anti-DDoS</span></div></div>
+
+            <div class="cc-card" style="--cc-color:#8b5cf6;"><div class="cc-head"><div class="cc-icon">🤖</div><div><div class="cc-num">CC-05</div><div class="cc-title">AI Security</div></div></div><div class="cc-desc">{% if locale == "es" %}Defensa contra prompt injection. Guardrails de alucinación. Filtrado de outputs. Confinamiento de agentes por dominio.{% else %}Prompt injection defense. Hallucination guardrails. Output filtering. Domain-bound agent confinement.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Anti-Injection</span><span class="cc-tag">Hallucination Guard</span><span class="cc-tag">Output Filter</span></div></div>
+
+            <div class="cc-card" style="--cc-color:#06b6d4;"><div class="cc-head"><div class="cc-icon">🗃️</div><div><div class="cc-num">CC-06</div><div class="cc-title">Data Integrity</div></div></div><div class="cc-desc">{% if locale == "es" %}Queries parametrizadas (zero SQLi). Sanitización de inputs. Límites de longitud. Stripping de HTML.{% else %}Parameterized queries (zero SQLi). Input sanitization. Length limits. HTML stripping.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Anti-SQLi</span><span class="cc-tag">Sanitization</span><span class="cc-tag">Parameterized</span></div></div>
+
+            <div class="cc-card" style="--cc-color:#ec4899;"><div class="cc-head"><div class="cc-icon">📝</div><div><div class="cc-num">CC-07</div><div class="cc-title">Observability & Audit</div></div></div><div class="cc-desc">{% if locale == "es" %}Logging estructurado. Trazabilidad con X-Request-Id por petición. Auditoría persistente a Memento.{% else %}Structured logging. X-Request-Id traceability per request. Persistent audit to Memento.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Audit Trail</span><span class="cc-tag">Request Tracing</span><span class="cc-tag">Memento</span></div></div>
+
+            <div class="cc-card" style="--cc-color:#14b8a6;"><div class="cc-head"><div class="cc-icon">📊</div><div><div class="cc-num">CC-08</div><div class="cc-title">Traffic Intelligence</div></div></div><div class="cc-desc">{% if locale == "es" %}Analíticas en tiempo real por host y ruta. Línea base de comportamiento. Scoring de anomalías.{% else %}Real-time analytics per host and path. Behavioral baseline. Anomaly scoring.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Real-Time</span><span class="cc-tag">Anomaly Score</span><span class="cc-tag">Auto-Escalate</span></div></div>
+
+            <div class="cc-card" style="--cc-color:#f43f5e;"><div class="cc-head"><div class="cc-icon">🚨</div><div><div class="cc-num">CC-09</div><div class="cc-title">Disaster Recovery</div></div></div><div class="cc-desc">{% if locale == "es" %}RTO 15 min para servicios críticos. RPO cero (PostgreSQL WAL). Backups cada 6h. Failover vía Argus.{% else %}15min RTO for critical services. Zero RPO (PostgreSQL WAL). 6h automated backups. Argus failover.{% endif %}</div><div class="cc-tags"><span class="cc-tag">RTO 15min</span><span class="cc-tag">RPO Zero</span><span class="cc-tag">Auto-Backup</span></div></div>
+
+            <div class="cc-card" style="--cc-color:#6366f1;"><div class="cc-head"><div class="cc-icon">🔍</div><div><div class="cc-num">CC-10</div><div class="cc-title">Vulnerability Mgmt</div></div></div><div class="cc-desc">{% if locale == "es" %}Autoataque automatizado: port scanning, SQLi/XSS probes, auditoría TLS, path traversal, CORS.{% else %}Automated self-attack: port scanning, SQLi/XSS probes, TLS audit, path traversal, CORS.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Pentest</span><span class="cc-tag">Port Scan</span><span class="cc-tag">TLS Audit</span></div></div>
+
+            <div class="cc-card" style="--cc-color:#84cc16;"><div class="cc-head"><div class="cc-icon">🔒</div><div><div class="cc-num">CC-11</div><div class="cc-title">Responsible Disclosure</div></div></div><div class="cc-desc">{% if locale == "es" %}Divulgación coordinada. security.txt RFC 9116. Contacto directo para reportes de seguridad.{% else %}Coordinated disclosure. security.txt RFC 9116. Direct security reporting contact.{% endif %}</div><div class="cc-tags"><span class="cc-tag">RFC 9116</span><span class="cc-tag">Coordinated</span><span class="cc-tag">PGP</span></div></div>
+
+            <div class="cc-card" style="--cc-color:#a855f7;"><div class="cc-head"><div class="cc-icon">📋</div><div><div class="cc-num">CC-12</div><div class="cc-title">Compliance Matrix</div></div></div><div class="cc-desc">{% if locale == "es" %}11 marcos mapeados: ISO 27001, PCI DSS v4, SOC 2, OWASP, NIST, CIS, GDPR, ISO 27017/18, HIPAA, ISO 22301, NIST CSF.{% else %}11 frameworks mapped: ISO 27001, PCI DSS v4, SOC 2, OWASP, NIST, CIS, GDPR, ISO 27017/18, HIPAA, ISO 22301, NIST CSF.{% endif %}</div><div class="cc-tags"><span class="cc-tag">ISO 27001</span><span class="cc-tag">PCI DSS</span><span class="cc-tag">SOC 2</span><span class="cc-tag">+8</span></div></div>
+        </div>
+
+        <!-- Disaster Recovery Metrics -->
+        <div class="sec-section">
+            <h2 class="sec-h2">🚨 {% if locale == "es" %}Recuperación ante Desastres{% else %}Disaster Recovery{% endif %}</h2>
+            <div class="dr-grid">
+                <div class="dr-item"><div class="dr-val">15 min</div><div class="dr-lbl">RTO — {% if locale == "es" %}Servicios Críticos{% else %}Critical Services{% endif %}</div><span class="dr-sev sev-crit">SEV-1</span></div>
+                <div class="dr-item"><div class="dr-val">0</div><div class="dr-lbl">RPO — {% if locale == "es" %}Pérdida de Datos{% else %}Data Loss{% endif %}</div><span class="dr-sev sev-crit">PostgreSQL WAL</span></div>
+                <div class="dr-item"><div class="dr-val">6h</div><div class="dr-lbl">{% if locale == "es" %}Backups Automáticos{% else %}Automated Backups{% endif %}</div><span class="dr-sev sev-high">{% if locale == "es" %}Cifrados{% else %}Encrypted{% endif %}</span></div>
+                <div class="dr-item"><div class="dr-val">48h</div><div class="dr-lbl">{% if locale == "es" %}Postmortem Obligatorio{% else %}Mandatory Postmortem{% endif %}</div><span class="dr-sev sev-high">SEV-1/2</span></div>
+            </div>
+            <p>{% if locale == "es" %}Clasificación de incidentes en 4 niveles (SEV-1 a SEV-4). Alertas automáticas vía Telegram y WhatsApp. Postmortem blameless obligatorio dentro de 48h para SEV-1/SEV-2.{% else %}4-level incident classification (SEV-1 to SEV-4). Automated alerts via Telegram and WhatsApp. Mandatory blameless postmortem within 48h for SEV-1/SEV-2.{% endif %}</p>
+        </div>
+
+        <!-- Compliance -->
+        <div class="sec-section">
+            <h2 class="sec-h2">📋 {% if locale == "es" %}Marcos de Cumplimiento{% else %}Compliance Frameworks{% endif %}</h2>
+            <p>{% if locale == "es" %}Nuestra postura de seguridad se alinea con 11 marcos reconocidos. Las referencias indican alineación operativa, no certificación implícita.{% else %}Our security posture aligns with 11 recognized frameworks. References indicate operational alignment, not implied certification.{% endif %}</p>
+            <div class="comp-grid">
+                <div class="comp-card"><div class="comp-name">ISO/IEC 27001</div><div class="comp-desc">{% if locale == "es" %}Gobierno ISMS{% else %}ISMS Governance{% endif %}</div></div>
+                <div class="comp-card"><div class="comp-name">PCI DSS v4.0</div><div class="comp-desc">{% if locale == "es" %}Datos de pago{% else %}Payment Data{% endif %}</div></div>
+                <div class="comp-card"><div class="comp-name">SOC 2 Type II</div><div class="comp-desc">{% if locale == "es" %}Seguridad & Disponibilidad{% else %}Security & Availability{% endif %}</div></div>
+                <div class="comp-card"><div class="comp-name">OWASP ASVS v4</div><div class="comp-desc">{% if locale == "es" %}Verificación de apps{% else %}App Verification{% endif %}</div></div>
+                <div class="comp-card"><div class="comp-name">NIST 800-53</div><div class="comp-desc">{% if locale == "es" %}Controles federales{% else %}Federal Controls{% endif %}</div></div>
+                <div class="comp-card"><div class="comp-name">CIS Controls v8</div><div class="comp-desc">{% if locale == "es" %}Higiene cyber{% else %}Cyber Hygiene{% endif %}</div></div>
+                <div class="comp-card"><div class="comp-name">GDPR Art. 25/32</div><div class="comp-desc">{% if locale == "es" %}Protección por diseño{% else %}Protection by Design{% endif %}</div></div>
+                <div class="comp-card"><div class="comp-name">ISO 27017/18</div><div class="comp-desc">{% if locale == "es" %}Cloud soberano{% else %}Sovereign Cloud{% endif %}</div></div>
+                <div class="comp-card"><div class="comp-name">HIPAA</div><div class="comp-desc">{% if locale == "es" %}Datos de salud{% else %}Health Data{% endif %}</div></div>
+                <div class="comp-card"><div class="comp-name">ISO 22301</div><div class="comp-desc">{% if locale == "es" %}Continuidad{% else %}Continuity{% endif %}</div></div>
+                <div class="comp-card"><div class="comp-name">NIST CSF v2.0</div><div class="comp-desc">{% if locale == "es" %}Marco integral{% else %}Full Framework{% endif %}</div></div>
+            </div>
+        </div>
+
+        <!-- Data Protection -->
+        <div class="sec-section">
+            <h2 class="sec-h2">🔐 {% if locale == "es" %}Protección de Datos{% else %}Data Protection{% endif %}</h2>
+            <p>{% if locale == "es" %}{{ app_name }} aplica minimización de datos, controles de acceso por rol, y prácticas de retención orientadas a proteger información de usuarios y actividad operativa.{% else %}{{ app_name }} applies data minimization, role-based access controls, and retention practices designed to protect user data and operational activity.{% endif %}</p>
+            <ul>
+                <li>{% if locale == "es" %}Cifrado en tránsito (TLS 1.3) y en reposo{% else %}Encryption in transit (TLS 1.3) and at rest{% endif %}</li>
+                <li>{% if locale == "es" %}Separación estricta entre superficies públicas, operativas y administrativas{% else %}Strict separation between public, operational, and administrative surfaces{% endif %}</li>
+                <li>{% if locale == "es" %}Sanitización de inputs en todos los formularios y endpoints API{% else %}Input sanitization across all forms and API endpoints{% endif %}</li>
+                <li>{% if locale == "es" %}Sin almacenamiento de credenciales en texto plano{% else %}No plaintext credential storage{% endif %}</li>
+            </ul>
+        </div>
+
+        <!-- Responsible Disclosure -->
+        <div class="sec-section">
+            <h2 class="sec-h2">🔒 {% if locale == "es" %}Divulgación Responsable{% else %}Responsible Disclosure{% endif %}</h2>
+            <p>{% if locale == "es" %}Si identificas una vulnerabilidad, pedimos un reporte responsable y privado. Evaluamos cada hallazgo y coordinamos corrección antes de cualquier divulgación pública.{% else %}If you identify a vulnerability, we ask for a responsible, private report. We evaluate each finding and coordinate fixes before any public disclosure.{% endif %}</p>
+            <p>{% if locale == "es" %}Nuestro archivo{% else %}Our{% endif %} <a href="/.well-known/security.txt" style="color:var(--primary);font-weight:600;">security.txt</a> {% if locale == "es" %}sigue el estándar RFC 9116.{% else %}follows the RFC 9116 standard.{% endif %}</p>
+        </div>
+
+        {% if contact_email %}
+        <div class="sec-cta">
+            <h3>🔒 {% if locale == "es" %}¿Encontraste una vulnerabilidad?{% else %}Found a vulnerability?{% endif %}</h3>
+            <p>{% if locale == "es" %}Envíanos un reporte responsable a{% else %}Send us a responsible report to{% endif %} <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% include "shared/public_footer.html.tera" %}
+</body>
+</html>

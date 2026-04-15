@@ -1,0 +1,246 @@
+{# ──────────────────────────────────────────────────────────────
+   Semantic Tree Viewer — OS-v3 Shared Component
+   Renders a ViewerGraph as an interactive vertical genealogical tree.
+   Zero external JS dependencies — pure vanilla JS + CSS.
+   ────────────────────────────────────────────────────────────── #}
+
+<style>
+/* ── Tree Layout ────────────────────────────────────────────── */
+.semantic-tree { --tree-gap: 2rem; --tree-line: var(--outline-variant, #444); --tree-focus-ring: var(--primary, #6750A4); --tree-bg: var(--surface-container-low, #1d1b20); --tree-node-bg: var(--surface-container, #252329); --tree-node-hover: var(--surface-container-high, #322f37); --tree-text: var(--on-surface, #e6e0e9); --tree-sub: var(--outline, #938f96); --tree-badge-bg: var(--primary-container, #4f378b); --tree-badge-text: var(--on-primary-container, #eaddff); }
+
+.semantic-tree { position: relative; width: 100%; overflow-x: auto; padding: 2rem 1rem; }
+.semantic-tree__canvas { display: flex; flex-direction: column; align-items: center; gap: var(--tree-gap); min-width: max-content; }
+
+/* ── Generation Row ─────────────────────────────────────────── */
+.tree-gen { display: flex; justify-content: center; align-items: flex-start; gap: 1.5rem; position: relative; }
+.tree-gen__label { position: absolute; left: -6rem; top: 50%; transform: translateY(-50%); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: var(--tree-sub); white-space: nowrap; }
+
+/* ── Connector Lines (vertical between generations) ─────────── */
+.tree-connector { display: flex; justify-content: center; height: var(--tree-gap); position: relative; }
+.tree-connector::after { content: ''; position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: var(--tree-line); opacity: 0.4; }
+
+/* Horizontal branch for siblings */
+.tree-branch { position: relative; display: flex; justify-content: center; align-items: flex-start; gap: 1.5rem; }
+.tree-branch::before { content: ''; position: absolute; top: -1rem; height: 2px; background: var(--tree-line); opacity: 0.3; }
+
+/* ── Node Card ──────────────────────────────────────────────── */
+.tree-node { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; cursor: pointer; text-decoration: none; color: inherit; transition: transform 0.2s ease; min-width: 120px; max-width: 160px; }
+.tree-node:hover { transform: translateY(-2px); }
+.tree-node:hover .tree-node__card { background: var(--tree-node-hover); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+
+.tree-node__card { background: var(--tree-node-bg); border: 1.5px solid var(--tree-line); border-radius: 16px; padding: 1rem; text-align: center; width: 100%; transition: all 0.2s ease; position: relative; overflow: hidden; }
+
+.tree-node--focus .tree-node__card { border-color: var(--tree-focus-ring); border-width: 2.5px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--tree-focus-ring) 25%, transparent), 0 8px 32px rgba(0,0,0,0.2); }
+.tree-node--focus .tree-node__card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, color-mix(in srgb, var(--tree-focus-ring) 8%, transparent), transparent); pointer-events: none; }
+
+.tree-node--unknown .tree-node__card { border-style: dashed; opacity: 0.6; }
+
+.tree-node__avatar { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; margin: 0 auto 0.5rem; border: 2px solid var(--tree-line); }
+.tree-node__icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.5rem; background: color-mix(in srgb, var(--tree-focus-ring) 15%, transparent); color: var(--tree-focus-ring); font-size: 1.5rem; }
+
+.tree-node__label { font-size: 0.9rem; font-weight: 800; color: var(--tree-text); line-height: 1.2; }
+.tree-node__subtitle { font-size: 0.7rem; color: var(--tree-sub); margin-top: 2px; }
+
+.tree-node__badges { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.tree-node__badge { font-size: 0.6rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--tree-badge-bg); color: var(--tree-badge-text); text-transform: uppercase; letter-spacing: 0.08em; }
+
+.tree-node__metrics { display: flex; justify-content: center; gap: 8px; margin-top: 6px; }
+.tree-node__metric { font-size: 0.65rem; font-weight: 700; color: var(--tree-sub); }
+.tree-node__metric-val { color: var(--tree-text); }
+
+/* ── Relation Label (on connector) ──────────────────────────── */
+.tree-rel-label { font-size: 0.6rem; font-weight: 700; color: var(--tree-sub); text-transform: uppercase; letter-spacing: 0.1em; text-align: center; }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .tree-gen { flex-direction: column; align-items: center; gap: 0.75rem; }
+  .tree-gen__label { position: static; transform: none; margin-bottom: 0.25rem; }
+  .tree-node { min-width: 100px; max-width: 130px; }
+  .tree-node__card { padding: 0.75rem; }
+  .tree-node__avatar, .tree-node__icon { width: 36px; height: 36px; }
+}
+
+/* ── Empty State ────────────────────────────────────────────── */
+.tree-empty { text-align: center; padding: 3rem; color: var(--tree-sub); }
+.tree-empty__icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+</style>
+
+<div class="semantic-tree" id="semantic-tree-container">
+  <div class="tree-empty" id="tree-loading">
+    <span class="material-symbols-outlined tree-empty__icon">account_tree</span>
+    <p style="font-weight:700;">Loading tree…</p>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── Data injected by the server ──
+  const graphJson = '{{ graph_json | safe }}';
+  let graph;
+  try { graph = JSON.parse(graphJson); } catch(e) { console.error('Tree: bad graph JSON', e); return; }
+
+  if (!graph || !graph.nodes || graph.nodes.length === 0) {
+    document.getElementById('tree-loading').innerHTML =
+      '<span class="material-symbols-outlined tree-empty__icon">family_restroom</span>' +
+      '<p style="font-weight:700;">No lineage data available</p>';
+    return;
+  }
+
+  const container = document.getElementById('semantic-tree-container');
+  const nodesById = {};
+  graph.nodes.forEach(function(n) { nodesById[n.id] = n; });
+
+  // Build adjacency: parent → children
+  const childrenOf = {};  // parent_id → [child_id, ...]
+  const parentsOf = {};   // child_id → [parent_id, ...]
+  graph.edges.forEach(function(e) {
+    if (!childrenOf[e.source_id]) childrenOf[e.source_id] = [];
+    childrenOf[e.source_id].push(e.target_id);
+    if (!parentsOf[e.target_id]) parentsOf[e.target_id] = [];
+    parentsOf[e.target_id].push(e.source_id);
+  });
+
+  // ── Render a single node card ──
+  function renderNode(nodeId) {
+    var n = nodesById[nodeId];
+    var isUnknown = !n;
+    if (!n) n = { id: nodeId, label: nodeId, is_focus: false };
+
+    var cls = 'tree-node';
+    if (n.is_focus) cls += ' tree-node--focus';
+    if (isUnknown) cls += ' tree-node--unknown';
+
+    var href = n.href || '#';
+    var html = '<a class="' + cls + '" href="' + href + '" title="' + n.label + '">';
+    html += '<div class="tree-node__card">';
+
+    // Avatar
+    if (n.avatar) {
+      if (n.avatar.kind === 'image' && n.avatar.src) {
+        html += '<img class="tree-node__avatar" src="' + n.avatar.src + '" alt="' + (n.avatar.alt || n.label) + '"/>';
+      } else if (n.avatar.kind === 'icon' && n.avatar.name) {
+        html += '<div class="tree-node__icon"><span class="material-symbols-outlined">' + n.avatar.name + '</span></div>';
+      }
+    } else {
+      // Default icon based on badge
+      var sexBadge = (n.badges || []).find(function(b) { return b.label === 'H' || b.label === 'M'; });
+      var icon = sexBadge && sexBadge.label === 'H' ? 'female' : (sexBadge && sexBadge.label === 'M' ? 'male' : 'pets');
+      html += '<div class="tree-node__icon"><span class="material-symbols-outlined">' + icon + '</span></div>';
+    }
+
+    // Label
+    html += '<div class="tree-node__label">' + n.label + '</div>';
+    if (n.subtitle) html += '<div class="tree-node__subtitle">' + n.subtitle + '</div>';
+
+    // Badges
+    if (n.badges && n.badges.length > 0) {
+      html += '<div class="tree-node__badges">';
+      n.badges.forEach(function(b) {
+        html += '<span class="tree-node__badge">' + b.label + '</span>';
+      });
+      html += '</div>';
+    }
+
+    // Metrics
+    if (n.metrics && n.metrics.length > 0) {
+      html += '<div class="tree-node__metrics">';
+      n.metrics.forEach(function(m) {
+        var val = m.value;
+        var display = '';
+        if (val.type === 'number') display = Math.round(val.value) + '';
+        else if (val.type === 'text') display = val.text;
+        else if (val.type === 'money') display = val.currency + ' ' + val.amount.toFixed(0);
+        else display = JSON.stringify(val);
+        html += '<span class="tree-node__metric">' + m.label + ': <span class="tree-node__metric-val">' + display + '</span></span>';
+      });
+      html += '</div>';
+    }
+
+    html += '</div></a>';
+    return html;
+  }
+
+  // ── Build generation layers ──
+  // Walk up from focus to find ancestors, walk down for descendants.
+  var focusId = graph.focus_record_id;
+  var maxDepth = graph.max_depth || 3;
+
+  // Ancestors: BFS upward
+  var ancestorLayers = []; // index 0 = parents, 1 = grandparents, etc.
+  var currentLayer = [focusId];
+  var visited = {};
+  visited[focusId] = true;
+
+  for (var d = 0; d < maxDepth; d++) {
+    var nextLayer = [];
+    currentLayer.forEach(function(id) {
+      (parentsOf[id] || []).forEach(function(pid) {
+        if (!visited[pid]) { visited[pid] = true; nextLayer.push(pid); }
+      });
+    });
+    if (nextLayer.length === 0) break;
+    ancestorLayers.push(nextLayer);
+    currentLayer = nextLayer;
+  }
+  ancestorLayers.reverse(); // oldest first
+
+  // Descendants: BFS downward
+  var descendantLayers = [];
+  currentLayer = [focusId];
+
+  for (var d2 = 0; d2 < maxDepth; d2++) {
+    var nextLayer2 = [];
+    currentLayer.forEach(function(id) {
+      (childrenOf[id] || []).forEach(function(cid) {
+        if (!visited[cid]) { visited[cid] = true; nextLayer2.push(cid); }
+      });
+    });
+    if (nextLayer2.length === 0) break;
+    descendantLayers.push(nextLayer2);
+    currentLayer = nextLayer2;
+  }
+
+  // ── Determine generation labels ──
+  var genLabels = {
+    '-3': graph.layout_hint === 'lineage' ? 'Bisabuelos / Great-GP' : 'Level -3',
+    '-2': graph.layout_hint === 'lineage' ? 'Abuelos / Grandparents' : 'Level -2',
+    '-1': graph.layout_hint === 'lineage' ? 'Padres / Parents' : 'Level -1',
+    '0': '',
+    '1': graph.layout_hint === 'lineage' ? 'Hijos / Offspring' : 'Level +1',
+    '2': graph.layout_hint === 'lineage' ? 'Nietos / Grandchildren' : 'Level +2',
+  };
+
+  // ── Render the full tree ──
+  var treeHtml = '<div class="semantic-tree__canvas">';
+
+  // Ancestor layers
+  ancestorLayers.forEach(function(layer, i) {
+    var genIdx = -(ancestorLayers.length - i);
+    var label = genLabels[genIdx] || ('Gen ' + genIdx);
+    treeHtml += '<div class="tree-gen"><span class="tree-gen__label">' + label + '</span>';
+    layer.forEach(function(id) { treeHtml += renderNode(id); });
+    treeHtml += '</div>';
+    treeHtml += '<div class="tree-connector"></div>';
+  });
+
+  // Focus node
+  treeHtml += '<div class="tree-gen">';
+  treeHtml += renderNode(focusId);
+  treeHtml += '</div>';
+
+  // Descendant layers
+  descendantLayers.forEach(function(layer, i) {
+    var genIdx = i + 1;
+    var label = genLabels[genIdx] || ('Gen +' + genIdx);
+    treeHtml += '<div class="tree-connector"></div>';
+    treeHtml += '<div class="tree-gen"><span class="tree-gen__label">' + label + '</span>';
+    layer.forEach(function(id) { treeHtml += renderNode(id); });
+    treeHtml += '</div>';
+  });
+
+  treeHtml += '</div>';
+  container.innerHTML = treeHtml;
+})();
+</script>

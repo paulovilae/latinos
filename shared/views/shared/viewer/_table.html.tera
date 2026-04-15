@@ -1,0 +1,61 @@
+<div class="overflow-x-auto rounded-2xl border border-outline-variant/15 bg-surface-container">
+  <table class="min-w-full divide-y divide-outline-variant/10 text-sm">
+    <thead class="bg-surface-container-low text-left text-on-surface-variant">
+      <tr>
+        <th class="px-4 py-3 font-label text-xs uppercase tracking-[0.18em]">Registro</th>
+        <th class="px-4 py-3 font-label text-xs uppercase tracking-[0.18em]">Estado</th>
+        <th class="px-4 py-3 font-label text-xs uppercase tracking-[0.18em]">Métricas</th>
+        <th class="px-4 py-3 font-label text-xs uppercase tracking-[0.18em]">Campos</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-outline-variant/10">
+      {% for record in dataset.records %}
+      <tr class="hover:bg-surface-container-low">
+        <td class="px-4 py-4 align-top">
+          <a href="{{ record.detail_href | default(value="#") }}" class="no-underline">
+            <div class="font-bold text-primary">{{ record.title }}</div>
+            {% if record.subtitle %}
+            <div class="text-on-surface-variant">{{ record.subtitle }}</div>
+            {% endif %}
+          </a>
+        </td>
+        <td class="px-4 py-4 align-top">
+          {% if record.status %}
+          <span class="rounded-full bg-secondary-fixed/30 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-secondary">{{ record.status.label }}</span>
+          {% else %}
+          <span class="text-on-surface-variant">-</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-4 align-top text-on-surface-variant">
+          {% for metric in record.primary_metrics %}
+          <div>
+            {{ metric.label }}:
+            <strong class="text-primary">
+              {% if metric.value.type == "number" %}
+                {{ metric.value.value | round(method="common", precision=0) }}
+              {% else %}
+                {{ metric.value.text | default(value=metric.value.iso | default(value="")) }}
+              {% endif %}
+            </strong>
+          </div>
+          {% endfor %}
+        </td>
+        <td class="px-4 py-4 align-top text-on-surface-variant">
+          {% for field in record.fields %}
+          <div>
+            {{ field.label }}:
+            <strong class="text-primary">
+              {% if field.value.type == "text" %}
+                {{ field.value.text }}
+              {% else %}
+                {{ field.value.iso | default(value=field.value.value | default(value="")) }}
+              {% endif %}
+            </strong>
+          </div>
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,26 @@
+{% extends "base.html.tera" %}
+
+{% block title %}Admin — {{ app_name }}{% endblock %}
+
+{% block header %}
+<div class="admin-header">
+    <h1>🎯 {{ app_name }} — Admin Panel</h1>
+    <span class="badge">v{{ version }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="admin-grid">
+    <div class="admin-card"><div class="label">👥 Users</div><div class="value">{{ users }}</div></div>
+    <div class="admin-card"><div class="label">🤖 Bots</div><div class="value">{{ bots }}</div></div>
+    <div class="admin-card buy"><div class="label">📊 Signals</div><div class="value">{{ signals }}</div></div>
+    <div class="admin-card"><div class="label">🧪 Backtests</div><div class="value">{{ backtests }}</div></div>
+    <div class="admin-card sell"><div class="label">💱 Trades</div><div class="value">{{ trades }}</div></div>
+</div>
+<div class="admin-links">
+    <a href="/swagger-ui/">📋 Swagger UI</a>
+    <a href="/api/health">❤️ Health Check</a>
+    <a href="/api/metrics">📈 API Metrics</a>
+    <a href="/">🏠 Landing</a>
+</div>
+{% endblock %}

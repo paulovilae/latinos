@@ -1,0 +1,58 @@
+app:
+  id: Latinos-rust
+  name: Latinos Trading
+  runtime: rust-loco
+  path: Apps/Latinos-rust
+  description: Algorithmic trading platform — sovereign Rust shell with bot, signal, and backtest management.
+  shared_auth: true
+  shell:
+    icon: /static/icons/latinos.svg
+    launch_route: https://latinos.paulovila.org
+    launch_mode: route
+    window_title: Latinos Trading
+    sort_order: 2
+    category: Trading
+    file_handlers:
+      - text/csv
+      - application/json
+    intent_handlers:
+      - view
+      - analyze
+      - backtest
+    deep_links:
+      - /dashboard
+      - /bots/{id}
+  assets:
+    - id: Workflows/Latinos/signal-evaluation.json
+      kind: workflow
+      metadata:
+        scope: app-scoped
+        owner_app: Latinos-rust
+        artifact_type: latinos-signal-workflow
+        version: 0.1.0
+        consumers:
+          - Latinos-rust
+          - Imaginclaw
+        promotion_reason: Signal evaluation is Latinos-owned business logic but must be accessible to agents.
+    - id: Tools/Latinos/backtest_runner.json
+      kind: tool
+      metadata:
+        scope: app-scoped
+        owner_app: Latinos-rust
+        artifact_type: latinos-backtest-tool
+        version: 0.1.0
+        consumers:
+          - Latinos-rust
+          - Imaginclaw
+        promotion_reason: Backtest execution must live in a reusable asset for agent-driven strategy analysis.
+    - id: Tools/Latinos/market_data_loader.json
+      kind: tool
+      metadata:
+        scope: app-scoped
+        owner_app: Latinos-rust
+        artifact_type: latinos-market-data-tool
+        version: 0.1.0
+        consumers:
+          - Latinos-rust
+          - Imaginclaw
+        promotion_reason: Market data loading is shared between app execution and agent-driven analysis.

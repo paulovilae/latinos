@@ -1,3 +1,0 @@
-@echo off
-echo Starting AI Trading Bot Platform...
-node ../orchestrator.js %*

@@ -1,0 +1,70 @@
+{# ─── Shared Status Content Partial ───
+   This is a content-only partial. Include it inside a page that extends base.html.tera.
+   Required context: app_name, locale, version, uptime_display, services (optional array)
+   Optional context: request_time, db_time
+#}
+
+<div class="status-page">
+    <div class="status-hero">
+        <div class="status-badge"><span class="status-dot"></span> {% if locale == "es" %}Todos los Sistemas Operativos{% else %}All Systems Operational{% endif %}</div>
+        <h1 class="status-page-title">⚡ {% if locale == "es" %}Estado del Sistema{% else %}System Status{% endif %}</h1>
+        <p class="status-page-sub">{% if locale == "es" %}Rendimiento en tiempo real de {{ app_name }}. Última verificación: ahora mismo.{% else %}Real-time performance monitoring for {{ app_name }}. Last check: right now.{% endif %}</p>
+    </div>
+
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-value">{{ uptime_display | default(value="—") }}</div>
+            <div class="metric-label">Uptime</div>
+        </div>
+        {% if request_time is defined %}
+        <div class="metric-card">
+            <div class="metric-value">{{ request_time }}</div>
+            <div class="metric-label">{% if locale == "es" %}Página Renderizada{% else %}Page Rendered{% endif %}</div>
+        </div>
+        {% endif %}
+        {% if db_time is defined %}
+        <div class="metric-card">
+            <div class="metric-value">{{ db_time }}</div>
+            <div class="metric-label">Database</div>
+        </div>
+        {% endif %}
+        <div class="metric-card">
+            <div class="metric-value">v{{ version | default(value="1.0.0") }}</div>
+            <div class="metric-label">{% if locale == "es" %}Versión{% else %}Version{% endif %}</div>
+        </div>
+    </div>
+
+    <div class="brag-banner">
+        <h3>🦾 {% if locale == "es" %}Infraestructura Soberana{% else %}Sovereign Infrastructure{% endif %}</h3>
+        <p>{% if locale == "es" %}Cero dependencias de nube. Compilado nativamente. Respuestas sub-milisegundo.<br>100% auto-hospedado en bare metal con capacidades AI nativas integradas.{% else %}Zero cloud dependencies. Natively compiled. Sub-millisecond responses.<br>100% self-hosted on bare metal with AI-native capabilities built in.{% endif %}</p>
+        <div class="brag-stats">
+            <div><div class="brag-stat-val">&lt;1ms</div><div class="brag-stat-label">{% if locale == "es" %}Respuesta Promedio{% else %}Avg Response{% endif %}</div></div>
+            <div><div class="brag-stat-val">~1MB</div><div class="brag-stat-label">{% if locale == "es" %}Memoria{% else %}Memory{% endif %}</div></div>
+            <div><div class="brag-stat-val">v{{ version | default(value="1.0.0") }}</div><div class="brag-stat-label">Release</div></div>
+            <div><div class="brag-stat-val">AI 🤖</div><div class="brag-stat-label">{% if locale == "es" %}Integrado{% else %}Built-in{% endif %}</div></div>
+        </div>
+    </div>
+
+    {% if services is defined and services | length > 0 %}
+    <div class="status-section">
+        <h2 class="status-section-title">🟢 Services</h2>
+        <div class="service-list">
+            {% for svc in services %}
+            <div class="service-row">
+                <span class="svc-dot {% if svc.status == 'operational' or svc.status == 'active' %}svc-dot-green{% else %}svc-dot-amber{% endif %}"></span>
+                <div class="svc-info">
+                    <div class="svc-name">{{ svc.name }}</div>
+                    <div class="svc-desc">{{ svc.description }}</div>
+                </div>
+                <span class="svc-time">{% if svc.time %}{{ svc.time }}ms{% else %}—{% endif %}</span>
+                <span class="svc-badge {% if svc.status == 'operational' %}svc-badge-ok{% else %}svc-badge-active{% endif %}">{{ svc.label | default(value="OK") }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="render-note">
+        <p>{% if locale == "es" %}Esta página fue renderizada del lado del servidor en <strong>{{ request_time | default(value="<1") }}ms</strong>. Sin servicios externos involucrados. ⚡{% else %}This page was rendered server-side in <strong>{{ request_time | default(value="<1") }}ms</strong>. No external services involved. ⚡{% endif %}</p>
+    </div>
+</div>

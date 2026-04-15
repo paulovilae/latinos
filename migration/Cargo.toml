@@ -1,0 +1,10 @@
+[package]
+name = "latinos-migration"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+sea-orm-migration = { version = "1.1" }
+async-trait = { version = "0.1" }
+async-std = { version = "1", features = ["attributes", "tokio1"] }

@@ -1,0 +1,58 @@
+[workspace]
+members = [".", "migration"]
+
+[package]
+name = "latinos-rust"
+version = "0.1.0"
+edition = "2021"
+publish = false
+default-run = "latinos-rust-cli"
+
+[workspace.dependencies]
+loco-rs = { version = "0.16" }
+
+[dependencies]
+loco-rs = { workspace = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
+tokio = { version = "1.45", default-features = false, features = [
+  "rt-multi-thread",
+] }
+async-trait = { version = "0.1" }
+axum = { version = "0.8", features = ["multipart"] }
+tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+reqwest = { version = "0.12", features = ["json"] }
+latinos-migration = { path = "migration" }
+sea-orm = { version = "1.1", features = [
+  "sqlx-postgres",
+  "runtime-tokio-rustls",
+  "macros",
+] }
+chrono = { version = "0.4" }
+tera = { version = "1" }
+tower-http = { version = "0.6", features = ["fs", "set-header", "compression-gzip", "compression-br"] }
+tower = { version = "0.5" }
+serde_yaml = "0.9"
+urlencoding = "2"
+base64 = "0.22"
+uuid = { version = "1", features = ["v4", "fast-rng"] }
+utoipa = { version = "5", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "9", features = ["axum"] }
+os-auth-kit = { path = "shared/auth-kit" }
+hmac = "0.13.0"
+sha2 = "0.11.0"
+hex = "0.4.3"
+tokio-util = { version = "0.7.18", features = ["io"] }
+anyhow = "1.0.102"
+dotenvy = "0.15"
+
+[[bin]]
+name = "latinos-rust-cli"
+path = "src/bin/main.rs"
+required-features = []
+
+[dev-dependencies]
+loco-rs = { workspace = true, features = ["testing"] }
+serial_test = { version = "3.1.1" }
+rstest = { version = "0.25" }

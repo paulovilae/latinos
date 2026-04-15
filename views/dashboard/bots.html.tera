@@ -1,0 +1,132 @@
+{% extends "base.html.tera" %}
+
+{% block title %}Bot Studio — {{ app_name }}{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Extend the existing dashboard-layout styles */
+.dashboard-main { padding-bottom: 4rem; }
+.page-title { margin-top: 0; margin-bottom: 2rem; color: white; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.page-title h1 { margin: 0; font-size: 2rem; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+.stat-card { background: rgba(30,41,59,0.5); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.05); }
+.stat-card .label { color: rgba(255,255,255,0.6); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+.stat-card .value { font-size: 1.75rem; font-weight: 900; color: white; }
+.stat-card.stat-emerald { border-color: rgba(16,185,129,0.3); background: linear-gradient(to bottom right, rgba(16,185,129,0.05), transparent); }
+
+.gallery-section { background: rgba(15,23,42,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; overflow: hidden; }
+.gallery-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; background: rgba(0,0,0,0.2); }
+.gallery-header h3 { margin: 0; font-size: 1.25rem; color: white; display: flex; align-items: center; gap: 0.5rem; }
+.gallery-header p { margin: 0; margin-top: 0.25rem; font-size: 0.85rem; color: rgba(255,255,255,0.5); font-family: monospace; }
+
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1px; background: rgba(255,255,255,0.05); }
+.bot-card { background: #0f172a; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; transition: background 0.2s; }
+.bot-card:hover { background: #1e293b; }
+
+.bot-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.bot-info { min-width: 0; flex: 1; }
+.bot-title { font-weight: 800; color: white; margin: 0; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bot-desc { color: rgba(255,255,255,0.5); font-size: 0.85rem; margin: 0.25rem 0 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Status Badges */
+.status-badge { text-transform: uppercase; letter-spacing: 0.1em; font-weight: 900; font-size: 0.65rem; padding: 3px 8px; border-radius: 999px; flex-shrink: 0; margin-left: 0.5rem; }
+.badge-draft { background-color: rgba(51,65,85, 0.5); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; }
+.badge-active { background-color: rgba(6,78,59,0.4); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; box-shadow: 0 0 10px rgba(16,185,129,0.2); }
+.badge-paused { background-color: rgba(22,78,99,0.4); border: 1px solid rgba(6,182,212,0.3); color: #67e8f9; }
+.badge-archived { background-color: rgba(51,65,85, 0.3); border: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); }
+
+.bot-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin-top: auto; }
+.bot-meta { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; }
+.meta-link { color: #818cf8; text-decoration: none; }
+.meta-link:hover { color: #a5b4fc; }
+
+.btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.85rem; border: none; cursor: pointer; text-decoration: none; transition: all 0.2s; color: white; }
+.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.75rem; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-indigo { background: #4f46e5; border: 1px solid rgba(255,255,255,0.1); }
+.btn-indigo:hover:not(:disabled) { background: #4338ca; box-shadow: 0 0 15px rgba(79,70,229,0.4); }
+
+.empty-state { padding: 4rem 2rem; text-align: center; }
+.empty-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+.empty-state h4 { color: white; font-size: 1.25rem; margin: 0 0 0.5rem 0; }
+.empty-state p { color: rgba(255,255,255,0.5); margin: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    {% include "dashboard/_sidebar.html.tera" %}
+    
+    <div class="dashboard-main">
+        <div class="page-title">
+            <h1>Bot Studio</h1>
+        </div>
+
+        <!-- Header Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">🤖 Total Bots</div>
+                <div class="value">{{ total_bots }}</div>
+            </div>
+            <div class="stat-card stat-emerald">
+                <div class="label">🟢 Active</div>
+                <div class="value">{{ active_count }}</div>
+            </div>
+        </div>
+
+        <!-- Bot Gallery -->
+        <div class="gallery-section">
+            <div class="gallery-header">
+                <div>
+                    <h3>🤖 Strategy Bots</h3>
+                    <p>Your algorithmic trading strategies</p>
+                </div>
+            </div>
+
+            {% if total_bots == 0 %}
+            <div class="empty-state">
+                <span class="empty-icon">🤖</span>
+                <h4>No strategies yet.</h4>
+                <p>Create a trading strategy to begin backtesting and analysis.</p>
+            </div>
+            {% else %}
+            <div class="gallery-grid">
+                {% for bot in bots %}
+                <div class="bot-card">
+                    <div class="bot-header">
+                        <div class="bot-info">
+                            <h4 class="bot-title">
+                                <a href="/dashboard/bots/{{ bot.id }}" style="color: inherit; text-decoration: none;">{{ bot.name }}</a>
+                            </h4>
+                            {% if bot.description %}
+                            <p class="bot-desc">{{ bot.description }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        {% if bot.status == "active" %}
+                            <span class="status-badge badge-active" title="Strategy is active and monitoring">🟢 Active</span>
+                        {% elif bot.status == "paused" %}
+                            <span class="status-badge badge-paused" title="Strategy is paused">⏸️ Paused</span>
+                        {% elif bot.status == "archived" %}
+                            <span class="status-badge badge-archived" title="Strategy is archived">📦 Archived</span>
+                        {% else %}
+                            <span class="status-badge badge-draft" title="Strategy is in draft">📝 Draft</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="bot-footer">
+                        <div class="bot-meta">
+                            <a href="/dashboard/bots/{{ bot.id }}" class="meta-link">✏️ Edit Detail</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

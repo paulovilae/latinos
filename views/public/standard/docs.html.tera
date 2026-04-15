@@ -1,0 +1,6 @@
+{% extends "base.html.tera" %}
+{% block title %}{% if locale == "es" %}Documentación{% else %}Documentation{% endif %} — {{ app_name | default(value="Latinos Trading") }}{% endblock %}
+{% block meta_description %}{% if locale == "es" %}Documentación y guías técnicas de {{ app_name }}.{% else %}Documentation and technical guides for {{ app_name }}.{% endif %}{% endblock %}
+{% block content %}
+{% include "shared/docs.html.tera" %}
+{% endblock %}

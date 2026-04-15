@@ -1,0 +1,58 @@
+{% extends "base.html.tera" %}
+
+{% block title %}{{ app_name }} — Plataforma de Trading Algorítmico{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero">
+    <h1 class="hero-title">{{ hero.title | default(value="Latinos Trading") }}</h1>
+    <p class="hero-subtitle">{{ hero.subtitle | default(value="Crea, prueba y ejecuta estrategias de trading algorítmico con señales inteligentes y backtesting de alta fidelidad.") }}</p>
+    <div class="hero-actions">
+        <a href="/auth/signup" class="btn-cta">🚀 Empezar Gratis</a>
+        <a href="/docs" class="btn-outline">📖 Documentación</a>
+    </div>
+</section>
+
+<!-- Features -->
+<section class="feature-section">
+    <h2>Todo lo que necesitas para operar</h2>
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <h3>Robot Studio</h3>
+            <p>Construye robots combinando señales con lógica AND-gate visual. Sin código necesario.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>Signal Studio</h3>
+            <p>Crea señales con fórmulas matemáticas o scripts Python sandboxeados. RSI, MACD, BBands y más.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧪</div>
+            <h3>Backtesting</h3>
+            <p>Simula estrategias con datos reales de mercado. Curvas de equity, PnL y métricas Sharpe/Sortino.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💱</div>
+            <h3>Live Trading</h3>
+            <p>Conecta con Alpaca y Binance. Ejecución en papel o real con Take Profit y Stop Loss automáticos.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📡</div>
+            <h3>Datos de Mercado</h3>
+            <p>OHLCV en tiempo real y histórico. Intervalos de 1m a 1M. Universo multi-asset.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <h3>Soberano</h3>
+            <p>Auto-hospedado en infraestructura propia. Tus estrategias y datos nunca salen de tu control.</p>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+    <p>¿Listo para automatizar tu trading?</p>
+    <a href="/auth/signup" class="btn-accent">Crear Cuenta →</a>
+</section>
+{% endblock %}

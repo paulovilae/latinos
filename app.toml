@@ -1,23 +1,27 @@
-# Latinos App Manifest
-# Read by Memento and the OS to discover this app's data and services.
+# Latinos-Rust App Manifest
 
 [app]
-name = "Latinos"
-slug = "latinos"
-description = "Workflow automation and government compliance platform — handles business registrations, document processing, and regulatory workflows."
-domain = "latinos.vilaros.ai"
-port = 3305
+slug = "latinos-rust"
+name = "Latinos Trading"
+version = "0.1.0"
+description = "Algorithmic trading platform rebuilt in Rust/Loco on the shared OS-v3 platform."
+port = 5182
 
 [database]
 type = "postgres"
-url_env = "LATINOS_DATABASE_URL"
+url_env = "LATINOS_RUST_DATABASE_URL"
+url = "postgresql://directus:directus_password@localhost:5432/latinos_db"
 schema_prefix = "latinos_"
-key_tables = []                      # populate when schema is defined
 
 [bot]
-# name = "Ala"                       # future: dedicated Latinos support bot
-# persona = "ala"
-# permissions = ["hera_search"]
+name = "LatinosBot"
+persona = "latinos"
+permissions = ["hera_search", "memento_query"]
 
 [media]
-output_dir = "var/media"
+inputs_dir = "var/media/inputs"
+outputs_dir = "var/media/outputs"
+
+[development]
+start_command = "cargo run -- start -e development"
+build_command = "cargo build --release"

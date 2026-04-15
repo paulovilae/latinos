@@ -1,0 +1,58 @@
+{# ─── Shared Privacy Content Partial ───
+   This is a content-only partial. Include it inside a page that extends base.html.tera.
+   Required context: app_name, locale, legal_entity, legal_address, contact_email
+#}
+
+<div class="legal-page">
+    <h1 class="legal-page-title">{% if locale == "es" %}🔒 Política de Privacidad{% else %}🔒 Privacy Policy{% endif %}</h1>
+    <p class="legal-meta">{% if locale == "es" %}Última actualización: Marzo 2026{% else %}Last updated: March 2026{% endif %}</p>
+
+    <div class="legal-section">
+        <h2>{% if locale == "es" %}1. Información que Recopilamos{% else %}1. Information We Collect{% endif %}</h2>
+        <ul>
+            <li>{% if locale == "es" %}Datos de registro: nombre, correo electrónico y credenciales de acceso.{% else %}Registration data: name, email and access credentials.{% endif %}</li>
+            <li>{% if locale == "es" %}Datos de uso: interacciones con la plataforma, registros de actividad.{% else %}Usage data: platform interactions, activity logs.{% endif %}</li>
+            <li>{% if locale == "es" %}Datos técnicos: dirección IP, tipo de navegador, dispositivo.{% else %}Technical data: IP address, browser type, device.{% endif %}</li>
+        </ul>
+    </div>
+
+    <div class="legal-section">
+        <h2>{% if locale == "es" %}2. Uso de la Información{% else %}2. Use of Information{% endif %}</h2>
+        <p>{% if locale == "es" %}Utilizamos su información para:{% else %}We use your information to:{% endif %}</p>
+        <ul>
+            <li>{% if locale == "es" %}Proveer y mantener nuestros servicios.{% else %}Provide and maintain our services.{% endif %}</li>
+            <li>{% if locale == "es" %}Mejorar y personalizar su experiencia.{% else %}Improve and personalize your experience.{% endif %}</li>
+            <li>{% if locale == "es" %}Comunicar actualizaciones y cambios relevantes.{% else %}Communicate relevant updates and changes.{% endif %}</li>
+            <li>{% if locale == "es" %}Cumplir con obligaciones legales.{% else %}Comply with legal obligations.{% endif %}</li>
+        </ul>
+    </div>
+
+    <div class="legal-section">
+        <h2>{% if locale == "es" %}3. Protección de Datos{% else %}3. Data Protection{% endif %}</h2>
+        <p>{% if locale == "es" %}Implementamos medidas técnicas y organizativas para proteger su información contra acceso no autorizado, pérdida o alteración. Todos los datos en tránsito están cifrados y el acceso está controlado por roles.{% else %}We implement technical and organizational measures to protect your information against unauthorized access, loss or alteration. All data in transit is encrypted and access is controlled by roles.{% endif %}</p>
+    </div>
+
+    <div class="legal-section">
+        <h2>{% if locale == "es" %}4. Compartición de Datos{% else %}4. Data Sharing{% endif %}</h2>
+        <p>{% if locale == "es" %}No vendemos ni compartimos su información personal con terceros para fines comerciales. Podemos compartir datos con proveedores de servicios esenciales bajo acuerdos de confidencialidad, o cuando sea requerido por ley.{% else %}We do not sell or share your personal information with third parties for commercial purposes. We may share data with essential service providers under confidentiality agreements, or when required by law.{% endif %}</p>
+    </div>
+
+    <div class="legal-section">
+        <h2>{% if locale == "es" %}5. Sus Derechos{% else %}5. Your Rights{% endif %}</h2>
+        <ul>
+            <li>{% if locale == "es" %}Acceder a sus datos personales.{% else %}Access your personal data.{% endif %}</li>
+            <li>{% if locale == "es" %}Solicitar corrección de datos inexactos.{% else %}Request correction of inaccurate data.{% endif %}</li>
+            <li>{% if locale == "es" %}Solicitar eliminación de sus datos.{% else %}Request deletion of your data.{% endif %}</li>
+            <li>{% if locale == "es" %}Oponerse al procesamiento de sus datos.{% else %}Object to processing of your data.{% endif %}</li>
+        </ul>
+    </div>
+
+    <div class="legal-section">
+        <h2>{% if locale == "es" %}6. Contacto{% else %}6. Contact{% endif %}</h2>
+        <p>{% if locale == "es" %}Para ejercer sus derechos o consultas sobre privacidad:{% else %}To exercise your rights or privacy inquiries:{% endif %}</p>
+        <ul>
+            {% if legal_entity %}<li><strong>{% if locale == "es" %}Entidad{% else %}Entity{% endif %}:</strong> {{ legal_entity }}</li>{% endif %}
+            {% if contact_email %}<li><strong>Email:</strong> <a href="mailto:{{ contact_email }}" class="link">{{ contact_email }}</a></li>{% endif %}
+        </ul>
+    </div>
+</div>

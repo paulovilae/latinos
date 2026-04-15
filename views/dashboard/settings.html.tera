@@ -1,0 +1,161 @@
+{% extends "base.html.tera" %}
+
+{% block title %}Settings — {{ app_name }}{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Extend the existing dashboard-layout styles */
+.dashboard-main { padding-bottom: 4rem; }
+.page-title { margin-top: 0; margin-bottom: 2rem; color: white; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.page-title h1 { margin: 0; font-size: 2rem; }
+
+.settings-card { background: rgba(15,23,42,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 2rem; margin-bottom: 2rem; }
+.settings-card h3 { margin: 0 0 1.5rem 0; font-size: 1.25rem; color: white; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
+
+.form-group { margin-bottom: 1.5rem; }
+.form-group label { display: block; margin-bottom: 0.5rem; color: rgba(255,255,255,0.8); font-size: 0.9rem; font-weight: 600; }
+.form-control { width: 100%; max-width: 400px; padding: 0.75rem 1rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; color: white; font-family: inherit; font-size: 1rem; outline: none; transition: border-color 0.2s; }
+.form-control:focus { border-color: rgba(79,70,229,0.5); }
+.form-text { display: block; margin-top: 0.4rem; font-size: 0.8rem; color: rgba(255,255,255,0.4); }
+
+.btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.9rem; border: none; cursor: pointer; text-decoration: none; transition: all 0.2s; color: white; }
+.btn-indigo { background: #4f46e5; border: 1px solid rgba(255,255,255,0.1); }
+.btn-indigo:hover:not(:disabled) { background: #4338ca; box-shadow: 0 0 15px rgba(79,70,229,0.4); }
+
+.coming-soon-badge { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.25); color: #fbbf24; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; margin-left: 0.5rem; }
+.preview-badge { display: inline-flex; align-items: center; gap: 0.35rem; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25); color: #a5b4fc; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; margin-left: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    {% include "dashboard/_sidebar.html.tera" %}
+    
+    <div class="dashboard-main">
+        <div class="page-title">
+            <h1>Settings</h1>
+        </div>
+
+        <div class="settings-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
+                <div>
+                    <h3>Brokerage Connection <span class="preview-badge">⚡ Active Mode: {{ alpaca_mode | upper }}</span></h3>
+                    <p style="color: rgba(255,255,255,0.5); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                        Live broker connectivity and sync status with Alpaca.
+                    </p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 0.5rem; min-width: 200px; border: 1px solid rgba(255,255,255,0.1);">
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-bottom: 0.5rem;">Alpaca API Status</div>
+                    {% if broker_connected %}
+                    <div style="color: #34d399; font-weight: bold; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="display: inline-block; width: 8px; height: 8px; background: #34d399; border-radius: 50%; box-shadow: 0 0 8px #34d399;"></span>
+                        Connected
+                    </div>
+                    <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                        <span style="color: rgba(255,255,255,0.6);">Buying Power:</span> 
+                        <strong style="color: white;">${{ buying_power }}</strong>
+                    </div>
+                    {% else %}
+                    <div style="color: #f87171; font-weight: bold; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="display: inline-block; width: 8px; height: 8px; background: #f87171; border-radius: 50%; box-shadow: 0 0 8px #f87171;"></span>
+                        Disconnected / Offline
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <form style="margin-top: 1rem;">
+                <div class="form-group">
+                    <label for="alpaca_key">Alpaca Configuration</label>
+                    <input type="text" id="alpaca_key" class="form-control" value="Managed via environment variables (.env)" disabled>
+                    <span class="form-text">Change <code>ALPACA_MODE</code>, <code>ALPACA_PAPER_KEY</code>, or <code>ALPACA_PAPER_SECRET</code> locally.</span>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-indigo" disabled>Save API Keys</button>
+                    <span style="color: rgba(255,255,255,0.3); font-size: 0.8rem; margin-left: 0.5rem;">Configuration is read-only in this environment</span>
+                </div>
+            </form>
+        </div>
+
+        <div class="settings-card">
+            <h3>Risk Management Thresholds <span class="preview-badge">👁️ Preview — Not Active</span></h3>
+            <p style="color: rgba(255,255,255,0.5); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                These risk parameters are not yet enforced. Configuration here is for preview purposes only.
+                Risk enforcement will activate when the paper trading engine goes live.
+            </p>
+            <form>
+                <div class="form-group">
+                    <label for="max_drawdown">Global Maximum Drawdown (%)</label>
+                    <input type="number" id="max_drawdown" class="form-control" value="15">
+                    <span class="form-text">If open PnL reaches this threshold, all active bots will be paused.</span>
+                </div>
+                <div class="form-group">
+                    <label for="max_allocation">Maximum Allocation per Asset (%)</label>
+                    <input type="number" id="max_allocation" class="form-control" value="20">
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-indigo" disabled>Update Risk Parameters</button>
+                    <span style="color: rgba(255,255,255,0.3); font-size: 0.8rem; margin-left: 0.5rem;">Preview only — not persisted</span>
+                </div>
+            </form>
+        </div>
+
+        <div class="settings-card" style="margin-top: 3rem;">
+            <h3>Simulation Order History <span class="preview-badge" style="background:#10b9811a;color:#34d399;border-color:#10b98140">⚡ Live Engine</span></h3>
+            <p style="color: rgba(255,255,255,0.5); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                Live simulated executions piped from the Risk & Bot Engine directly to the Alpaca Paper Endpoint.
+            </p>
+            
+            <div style="overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; color: white;">
+                    <thead>
+                        <tr style="background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <th style="padding: 1rem;">Time</th>
+                            <th style="padding: 1rem;">Broker</th>
+                            <th style="padding: 1rem;">Asset & Side</th>
+                            <th style="padding: 1rem;">Amount</th>
+                            <th style="padding: 1rem;">Price</th>
+                            <th style="padding: 1rem;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trade in trades %}
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 1rem; color: rgba(255,255,255,0.6);">{{ trade.timestamp }}</td>
+                            <td style="padding: 1rem; font-weight: 600;">{{ trade.broker }}</td>
+                            <td style="padding: 1rem;">
+                                <strong style="color: white; margin-right: 0.5rem;">{{ trade.symbol }}</strong>
+                                {% if trade.side == "buy" %}
+                                <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">BUY</span>
+                                {% else %}
+                                <span style="background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">SELL</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 1rem;">{{ trade.amount | round(precision=2) }}</td>
+                            <td style="padding: 1rem;">${{ trade.price | round(precision=2) }}</td>
+                            <td style="padding: 1rem;">
+                                {% if trade.status == "filled" %}
+                                <span style="color: #34d399; font-weight: 600;">Filled</span>
+                                {% elif trade.status == "rejected" %}
+                                <span style="color: #f87171; font-weight: 600;">Rejected</span>
+                                {% else %}
+                                <span style="color: #fbbf24; font-weight: 600;">{{ trade.status | title }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" style="padding: 2rem; text-align: center; color: rgba(255,255,255,0.4);">
+                                <em>No paper trades recorded yet. Start a bot to see history here.</em>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

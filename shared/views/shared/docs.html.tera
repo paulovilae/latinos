@@ -1,0 +1,41 @@
+{# ─── Shared Docs Content Partial ───
+   This is a content-only partial. Include it inside a page that extends base.html.tera.
+   Required context: app_name, locale, doc_cards (optional array of {icon, title, description, href, badge})
+#}
+
+<div class="docs-page">
+    <h1 class="docs-page-title">{% if locale == "es" %}📚 Documentación{% else %}📚 Documentation{% endif %}</h1>
+    <p class="docs-page-subtitle">{% if locale == "es" %}Recursos, guías y referencias técnicas de {{ app_name }}.{% else %}Resources, guides and technical references for {{ app_name }}.{% endif %}</p>
+
+    <div class="docs-grid">
+        {% if doc_cards is defined and doc_cards | length > 0 %}
+            {% for card in doc_cards %}
+            <a class="doc-card" href="{{ card.href }}">
+                <div class="doc-icon">{{ card.icon }}</div>
+                <div class="doc-title">{{ card.title }}</div>
+                <div class="doc-desc">{{ card.description }}</div>
+                {% if card.badge %}<span class="badge badge-live">{{ card.badge }}</span>{% endif %}
+            </a>
+            {% endfor %}
+        {% else %}
+        <a class="doc-card" href="/api/docs">
+            <div class="doc-icon">📡</div>
+            <div class="doc-title">API Reference</div>
+            <div class="doc-desc">{% if locale == "es" %}Documentación técnica de la API.{% else %}Technical API documentation.{% endif %}</div>
+            <span class="badge badge-live">{% if locale == "es" %}Disponible{% else %}Available{% endif %}</span>
+        </a>
+        <a class="doc-card" href="/faq">
+            <div class="doc-icon">❓</div>
+            <div class="doc-title">FAQ</div>
+            <div class="doc-desc">{% if locale == "es" %}Preguntas frecuentes.{% else %}Frequently asked questions.{% endif %}</div>
+            <span class="badge badge-live">{% if locale == "es" %}Disponible{% else %}Available{% endif %}</span>
+        </a>
+        <a class="doc-card" href="/security">
+            <div class="doc-icon">🛡️</div>
+            <div class="doc-title">{% if locale == "es" %}Seguridad{% else %}Security{% endif %}</div>
+            <div class="doc-desc">{% if locale == "es" %}Prácticas de seguridad y protección de datos.{% else %}Security practices and data protection.{% endif %}</div>
+            <span class="badge badge-live">{% if locale == "es" %}Disponible{% else %}Available{% endif %}</span>
+        </a>
+        {% endif %}
+    </div>
+</div>

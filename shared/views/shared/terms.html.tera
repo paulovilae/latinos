@@ -1,0 +1,53 @@
+{# ─── Shared Terms Content Partial ───
+   This is a content-only partial. Include it inside a page that extends base.html.tera.
+   Required context: app_name, locale, legal_entity, legal_address, contact_email
+#}
+
+<div class="legal-page">
+    <h1 class="legal-page-title">{% if locale == "es" %}📋 Términos y Condiciones{% else %}📋 Terms & Conditions{% endif %}</h1>
+    <p class="legal-meta">{% if locale == "es" %}Última actualización: Marzo 2026{% else %}Last updated: March 2026{% endif %}</p>
+
+    <div class="legal-section">
+        <h2>{% if locale == "es" %}1. Aceptación de los Términos{% else %}1. Acceptance of Terms{% endif %}</h2>
+        <p>{% if locale == "es" %}Al acceder y utilizar los servicios de {{ app_name }} (operado por {{ legal_entity }}), usted acepta estar sujeto a estos Términos y Condiciones. Si no está de acuerdo con alguna parte de estos términos, no deberá utilizar nuestros servicios.{% else %}By accessing and using {{ app_name }} services (operated by {{ legal_entity }}), you agree to be bound by these Terms and Conditions. If you disagree with any part, you should not use our services.{% endif %}</p>
+    </div>
+
+    <div class="legal-section">
+        <h2>{% if locale == "es" %}2. Descripción del Servicio{% else %}2. Service Description{% endif %}</h2>
+        <p>{% if locale == "es" %}{{ app_name }} proporciona una plataforma digital con servicios de gestión, comunicación y herramientas especializadas para sus usuarios registrados. Los servicios específicos pueden variar según el plan contratado.{% else %}{{ app_name }} provides a digital platform with management, communication and specialized tools for registered users. Specific services may vary by plan.{% endif %}</p>
+    </div>
+
+    <div class="legal-section">
+        <h2>{% if locale == "es" %}3. Registro y Cuentas{% else %}3. Registration and Accounts{% endif %}</h2>
+        <ul>
+            <li>{% if locale == "es" %}Es responsable de mantener la confidencialidad de sus credenciales de acceso.{% else %}You are responsible for maintaining the confidentiality of your access credentials.{% endif %}</li>
+            <li>{% if locale == "es" %}Debe proporcionar información precisa y actualizada durante el registro.{% else %}You must provide accurate and current information during registration.{% endif %}</li>
+            <li>{% if locale == "es" %}Una cuenta por persona. Las cuentas no son transferibles.{% else %}One account per person. Accounts are non-transferable.{% endif %}</li>
+        </ul>
+    </div>
+
+    <div class="legal-section">
+        <h2>{% if locale == "es" %}4. Uso Aceptable{% else %}4. Acceptable Use{% endif %}</h2>
+        <p>{% if locale == "es" %}Usted se compromete a no utilizar la plataforma para actividades ilegales, fraudulentas, o que puedan dañar a otros usuarios o a la infraestructura del servicio.{% else %}You agree not to use the platform for illegal, fraudulent activities, or activities that could harm other users or service infrastructure.{% endif %}</p>
+    </div>
+
+    <div class="legal-section">
+        <h2>{% if locale == "es" %}5. Propiedad Intelectual{% else %}5. Intellectual Property{% endif %}</h2>
+        <p>{% if locale == "es" %}Todo el contenido, diseño, código y tecnología de {{ app_name }} son propiedad de {{ legal_entity }}. Queda prohibida su reproducción sin autorización expresa.{% else %}All content, design, code and technology of {{ app_name }} are property of {{ legal_entity }}. Reproduction without express authorization is prohibited.{% endif %}</p>
+    </div>
+
+    <div class="legal-section">
+        <h2>{% if locale == "es" %}6. Limitación de Responsabilidad{% else %}6. Limitation of Liability{% endif %}</h2>
+        <p>{% if locale == "es" %}{{ legal_entity }} no será responsable por daños indirectos, incidentales o consecuentes derivados del uso o imposibilidad de uso de nuestros servicios, en la máxima medida permitida por la ley aplicable.{% else %}{{ legal_entity }} shall not be liable for indirect, incidental or consequential damages arising from the use or inability to use our services, to the maximum extent permitted by applicable law.{% endif %}</p>
+    </div>
+
+    <div class="legal-section">
+        <h2>{% if locale == "es" %}7. Contacto{% else %}7. Contact{% endif %}</h2>
+        <p>{% if locale == "es" %}Para preguntas sobre estos términos:{% else %}For questions about these terms:{% endif %}</p>
+        <ul>
+            {% if legal_entity %}<li><strong>{% if locale == "es" %}Entidad{% else %}Entity{% endif %}:</strong> {{ legal_entity }}</li>{% endif %}
+            {% if legal_address %}<li><strong>{% if locale == "es" %}Dirección{% else %}Address{% endif %}:</strong> {{ legal_address }}</li>{% endif %}
+            {% if contact_email %}<li><strong>Email:</strong> <a href="mailto:{{ contact_email }}" class="link">{{ contact_email }}</a></li>{% endif %}
+        </ul>
+    </div>
+</div>

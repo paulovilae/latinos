@@ -1,0 +1,1495 @@
+{% extends "base.html.tera" %}
+
+{% block title %}Consultant — {{ app_name }}{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-main { padding-bottom: 4rem; }
+.consultant-shell { display: flex; flex-direction: column; gap: 1.5rem; }
+.consultant-hero {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    background:
+        radial-gradient(circle at top right, rgba(56,189,248,0.2), transparent 30%),
+        linear-gradient(145deg, rgba(15,23,42,0.95), rgba(30,41,59,0.92));
+    box-shadow: 0 25px 60px rgba(15,23,42,0.45);
+}
+.consultant-hero::after {
+    content: "";
+    position: absolute;
+    inset: auto -15% -55% auto;
+    width: 340px;
+    height: 340px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(14,165,233,0.16), transparent 65%);
+    pointer-events: none;
+}
+.hero-topline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.7rem;
+    margin-bottom: 1rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #bae6fd;
+    background: rgba(8,145,178,0.12);
+    border: 1px solid rgba(103,232,249,0.16);
+}
+.hero-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+.hero-copy h1 {
+    margin: 0 0 0.75rem;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+    color: white;
+}
+.hero-copy p {
+    max-width: 60ch;
+    margin: 0 0 1.25rem;
+    color: #cbd5e1;
+    font-size: 1rem;
+}
+.hero-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+.hero-metric {
+    padding: 1rem;
+    border-radius: 1rem;
+    background: rgba(15,23,42,0.58);
+    border: 1px solid rgba(255,255,255,0.07);
+}
+.hero-metric .label {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.hero-metric .value {
+    color: white;
+    font-size: 1.3rem;
+    font-weight: 800;
+}
+.intake-card {
+    padding: 1rem;
+    border-radius: 1.25rem;
+    background: rgba(2,6,23,0.65);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.intake-card h2 {
+    margin: 0 0 0.5rem;
+    color: white;
+    font-size: 1.05rem;
+}
+.intake-card p {
+    margin: 0 0 1rem;
+    color: #94a3b8;
+    font-size: 0.92rem;
+}
+.search-form {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 1rem;
+    background: rgba(15,23,42,0.9);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.search-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    padding: 0.9rem 1rem;
+    border-radius: 0.8rem;
+    background: transparent;
+    color: white;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+.search-input::placeholder {
+    color: rgba(148,163,184,0.85);
+    text-transform: none;
+    letter-spacing: 0;
+}
+.btn-analyze {
+    border: none;
+    border-radius: 0.9rem;
+    padding: 0 1.2rem;
+    min-height: 3.2rem;
+    font-weight: 800;
+    color: white;
+    cursor: pointer;
+    background: linear-gradient(135deg, #0ea5e9, #2563eb);
+    box-shadow: 0 14px 30px rgba(37,99,235,0.25);
+}
+.selection-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+    gap: 1rem;
+}
+.panel-card {
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+    background: rgba(15,23,42,0.7);
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.panel-card h3 {
+    margin: 0 0 0.35rem;
+    color: white;
+    font-size: 1rem;
+}
+.panel-card p {
+    margin: 0 0 1rem;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+.suggestion-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+.suggestion-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid rgba(125,211,252,0.16);
+    background: rgba(14,116,144,0.12);
+    color: #e0f2fe;
+    cursor: pointer;
+    font-weight: 700;
+}
+.suggestion-chip small {
+    color: #7dd3fc;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+.decision-list {
+    display: grid;
+    gap: 0.85rem;
+}
+.decision-item {
+    padding: 0.9rem 1rem;
+    border-radius: 1rem;
+    background: rgba(2,6,23,0.42);
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.decision-item strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: white;
+}
+.decision-item span {
+    color: #94a3b8;
+    font-size: 0.88rem;
+}
+.reports-grid {
+    display: grid;
+    gap: 1rem;
+}
+.reports-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.25rem;
+    flex-wrap: wrap;
+}
+.reports-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 1.05rem;
+}
+.reports-header p {
+    margin: 0.3rem 0 0;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+.reports-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+.toolbar-search,
+.toolbar-select,
+.toolbar-button {
+    min-height: 2.9rem;
+    border-radius: 0.9rem;
+    border: 1px solid rgba(255,255,255,0.09);
+    background: rgba(15,23,42,0.8);
+    color: #e2e8f0;
+}
+.toolbar-search {
+    min-width: min(360px, 100%);
+    padding: 0 0.95rem;
+}
+.toolbar-select,
+.toolbar-button {
+    padding: 0 0.95rem;
+    font-weight: 700;
+}
+.toolbar-button {
+    cursor: pointer;
+}
+.research-table-shell {
+    overflow: hidden;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: linear-gradient(180deg, rgba(15,23,42,0.88), rgba(15,23,42,0.72));
+}
+.research-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.research-table thead th {
+    padding: 0.9rem 1rem;
+    text-align: left;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: rgba(2,6,23,0.45);
+}
+.sort-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border: none;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    cursor: pointer;
+}
+.sort-button.active {
+    color: #7dd3fc;
+}
+.research-row td,
+.research-detail-row td {
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.research-row {
+    background: rgba(15,23,42,0.2);
+}
+.research-row:hover {
+    background: rgba(30,41,59,0.46);
+}
+.research-row.is-open {
+    background: rgba(8,47,73,0.28);
+}
+.research-row td {
+    padding: 0.95rem 1rem;
+    vertical-align: middle;
+}
+.row-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: 100%;
+    border: none;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.row-caret {
+    flex: none;
+    width: 1.8rem;
+    height: 1.8rem;
+    margin-top: 0.15rem;
+    border-radius: 999px;
+    border: 1px solid rgba(125,211,252,0.16);
+    background: rgba(14,116,144,0.12);
+    color: #7dd3fc;
+    font-weight: 900;
+}
+.research-row.is-open .row-caret {
+    transform: rotate(90deg);
+}
+.row-title {
+    display: inline;
+    color: white;
+    font-size: 0.98rem;
+    font-weight: 800;
+}
+.row-subtitle {
+    display: inline;
+    margin-left: 0.35rem;
+    color: #94a3b8;
+    font-size: 0.84rem;
+}
+.asset-pill,
+.meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.38rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.05);
+    color: #cbd5e1;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+.asset-pill {
+    background: rgba(14,165,233,0.12);
+    border: 1px solid rgba(125,211,252,0.18);
+    color: #7dd3fc;
+    letter-spacing: 0.05em;
+}
+.row-date {
+    color: white;
+    font-weight: 700;
+}
+.catalyst-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: white;
+    font-weight: 700;
+}
+.catalyst-time {
+    color: #94a3b8;
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+.research-detail-row[hidden] {
+    display: none;
+}
+.research-detail-row td {
+    padding: 0;
+}
+.detail-panel {
+    padding: 1.25rem 1.25rem 1.4rem;
+    background: rgba(2,6,23,0.42);
+}
+.detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+.detail-copy {
+    color: #94a3b8;
+    font-size: 0.84rem;
+}
+.detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+}
+.detail-action-form {
+    margin: 0;
+}
+.detail-action-button {
+    min-height: 2.4rem;
+    border-radius: 0.75rem;
+    padding: 0 0.95rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(15,23,42,0.86);
+    color: #e2e8f0;
+    font-weight: 800;
+    cursor: pointer;
+}
+.detail-action-button.danger {
+    border-color: rgba(248,113,113,0.28);
+    color: #fecaca;
+    background: rgba(127,29,29,0.28);
+}
+.report-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.9fr);
+    gap: 1rem;
+}
+.summary-card,
+.news-section {
+    padding: 1rem;
+    border-radius: 1rem;
+    background: rgba(2,6,23,0.42);
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.summary-card h4,
+.news-section h4 {
+    margin: 0 0 0.8rem;
+    color: white;
+    font-size: 0.94rem;
+}
+.summary-card p {
+    color: #cbd5e1;
+    line-height: 1.65;
+}
+.summary-card.compact p {
+    margin: 0;
+}
+.nested-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    border: none;
+    padding: 0;
+    background: transparent;
+    color: white;
+    text-align: left;
+    cursor: pointer;
+}
+.nested-toggle .caret {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.7rem;
+    height: 1.7rem;
+    border-radius: 999px;
+    border: 1px solid rgba(125,211,252,0.2);
+    background: rgba(14,116,144,0.12);
+    color: #7dd3fc;
+    font-weight: 900;
+}
+.nested-toggle[aria-expanded="true"] .caret {
+    transform: rotate(90deg);
+}
+.nested-panel[hidden] {
+    display: none;
+}
+.detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(15,23,42,0.6);
+}
+.detail-table th,
+.detail-table td {
+    padding: 0.85rem 0.95rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.detail-table th {
+    width: 38%;
+    color: #94a3b8;
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.detail-table td {
+    color: white;
+    font-weight: 600;
+}
+.metrics-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+}
+.metric-box {
+    padding: 0.95rem;
+    border-radius: 0.95rem;
+    background: rgba(15,23,42,0.9);
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.metric-box .label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.source-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.55rem;
+    padding: 0 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(125,211,252,0.2);
+    background: rgba(14,116,144,0.12);
+    color: #7dd3fc;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.source-link:hover {
+    color: white;
+}
+.source-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+}
+.source-card {
+    display: block;
+    padding: 0.85rem 0.9rem;
+    border-radius: 0.95rem;
+    background: rgba(15,23,42,0.78);
+    border: 1px solid rgba(255,255,255,0.06);
+    text-decoration: none;
+}
+.source-card:hover {
+    border-color: rgba(125,211,252,0.2);
+}
+.source-card-label {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: white;
+    font-size: 0.84rem;
+    font-weight: 800;
+}
+.source-card-kind {
+    display: inline-flex;
+    margin-bottom: 0.45rem;
+    padding: 0.22rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(14,116,144,0.12);
+    color: #7dd3fc;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.source-card-desc {
+    color: #94a3b8;
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+.metric-box .value {
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+.metric-box .value-subtext {
+    display: block;
+    margin-top: 0.3rem;
+    color: #94a3b8;
+    font-size: 0.76rem;
+    line-height: 1.35;
+}
+.metric-box .value.up { color: #34d399; }
+.metric-box .value.down { color: #f87171; }
+.rec-badge {
+    display: inline-flex;
+    margin-top: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.rec-buy { background: rgba(16,185,129,0.16); color: #6ee7b7; }
+.rec-hold { background: rgba(245,158,11,0.14); color: #fcd34d; }
+.rec-sell { background: rgba(239,68,68,0.15); color: #fca5a5; }
+.rec-none { background: rgba(148,163,184,0.14); color: #cbd5e1; }
+.news-list {
+    display: grid;
+    gap: 0.8rem;
+}
+.news-item {
+    padding-left: 0.8rem;
+    border-left: 2px solid rgba(56,189,248,0.75);
+}
+.news-item-title {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: white;
+    font-size: 0.92rem;
+    line-height: 1.4;
+}
+.news-item-title:hover { color: #7dd3fc; }
+.news-meta { color: #94a3b8; font-size: 0.78rem; }
+.news-source {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: help;
+}
+.news-source:hover::after {
+    content: attr(data-summary);
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 0.5rem);
+    z-index: 6;
+    width: min(320px, 70vw);
+    padding: 0.75rem 0.8rem;
+    border-radius: 0.85rem;
+    background: rgba(2, 6, 23, 0.96);
+    border: 1px solid rgba(125,211,252,0.22);
+    color: #dbeafe;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    white-space: normal;
+    box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+}
+.news-item-time {
+    display: block;
+    margin-top: 0.2rem;
+    color: #7dd3fc;
+    font-size: 0.74rem;
+    font-weight: 700;
+}
+.research-empty-row td {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #94a3b8;
+}
+.empty-state {
+    padding: 3rem 1.5rem;
+    border-radius: 1.25rem;
+    background: rgba(15,23,42,0.7);
+    border: 1px dashed rgba(255,255,255,0.12);
+    text-align: center;
+}
+.loading-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: 1.5rem;
+    background: rgba(2,6,23,0.76);
+    backdrop-filter: blur(6px);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+.spinner {
+    width: 42px;
+    height: 42px;
+    border: 3px solid rgba(125,211,252,0.18);
+    border-top-color: #38bdf8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+.loading-text {
+    color: #7dd3fc;
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+body.is-analyzing .loading-overlay { display: flex; }
+@media (max-width: 1024px) {
+    .hero-grid,
+    .selection-panel,
+    .report-body { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+    .dashboard-main { padding: 1rem; }
+    .consultant-hero { padding: 1.2rem; }
+    .hero-metrics { grid-template-columns: 1fr; }
+    .search-form { flex-direction: column; }
+    .btn-analyze { width: 100%; }
+    .reports-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .toolbar-search {
+        min-width: 100%;
+    }
+    .research-table-shell {
+        overflow-x: auto;
+    }
+    .research-table {
+        min-width: 860px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    {% include "dashboard/_sidebar.html.tera" %}
+    <div class="dashboard-main">
+        <div class="consultant-shell">
+            <section class="consultant-hero">
+                <div class="loading-overlay">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Construyendo investigación</div>
+                </div>
+
+                <div class="hero-topline">Research Desk</div>
+
+                <div class="hero-grid">
+                    <div class="hero-copy">
+                        <h1>Investigaciones inteligentes basadas en AI</h1>
+                        <p>Analiza un ticker, conserva el historial por usuario y registra si la investigación vino del dashboard o desde un bot. Usa los atajos para arrancar con más contexto y volver a tus lecturas anteriores.</p>
+
+                        <div class="hero-metrics">
+                            <div class="hero-metric">
+                                <span class="label">Investigaciones</span>
+                                <span class="value">{{ research_count }}</span>
+                            </div>
+                            <div class="hero-metric">
+                                <span class="label">Última corrida</span>
+                                <span class="value" style="font-size:0.92rem;">{{ latest_research }}</span>
+                            </div>
+                            <div class="hero-metric">
+                                <span class="label">Cobertura rápida</span>
+                                <span class="value">10 activos</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="intake-card">
+                        <h2>Nuevo deep dive</h2>
+                        <p>Escribe un ticker bursátil. El sistema extrae datos, genera un resumen en Hera y lo guarda en tu biblioteca.</p>
+                        <form action="/dashboard/consultant/analyze" method="POST" class="search-form" onsubmit="document.body.classList.add('is-analyzing')">
+                            <input type="text" id="ticker-input" name="ticker" class="search-input" placeholder="NVDA, BTC-USD, GC=F" required autocomplete="off" spellcheck="false">
+                            <button type="submit" class="btn-analyze">Investigar</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <section class="selection-panel">
+                <div class="panel-card">
+                    <h3>Qué investigar ahora</h3>
+                    <p>Estas ideas combinan símbolos de tus backtests recientes y una shortlist líquida para empezar sin fricción.</p>
+                    <div class="suggestion-grid">
+                        {% for suggestion in suggestions %}
+                        <button type="button" class="suggestion-chip" data-ticker="{{ suggestion.ticker }}">
+                            <span>{{ suggestion.label | default(value=suggestion.ticker) }}</span>
+                            <small>{{ suggestion.reason }}</small>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <h3>Cómo elegir bien</h3>
+                    <p>Si no tienes claro el próximo ticker, usa esta secuencia rápida.</p>
+                    <div class="decision-list">
+                        <div class="decision-item">
+                            <strong>Empieza por los activos de tus bots</strong>
+                            <span>Prioriza símbolos donde ya hiciste backtests o donde tienes capital en juego.</span>
+                        </div>
+                        <div class="decision-item">
+                            <strong>Busca catalizadores cercanos</strong>
+                            <span>Resultados, guidance, regulación o rotación sectorial suelen justificar una nueva lectura.</span>
+                        </div>
+                        <div class="decision-item">
+                            <strong>Revalida cuando cambia el régimen</strong>
+                            <span>Si precio, valuación o volumen cambian fuerte, rehace la investigación antes de ajustar estrategia.</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="reports-grid">
+                <div class="reports-header">
+                    <div>
+                        <h3>Historial de investigaciones</h3>
+                        <p>Usa esta tabla como biblioteca viva: filtra, ordena y expande solo la fila que necesites revisar.</p>
+                    </div>
+                    <div class="reports-toolbar">
+                        <input type="search" id="research-filter" class="toolbar-search" placeholder="Filtrar por título, activo, sector o fuente">
+                        <select id="research-sort-field" class="toolbar-select">
+                            <option value="date">Fecha</option>
+                            <option value="title">Título</option>
+                            <option value="asset">Activo</option>
+                            <option value="source">Fuente</option>
+                        </select>
+                        <button type="button" id="research-sort-direction" class="toolbar-button" data-direction="desc">Descendente</button>
+                    </div>
+                </div>
+                {% if researches | length == 0 %}
+                <div class="empty-state">
+                    <h3 style="margin-bottom:0.5rem; color:white;">Todavía no hay investigaciones guardadas</h3>
+                    <p style="margin:0; color:#94a3b8;">Corre tu primer análisis para empezar a construir historial y contexto reutilizable.</p>
+                </div>
+                {% else %}
+                <div class="research-table-shell">
+                    <table class="research-table">
+                        <thead>
+                            <tr>
+                                <th><button type="button" class="sort-button" data-sort="title">Título</button></th>
+                                <th><button type="button" class="sort-button" data-sort="asset">Activo</button></th>
+                                <th><button type="button" class="sort-button active" data-sort="date">Fecha</button></th>
+                                <th><button type="button" class="sort-button" data-sort="source">Fuente</button></th>
+                                <th>Catalizadores</th>
+                            </tr>
+                        </thead>
+                        <tbody id="research-table-body">
+                            {% for item in researches %}
+                            {% set title = item.ticker | upper %}
+                            {% set subtitle = "" %}
+                            {% set industry = "" %}
+                            {% set news_count = 0 %}
+                            {% set latest_news_time = "" %}
+                            {% if item.raw_data and item.raw_data.asset_identity and item.raw_data.asset_identity.name %}
+                                {% set title = item.raw_data.asset_identity.name %}
+                            {% endif %}
+                            {% if item.raw_data and item.raw_data.asset_identity and item.raw_data.asset_identity.sector %}
+                                {% set subtitle = item.raw_data.asset_identity.sector %}
+                            {% endif %}
+                            {% if item.raw_data and item.raw_data.asset_identity and item.raw_data.asset_identity.industry %}
+                                {% set industry = item.raw_data.asset_identity.industry %}
+                            {% endif %}
+                            {% if subtitle == "Unknown" %}
+                                {% set subtitle = "" %}
+                            {% endif %}
+                            {% if industry == "Unknown" %}
+                                {% set industry = "" %}
+                            {% endif %}
+                            {% if item.raw_data and item.raw_data.catalysts_and_news and item.raw_data.catalysts_and_news.recent_headlines %}
+                                {% set news_count = item.raw_data.catalysts_and_news.recent_headlines | length %}
+                            {% endif %}
+                            {% if item.raw_data and item.raw_data.catalysts_and_news and item.raw_data.catalysts_and_news.recent_headlines and news_count > 0 and item.raw_data.catalysts_and_news.recent_headlines[0].display_time %}
+                                {% set latest_news_time = item.raw_data.catalysts_and_news.recent_headlines[0].display_time %}
+                            {% endif %}
+                            <tr class="research-row" data-row-id="{{ item.id }}" data-title="{{ title | lower }}" data-asset="{{ item.ticker | lower }}" data-date="{{ item.research_sort_key | default(value=item.research_date) }}" data-source="{{ item.source | lower }}" data-filter="{{ title | lower }} {{ item.ticker | lower }} {{ subtitle | lower }} {{ industry | lower }} {{ item.source | lower }}">
+                                <td>
+                                    <button type="button" class="row-toggle" data-toggle-row="{{ item.id }}" aria-expanded="false">
+                                        <span class="row-caret">›</span>
+                                        <span>
+                                            <span class="row-title">{{ title }}</span>
+                                            {% if subtitle or industry %}
+                                            <span class="row-subtitle">· {{ subtitle }}{% if subtitle and industry %} / {% endif %}{% if industry %}{{ industry }}{% endif %}</span>
+                                            {% endif %}
+                                        </span>
+                                    </button>
+                                </td>
+                                <td><span class="asset-pill">{{ item.ticker | upper }}</span></td>
+                                <td>
+                                    <div class="row-date">{{ item.research_date }}</div>
+                                </td>
+                                <td>
+                                    <span class="meta-pill">
+                                        {% if item.source == "bot" %}Bot{% else %}Dashboard{% endif %}
+                                        {% if item.bot_id %} · #{{ item.bot_id }}{% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="catalyst-cell">
+                                        {{ news_count }}
+                                        {% if latest_news_time %}
+                                        <span class="catalyst-time" {% if item.raw_data and item.raw_data.catalysts_and_news and item.raw_data.catalysts_and_news.recent_headlines and news_count > 0 and item.raw_data.catalysts_and_news.recent_headlines[0].published_at %}data-format="datetime" data-value="{{ item.raw_data.catalysts_and_news.recent_headlines[0].published_at }}"{% endif %}>{{ latest_news_time }}</span>
+                                        {% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr class="research-detail-row" data-detail-for="{{ item.id }}" hidden>
+                                <td colspan="5">
+                                    <div class="detail-panel">
+                                        {% if item.raw_data and item.raw_data.error %}
+                                        <div class="report-body" style="grid-template-columns:1fr;">
+                                            <div class="summary-card">
+                                                <h4>Error de investigación</h4>
+                                                <p>{{ item.raw_data.error }}</p>
+                                            </div>
+                                        </div>
+                                        {% elif item.raw_data %}
+                                        <div class="detail-header">
+                                            <div>
+                                                <div class="row-title">{{ title }}</div>
+                                            </div>
+                                            <div class="detail-actions">
+                                                <form action="/dashboard/consultant/{{ item.id }}/refresh" method="POST" class="detail-action-form">
+                                                    <button type="submit" class="detail-action-button">Actualizar</button>
+                                                </form>
+                                                <form action="/dashboard/consultant/{{ item.id }}/delete" method="POST" class="detail-action-form" onsubmit="return confirm('¿Eliminar esta investigación guardada?');">
+                                                    <button type="submit" class="detail-action-button danger">Eliminar</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        <div class="report-body">
+                                            <div>
+                                                {% set quote_url = item.raw_data.source_links.quote | default(value="https://finance.yahoo.com/quote/" ~ item.ticker) %}
+                                                {% set analysis_url = item.raw_data.source_links.analysis | default(value=quote_url) %}
+                                                {% set history_url = item.raw_data.source_links.history | default(value=quote_url) %}
+                                                {% set profile_url = item.raw_data.source_links.profile | default(value=quote_url) %}
+                                                {% set supporting_headlines = item.raw_data.catalysts_and_news.supporting_headlines | default(value=[]) %}
+                                                <div class="metrics-row">
+                                                    {% set cp = item.raw_data.technical_indicators.current_price %}
+                                                    {% set tp = item.raw_data.analyst_data.target_mean_price %}
+                                                    {% set rec = item.raw_data.analyst_data.recommendation_key | default(value="none") %}
+                                                    {% set forward_pe = item.raw_data.quantitative_metrics.forward_pe %}
+                                                    {% set beta = item.raw_data.technical_indicators.beta %}
+                                                    {% set revenue_growth = item.raw_data.quantitative_metrics.revenue_growth %}
+                                                    {% set avg_volume = item.raw_data.technical_indicators.average_volume %}
+                                                    {% set week_high = item.raw_data.technical_indicators.fifty_two_week_high %}
+                                                    {% set week_low = item.raw_data.technical_indicators.fifty_two_week_low %}
+                                                    <div class="metric-box">
+                                                        <span class="label">Precio actual <a href="{{ quote_url }}" target="_blank" rel="noreferrer" class="source-link">Yahoo Quote</a></span>
+                                                        <span class="value">
+                                                            {% if cp %}
+                                                            <span data-format="currency" data-value="{{ cp }}">{{ cp }}</span>
+                                                            {% else %}—{% endif %}
+                                                        </span>
+                                                    </div>
+                                                    {% if week_high %}
+                                                    <div class="metric-box">
+                                                        <span class="label">Máximo 52s <a href="{{ history_url }}" target="_blank" rel="noreferrer" class="source-link">Yahoo History</a></span>
+                                                        <span class="value">
+                                                            <span data-format="currency" data-value="{{ week_high }}">{{ week_high }}</span>
+                                                        </span>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if week_low %}
+                                                    <div class="metric-box">
+                                                        <span class="label">Mínimo 52s <a href="{{ history_url }}" target="_blank" rel="noreferrer" class="source-link">Yahoo History</a></span>
+                                                        <span class="value">
+                                                            <span data-format="currency" data-value="{{ week_low }}">{{ week_low }}</span>
+                                                        </span>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if avg_volume %}
+                                                    <div class="metric-box">
+                                                        <span class="label">Volumen promedio <a href="{{ history_url }}" target="_blank" rel="noreferrer" class="source-link">Yahoo History</a></span>
+                                                        <span class="value">
+                                                            <span data-format="decimal" data-value="{{ avg_volume }}">{{ avg_volume }}</span>
+                                                        </span>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+
+                                                <div class="metrics-row">
+                                                    {% if tp %}
+                                                    <div class="metric-box">
+                                                        <span class="label">Target consenso <a href="{{ analysis_url }}" target="_blank" rel="noreferrer" class="source-link">Yahoo Analysis</a></span>
+                                                        <span class="value {% if tp and cp and tp > cp %}up{% elif tp and cp and tp < cp %}down{% endif %}">
+                                                            <span data-format="currency" data-value="{{ tp }}">{{ tp }}</span>
+                                                        </span>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if forward_pe %}
+                                                    <div class="metric-box">
+                                                        <span class="label">Forward P/E <a href="{{ analysis_url }}" target="_blank" rel="noreferrer" class="source-link">Yahoo Analysis</a></span>
+                                                        <span class="value">
+                                                            <span data-format="decimal" data-value="{{ forward_pe }}">{{ forward_pe }}</span>
+                                                        </span>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if rec != "none" and rec != "" %}
+                                                    <div class="metric-box">
+                                                        <span class="label">Recomendación</span>
+                                                        {% if rec == "buy" or rec == "strong_buy" %}
+                                                        <span class="rec-badge rec-buy">{{ rec | replace(from="_", to=" ") }}</span>
+                                                        {% elif rec == "hold" %}
+                                                        <span class="rec-badge rec-hold">hold</span>
+                                                        {% elif rec == "sell" or rec == "underperform" %}
+                                                        <span class="rec-badge rec-sell">{{ rec | replace(from="_", to=" ") }}</span>
+                                                        {% else %}
+                                                        <span class="rec-badge rec-none">{{ rec | replace(from="_", to=" ") }}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    {% endif %}
+                                                    <div class="metric-box">
+                                                        <span class="label">Media 50d <a href="{{ history_url }}" target="_blank" rel="noreferrer" class="source-link">Yahoo History</a></span>
+                                                        <span class="value">{% if item.raw_data.technical_indicators.fifty_day_average %}<span data-format="currency" data-value="{{ item.raw_data.technical_indicators.fifty_day_average }}">{{ item.raw_data.technical_indicators.fifty_day_average }}</span>{% else %}—{% endif %}</span>
+                                                    </div>
+                                                    <div class="metric-box">
+                                                        <span class="label">Media 200d <a href="{{ history_url }}" target="_blank" rel="noreferrer" class="source-link">Yahoo History</a></span>
+                                                        <span class="value">{% if item.raw_data.technical_indicators.two_hundred_day_average %}<span data-format="currency" data-value="{{ item.raw_data.technical_indicators.two_hundred_day_average }}">{{ item.raw_data.technical_indicators.two_hundred_day_average }}</span>{% else %}—{% endif %}</span>
+                                                    </div>
+                                                    {% if beta %}
+                                                    <div class="metric-box">
+                                                        <span class="label">Beta <a href="{{ quote_url }}" target="_blank" rel="noreferrer" class="source-link">Yahoo Quote</a></span>
+                                                        <span class="value"><span data-format="decimal" data-value="{{ beta }}">{{ beta }}</span></span>
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if revenue_growth %}
+                                                    <div class="metric-box">
+                                                        <span class="label">Revenue growth <a href="{{ analysis_url }}" target="_blank" rel="noreferrer" class="source-link">Yahoo Analysis</a></span>
+                                                        <span class="value"><span data-format="percent" data-value="{{ revenue_growth }}">{{ revenue_growth }}</span></span>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+
+                                                {% if item.raw_data.investment_scores %}
+                                                <div class="metrics-row" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 1.2rem; gap: 1rem;">
+                                                    {% for score_key, score_val in item.raw_data.investment_scores %}
+                                                    <div class="metric-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.6rem; padding: 1.2rem 0.8rem;">
+                                                        <span class="label" style="margin:0; font-size: 0.85rem; font-weight: 700; text-transform: capitalize;">{{ score_key | replace(from="_", to=" ") | capitalize }}</span>
+                                                        <div style="position: relative; width: 4.5rem; height: 4.5rem;">
+                                                            <svg viewBox="0 0 100 100" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+                                                                <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8"></circle>
+                                                                <circle cx="50" cy="50" r="42" fill="none" 
+                                                                    stroke="{% if score_val >= 70 %}#4ade80{% elif score_val >= 40 %}#facc15{% else %}#f87171{% endif %}" 
+                                                                    stroke-width="8" stroke-dasharray="263.89" 
+                                                                    stroke-dashoffset="{{ 263.89 - (263.89 * score_val / 100) }}" 
+                                                                    stroke-linecap="round"
+                                                                    style="transition: stroke-dashoffset 1s ease-out;"></circle>
+                                                            </svg>
+                                                            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center;">
+                                                                <span style="font-size: 1.15rem; font-weight: 800; color: white;">{{ score_val }}</span>
+                                                            </div>
+                                                        </div>
+                                                        {% if item.raw_data.investment_score_explanations[score_key] %}
+                                                        <p style="margin: 0.3rem 0 0 0; font-size: 0.78rem; color: rgba(255,255,255,0.55); line-height: 1.4; text-align: center; max-width: 22rem;">{{ item.raw_data.investment_score_explanations[score_key] }}</p>
+                                                        {% endif %}
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                                {% if item.raw_data.investment_score_explanations.growth_context %}
+                                                <div style="margin: -0.5rem 0 1.2rem 0; padding: 0.75rem 1rem; background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15); border-radius: 0.5rem;">
+                                                    <p style="margin: 0; font-size: 0.85rem; color: rgba(255,255,255,0.7);">📈 {{ item.raw_data.investment_score_explanations.growth_context }}</p>
+                                                </div>
+                                                {% endif %}
+                                                {% endif %}
+
+                                                <div class="summary-card">
+                                                    <h4>Lectura ejecutiva</h4>
+                                                    <p>{{ item.analysis_summary | default(value="Sin resumen generado.") }}</p>
+                                                </div>
+
+                                                {% if item.raw_data.research_dossier %}
+                                                <div class="summary-card">
+                                                    <h4>Dossier de consultoría</h4>
+                                                    <p style="margin-bottom:0.7rem;">Tipo: {{ item.raw_data.research_dossier.research_type | default(value="market_intelligence") }}. Esta investigación se guarda como expediente vivo para mercado, negocio, producto/tecnología, competencia y riesgo.</p>
+                                                    {% if item.raw_data.research_dossier.consulting_lenses %}
+                                                    <div class="suggestion-grid">
+                                                        {% for lens in item.raw_data.research_dossier.consulting_lenses %}
+                                                        <span class="suggestion-chip" style="cursor:default;">{{ lens }}</span>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                {% endif %}
+
+                                                <div class="summary-card">
+                                                    <button type="button" class="nested-toggle" data-nested-toggle="detail-{{ item.id }}" aria-expanded="false">
+                                                        <h4 style="margin:0;">Ficha detallada</h4>
+                                                        <span class="caret">›</span>
+                                                    </button>
+                                                    <div class="nested-panel" data-nested-panel="detail-{{ item.id }}" hidden>
+                                                    <table class="detail-table">
+                                                        <tbody>
+                                                            <tr>
+                                                                <th>Ticker</th>
+                                                                <td>{{ item.ticker | upper }}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Última actualización</th>
+                                                                <td>{{ item.research_date }}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <th>Fuente de guardado</th>
+                                                                <td>{% if item.source == "bot" %}Bot{% else %}Dashboard{% endif %}{% if item.bot_id %} · #{{ item.bot_id }}{% endif %}</td>
+                                                            </tr>
+                                                            {% if cp %}
+                                                            <tr>
+                                                                <th>Precio actual</th>
+                                                                <td><span data-format="currency" data-value="{{ cp }}">{{ cp }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if week_high or week_low %}
+                                                            <tr>
+                                                                <th>Rango 52 semanas</th>
+                                                                <td>{% if week_low %}<span data-format="currency" data-value="{{ week_low }}">{{ week_low }}</span>{% endif %}{% if week_low and week_high %} - {% endif %}{% if week_high %}<span data-format="currency" data-value="{{ week_high }}">{{ week_high }}</span>{% endif %}</td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if avg_volume %}
+                                                            <tr>
+                                                                <th>Volumen promedio</th>
+                                                                <td><span data-format="decimal" data-value="{{ avg_volume }}">{{ avg_volume }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.asset_identity.long_name %}
+                                                            <tr>
+                                                                <th>Nombre largo</th>
+                                                                <td>{{ item.raw_data.asset_identity.long_name }}</td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if subtitle or industry %}
+                                                            <tr>
+                                                                <th>Clasificación</th>
+                                                                <td>{% if subtitle %}{{ subtitle }}{% endif %}{% if subtitle and industry %} / {% endif %}{% if industry %}{{ industry }}{% endif %}</td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.asset_identity.website %}
+                                                            <tr>
+                                                                <th>Sitio</th>
+                                                                <td><a href="{{ item.raw_data.asset_identity.website }}" target="_blank" rel="noreferrer">{{ item.raw_data.asset_identity.website }}</a></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.quantitative_metrics.market_cap %}
+                                                            <tr>
+                                                                <th>Market cap</th>
+                                                                <td><span data-format="currency" data-value="{{ item.raw_data.quantitative_metrics.market_cap }}">{{ item.raw_data.quantitative_metrics.market_cap }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.quantitative_metrics.trailing_pe %}
+                                                            <tr>
+                                                                <th>Trailing P/E</th>
+                                                                <td><span data-format="decimal" data-value="{{ item.raw_data.quantitative_metrics.trailing_pe }}">{{ item.raw_data.quantitative_metrics.trailing_pe }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.quantitative_metrics.price_to_book %}
+                                                            <tr>
+                                                                <th>Price to book</th>
+                                                                <td><span data-format="decimal" data-value="{{ item.raw_data.quantitative_metrics.price_to_book }}">{{ item.raw_data.quantitative_metrics.price_to_book }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.quantitative_metrics.dividend_yield %}
+                                                            <tr>
+                                                                <th>Dividend yield</th>
+                                                                <td><span data-format="percent" data-value="{{ item.raw_data.quantitative_metrics.dividend_yield }}">{{ item.raw_data.quantitative_metrics.dividend_yield }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.quantitative_metrics.operating_margins %}
+                                                            <tr>
+                                                                <th>Operating margins</th>
+                                                                <td><span data-format="percent" data-value="{{ item.raw_data.quantitative_metrics.operating_margins }}">{{ item.raw_data.quantitative_metrics.operating_margins }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.quantitative_metrics.profit_margins %}
+                                                            <tr>
+                                                                <th>Profit margins</th>
+                                                                <td><span data-format="percent" data-value="{{ item.raw_data.quantitative_metrics.profit_margins }}">{{ item.raw_data.quantitative_metrics.profit_margins }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.quantitative_metrics.return_on_equity %}
+                                                            <tr>
+                                                                <th>ROE</th>
+                                                                <td><span data-format="percent" data-value="{{ item.raw_data.quantitative_metrics.return_on_equity }}">{{ item.raw_data.quantitative_metrics.return_on_equity }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.quantitative_metrics.earnings_growth %}
+                                                            <tr>
+                                                                <th>Earnings growth</th>
+                                                                <td><span data-format="percent" data-value="{{ item.raw_data.quantitative_metrics.earnings_growth }}">{{ item.raw_data.quantitative_metrics.earnings_growth }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.quantitative_metrics.enterprise_value %}
+                                                            <tr>
+                                                                <th>Enterprise value</th>
+                                                                <td><span data-format="currency" data-value="{{ item.raw_data.quantitative_metrics.enterprise_value }}">{{ item.raw_data.quantitative_metrics.enterprise_value }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.quantitative_metrics.ebitda %}
+                                                            <tr>
+                                                                <th>EBITDA</th>
+                                                                <td><span data-format="currency" data-value="{{ item.raw_data.quantitative_metrics.ebitda }}">{{ item.raw_data.quantitative_metrics.ebitda }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.analyst_data.number_of_analyst_opinions %}
+                                                            <tr>
+                                                                <th>Opiniones de analistas</th>
+                                                                <td><span data-format="decimal" data-value="{{ item.raw_data.analyst_data.number_of_analyst_opinions }}">{{ item.raw_data.analyst_data.number_of_analyst_opinions }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                            {% if item.raw_data.technical_indicators.short_ratio %}
+                                                            <tr>
+                                                                <th>Short ratio</th>
+                                                                <td><span data-format="decimal" data-value="{{ item.raw_data.technical_indicators.short_ratio }}">{{ item.raw_data.technical_indicators.short_ratio }}</span></td>
+                                                            </tr>
+                                                            {% endif %}
+                                                        </tbody>
+                                                    </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <aside class="news-section">
+                                                <h4>Catalizadores recientes</h4>
+                                                {% if item.raw_data.catalysts_and_news and item.raw_data.catalysts_and_news.executive_summary %}
+                                                <div class="summary-card compact" style="margin-bottom:1rem;">
+                                                    <h4 style="margin-bottom:0.45rem;">Resumen de catalizadores</h4>
+                                                    <p style="margin:0 0 0.45rem; font-size:0.78rem; letter-spacing:0.08em; text-transform:uppercase; color:#7dd3fc;">Basado solo en titulares filtrados para este activo</p>
+                                                    <p>{{ item.raw_data.catalysts_and_news.executive_summary }}</p>
+                                                </div>
+                                                {% endif %}
+                                                {% if item.raw_data.catalysts_and_news and item.raw_data.catalysts_and_news.recent_headlines and item.raw_data.catalysts_and_news.recent_headlines | length > 0 %}
+                                                <div class="news-list">
+                                                    {% for news in item.raw_data.catalysts_and_news.recent_headlines %}
+                                                    <div class="news-item">
+                                                        <a href="{{ news.link }}" target="_blank" rel="noreferrer" class="news-item-title">{{ news.title }}</a>
+                                                        <div class="news-meta">
+                                                            <span class="news-source" data-summary="{{ news.source_summary | default(value=news.title) }}">{{ news.publisher | default(value="Fuente no disponible") }}</span>
+                                                        </div>
+                                                        {% if news.published_at %}
+                                                        <span class="news-item-time" data-format="datetime" data-value="{{ news.published_at }}">{{ news.display_time | default(value=news.published_at) }}</span>
+                                                        {% elif news.display_time %}
+                                                        <span class="news-item-time">{{ news.display_time }}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                                {% if supporting_headlines | length > 0 %}
+                                                <div class="summary-card compact" style="margin-top:1rem;">
+                                                    <h4 style="margin-bottom:0.6rem;">Más cobertura revisada</h4>
+                                                    <div class="news-list">
+                                                        {% for news in supporting_headlines %}
+                                                        <div class="news-item">
+                                                            <a href="{{ news.link }}" target="_blank" rel="noreferrer" class="news-item-title">{{ news.title }}</a>
+                                                            <div class="news-meta">
+                                                                <span class="news-source" data-summary="{{ news.source_summary | default(value=news.title) }}">{{ news.publisher | default(value="Fuente no disponible") }}</span>
+                                                            </div>
+                                                            {% if news.published_at %}
+                                                            <span class="news-item-time" data-format="datetime" data-value="{{ news.published_at }}">{{ news.display_time | default(value=news.published_at) }}</span>
+                                                            {% elif news.display_time %}
+                                                            <span class="news-item-time">{{ news.display_time }}</span>
+                                                            {% endif %}
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% if item.raw_data.source_catalog %}
+                                                <div class="summary-card compact" style="margin-top:1rem;">
+                                                    <h4 style="margin-bottom:0.6rem;">Fuentes consultadas</h4>
+                                                    <div class="source-grid">
+                                                        {% if item.raw_data.source_catalog.metric_sources %}
+                                                        {% for source in item.raw_data.source_catalog.metric_sources %}
+                                                        <a href="{{ source.url }}" target="_blank" rel="noreferrer" class="source-card">
+                                                            <span class="source-card-label">{{ source.label }}</span>
+                                                            <span class="source-card-kind">{{ source.kind | replace(from="_", to=" ") }}</span>
+                                                            <span class="source-card-desc">{{ source.description }}</span>
+                                                        </a>
+                                                        {% endfor %}
+                                                        {% endif %}
+                                                        {% if item.raw_data.source_catalog.news_sources %}
+                                                        {% for source in item.raw_data.source_catalog.news_sources %}
+                                                        {% if loop.index <= 4 %}
+                                                        <a href="{{ source.url }}" target="_blank" rel="noreferrer" class="source-card">
+                                                            <span class="source-card-label">{{ source.label }}</span>
+                                                            <span class="source-card-kind">news</span>
+                                                            <span class="source-card-desc">{{ source.title | default(value=source.description) }}</span>
+                                                        </a>
+                                                        {% endif %}
+                                                        {% endfor %}
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% else %}
+                                                <p style="margin:0; color:#94a3b8;">No se encontraron titulares recientes para este ticker.</p>
+                                                {% endif %}
+                                            </aside>
+                                        </div>
+                                        {% else %}
+                                        <div class="report-body" style="grid-template-columns:1fr;">
+                                            <div class="summary-card">
+                                                <h4>Sin payload legible</h4>
+                                                <p>La investigación fue guardada, pero no hay datos estructurados para renderizar.</p>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            <tr class="research-empty-row" id="research-empty-row" hidden>
+                                <td colspan="5">No hay investigaciones que coincidan con el filtro actual.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var input = document.getElementById('ticker-input');
+    var filterInput = document.getElementById('research-filter');
+    var sortField = document.getElementById('research-sort-field');
+    var sortDirectionButton = document.getElementById('research-sort-direction');
+    var tableBody = document.getElementById('research-table-body');
+    var emptyRow = document.getElementById('research-empty-row');
+
+    document.addEventListener('click', function (event) {
+        var chip = event.target.closest('[data-ticker]');
+        if (chip && input) {
+            input.value = chip.getAttribute('data-ticker') || '';
+            input.focus();
+            return;
+        }
+
+        var toggle = event.target.closest('[data-toggle-row]');
+        if (toggle) {
+            var rowId = toggle.getAttribute('data-toggle-row');
+            var row = document.querySelector('[data-row-id="' + rowId + '"]');
+            var detail = document.querySelector('[data-detail-for="' + rowId + '"]');
+            if (!row || !detail) return;
+
+            var isOpen = !detail.hasAttribute('hidden');
+            detail.toggleAttribute('hidden', isOpen);
+            toggle.setAttribute('aria-expanded', String(!isOpen));
+            row.classList.toggle('is-open', !isOpen);
+            return;
+        }
+
+        var nestedToggle = event.target.closest('[data-nested-toggle]');
+        if (!nestedToggle) return;
+        var nestedId = nestedToggle.getAttribute('data-nested-toggle');
+        var nestedPanel = document.querySelector('[data-nested-panel="' + nestedId + '"]');
+        if (!nestedPanel) return;
+        var nestedOpen = !nestedPanel.hasAttribute('hidden');
+        nestedPanel.toggleAttribute('hidden', nestedOpen);
+        nestedToggle.setAttribute('aria-expanded', String(!nestedOpen));
+    });
+
+    if (!tableBody || !filterInput || !sortField || !sortDirectionButton) {
+        return;
+    }
+
+    var pairs = Array.from(tableBody.querySelectorAll('.research-row')).map(function (row) {
+        var id = row.getAttribute('data-row-id');
+        return {
+            row: row,
+            detail: tableBody.querySelector('[data-detail-for="' + id + '"]')
+        };
+    });
+
+    function formatNumber(node) {
+        var mode = node.getAttribute('data-format');
+        var raw = node.getAttribute('data-value');
+        if (!mode || raw === null) return;
+
+        var value = Number(raw);
+        if (!Number.isFinite(value)) return;
+
+        if (mode === 'currency') {
+            node.textContent = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                maximumFractionDigits: value >= 1000 ? 0 : 2
+            }).format(value);
+            return;
+        }
+
+        if (mode === 'decimal') {
+            node.textContent = new Intl.NumberFormat('en-US', {
+                maximumFractionDigits: 2
+            }).format(value);
+            return;
+        }
+
+        if (mode === 'percent') {
+            node.textContent = new Intl.NumberFormat('en-US', {
+                style: 'percent',
+                maximumFractionDigits: 1
+            }).format(value);
+            return;
+        }
+
+        if (mode === 'datetime') {
+            var parsed = new Date(raw);
+            if (Number.isNaN(parsed.getTime())) return;
+            node.textContent = new Intl.DateTimeFormat('es-CO', {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            }).format(parsed);
+        }
+    }
+
+    function closeRow(pair) {
+        if (!pair.detail) return;
+        pair.detail.setAttribute('hidden', '');
+        pair.row.classList.remove('is-open');
+        var toggle = pair.row.querySelector('[data-toggle-row]');
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+    }
+
+    function applyTableState() {
+        var query = (filterInput.value || '').trim().toLowerCase();
+        var field = sortField.value || 'date';
+        var direction = sortDirectionButton.getAttribute('data-direction') || 'desc';
+
+        pairs.sort(function (a, b) {
+            var aValue = a.row.getAttribute('data-' + field) || '';
+            var bValue = b.row.getAttribute('data-' + field) || '';
+            if (field === 'date') {
+                return direction === 'asc'
+                    ? aValue.localeCompare(bValue)
+                    : bValue.localeCompare(aValue);
+            }
+            return direction === 'asc'
+                ? aValue.localeCompare(bValue)
+                : bValue.localeCompare(aValue);
+        });
+
+        var visibleCount = 0;
+        pairs.forEach(function (pair) {
+            var haystack = pair.row.getAttribute('data-filter') || '';
+            var isVisible = !query || haystack.indexOf(query) !== -1;
+            pair.row.hidden = !isVisible;
+            if (pair.detail) {
+                pair.detail.hidden = !isVisible || pair.detail.hasAttribute('hidden');
+                if (!isVisible) {
+                    closeRow(pair);
+                }
+            }
+            if (isVisible) {
+                visibleCount += 1;
+            }
+            tableBody.appendChild(pair.row);
+            if (pair.detail) {
+                tableBody.appendChild(pair.detail);
+            }
+        });
+
+        if (emptyRow) {
+            emptyRow.hidden = visibleCount !== 0;
+            tableBody.appendChild(emptyRow);
+        }
+
+        Array.from(document.querySelectorAll('.sort-button')).forEach(function (button) {
+            button.classList.toggle('active', button.getAttribute('data-sort') === field);
+        });
+    }
+
+    filterInput.addEventListener('input', applyTableState);
+    sortField.addEventListener('change', applyTableState);
+    sortDirectionButton.addEventListener('click', function () {
+        var nextDirection = sortDirectionButton.getAttribute('data-direction') === 'desc' ? 'asc' : 'desc';
+        sortDirectionButton.setAttribute('data-direction', nextDirection);
+        sortDirectionButton.textContent = nextDirection === 'desc' ? 'Descendente' : 'Ascendente';
+        applyTableState();
+    });
+
+    Array.from(document.querySelectorAll('.sort-button')).forEach(function (button) {
+        button.addEventListener('click', function () {
+            sortField.value = button.getAttribute('data-sort') || 'date';
+            applyTableState();
+        });
+    });
+
+    Array.from(document.querySelectorAll('[data-format]')).forEach(formatNumber);
+    applyTableState();
+});
+</script>
+{% endblock %}

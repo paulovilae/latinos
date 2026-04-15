@@ -1,0 +1,6 @@
+{% extends "base.html.tera" %}
+{% block title %}{% if locale == "es" %}Estado del Sistema{% else %}System Status{% endif %} — {{ app_name | default(value="Latinos Trading") }}{% endblock %}
+{% block meta_description %}{% if locale == "es" %}Estado en tiempo real de {{ app_name }}.{% else %}Real-time status of {{ app_name }}.{% endif %}{% endblock %}
+{% block content %}
+{% include "shared/status.html.tera" %}
+{% endblock %}

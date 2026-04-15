@@ -1,0 +1,35 @@
+{% extends "base.html.tera" %}
+
+{% block title %}Dashboard — {{ app_name }}{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    {% include "dashboard/_sidebar.html.tera" %}
+    <div class="dashboard-main">
+        <h1>Trading Terminal</h1>
+        <div class="stats-grid">
+            <div class="stat-card"><div class="label">🤖 Active Bots</div><div class="value neutral">{{ bot_count }}</div></div>
+            <div class="stat-card"><div class="label">📊 Today's Signals</div><div class="value buy">0</div></div>
+            <div class="stat-card"><div class="label">💱 Open Trades</div><div class="value neutral">0</div></div>
+            <div class="stat-card"><div class="label">🧪 Backtests</div><div class="value neutral">0</div></div>
+        </div>
+        {% if bot_count == 0 %}
+        <div class="empty-state">
+            <h2>🚀 Tu terminal de trading está lista</h2>
+            <p>Crea tu primer robot de trading, diseña señales en el Signal Studio, y ejecuta backtests con datos históricos reales.</p>
+            <a href="/dashboard/bots" class="cta">Crear Robot →</a>
+        </div>
+        {% else %}
+        <div class="empty-state" style="background: rgba(34, 197, 94, 0.05); border-color: rgba(34, 197, 94, 0.2);">
+            <h2>🟢 Sistemas Activos ({{ bot_count }})</h2>
+            <p>Tus robots están preparados. Monitorea su rendimiento o ajusta el Signal Manifest de tus estrategias en el Roastery.</p>
+            <a href="/dashboard/bots" class="cta" style="background: #10b981;">Gestionar Bots →</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}

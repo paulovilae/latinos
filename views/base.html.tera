@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="{{ locale | default(value='es') }}" data-theme="{{ initial_theme | default(value='dark') }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ app_name | default(value="Latinos Trading") }}{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Plataforma soberana de trading algorítmico.{% endblock %}">
+    <noscript></noscript>
+    {% block extra_head %}{% endblock %}
+    <link rel="stylesheet" href="/static/css/main.css?v=2">
+    {% block extra_css %}{% endblock %}
+</head>
+<body style="font-family: system-ui, -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif;">
+    <!-- Header -->
+    {% block header %}
+    {% include "shared/public_header.html.tera" %}
+    {% endblock %}
+
+    <!-- Main Content -->
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    {% block footer %}
+    {% include "partials/_footer.html.tera" %}
+    {% endblock %}
+
+    <!-- Theme Scripts -->
+    <script>
+    (function(){
+        var root=document.documentElement;
+        var readCookie=function(name){
+            return document.cookie.split(';').map(function(part){return part.trim();}).find(function(part){return part.indexOf(name+'=')===0;})?.slice(name.length+1);
+        };
+        var writeCookie=function(name,value){
+            document.cookie=name+'='+value+'; Path=/; Max-Age=31536000; SameSite=Lax';
+        };
+        var saved=localStorage.getItem('theme');
+        var cookieTheme=readCookie('latinos_theme');
+        var theme=(cookieTheme==='light'||cookieTheme==='dark')?cookieTheme:(saved==='light'||saved==='dark')?saved:'dark';
+        root.setAttribute('data-theme',theme);
+        writeCookie('latinos_theme',theme);
+        writeCookie('latinos_locale',root.lang||'es');
+    })();
+    function toggleTheme(){var h=document.documentElement,c=h.getAttribute('data-theme')||'dark',n=c==='dark'?'light':'dark';h.setAttribute('data-theme',n);localStorage.setItem('theme',n);document.cookie='latinos_theme='+n+'; Path=/; Max-Age=31536000; SameSite=Lax'}
+    function toggleLang(){var c=localStorage.getItem('lang')||'es',n=c==='es'?'en':'es';localStorage.setItem('lang',n);document.cookie='latinos_locale='+n+'; Path=/; Max-Age=31536000; SameSite=Lax';var b=document.getElementById('footer-lang-btn');if(b)b.textContent='🌐 '+n.toUpperCase()}
+    (function(){var l=localStorage.getItem('lang')||'es';var b=document.getElementById('footer-lang-btn');if(b)b.textContent='🌐 '+l.toUpperCase()})();
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+    <script src="/imaginclaw/widget.js" data-agent="latinos" data-app-id="latinos" data-title="Latinos" data-subtitle="Analista Cuantitativo" data-greeting="Sistemas en línea. ¿Qué mercado vamos a analizar hoy? 📊" id="imaginclaw-widget" defer></script>
+</body>
+</html>

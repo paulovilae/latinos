@@ -1,0 +1,71 @@
+{% extends "base.html.tera" %}
+{% block title %}{% if locale == "es" %}Centro de Seguridad{% else %}Security Center{% endif %} — {{ app_name | default(value="Latinos Trading") }}{% endblock %}
+{% block meta_description %}{% if locale == "es" %}Centro de Seguridad de {{ app_name }}: 12 Centros de Comando.{% else %}{{ app_name }} Security Center: 12 Command Centers.{% endif %}{% endblock %}
+{% block content %}
+{% set contact_email = contact_email | default(value="security@vilaros.com") %}
+<div class="sec-page">
+    <div class="sec-hero">
+        <h1>🛡️ {% if locale == "es" %}Centro de Seguridad{% else %}Security Center{% endif %}</h1>
+        <p>{% if locale == "es" %}Nuestra infraestructura soberana protege tu información con 12 Centros de Comando, alineados con los estándares más exigentes de la industria.{% else %}Our sovereign infrastructure protects your data with 12 Command Centers, aligned with the most demanding industry standards.{% endif %}</p>
+        <div class="sec-badges">
+            <span class="sec-badge sec-badge-live">{% if locale == "es" %}Monitoreo 24/7{% else %}24/7 Monitoring{% endif %}</span>
+            <span class="sec-badge">🔐 TLS 1.3</span>
+            <span class="sec-badge">🛡️ Zero-Trust</span>
+            <span class="sec-badge">🤖 AI Security</span>
+            <span class="sec-badge">📋 11 Frameworks</span>
+        </div>
+    </div>
+
+    <h2 class="sec-h2">{% if locale == "es" %}Centros de Comando{% else %}Command Centers{% endif %}</h2>
+    <div class="cc-grid">
+        <div class="cc-card" style="--cc-color:#3b82f6;"><div class="cc-head"><div class="cc-icon">🏗️</div><div><div class="cc-num">CC-01</div><div class="cc-title">Infrastructure Shield</div></div></div><div class="cc-desc">{% if locale == "es" %}Infraestructura soberana bare-metal. Networking zero-trust con malla WireGuard cifrada.{% else %}Sovereign bare-metal infrastructure. Zero-trust networking with encrypted WireGuard mesh.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Bare-Metal</span><span class="cc-tag">WireGuard</span><span class="cc-tag">Zero-Trust</span></div></div>
+        <div class="cc-card" style="--cc-color:#10b981;"><div class="cc-head"><div class="cc-icon">🔐</div><div><div class="cc-num">CC-02</div><div class="cc-title">Cryptographic Barrier</div></div></div><div class="cc-desc">{% if locale == "es" %}TLS 1.3 obligatorio con HSTS Preload. Cifrado en reposo. JWT con validación de audiencia.{% else %}Mandatory TLS 1.3 with HSTS Preload. Encryption at rest. JWT with audience validation.{% endif %}</div><div class="cc-tags"><span class="cc-tag">TLS 1.3</span><span class="cc-tag">HSTS</span><span class="cc-tag">JWT</span></div></div>
+        <div class="cc-card" style="--cc-color:#f59e0b;"><div class="cc-head"><div class="cc-icon">🔑</div><div><div class="cc-num">CC-03</div><div class="cc-title">Identity & Access</div></div></div><div class="cc-desc">{% if locale == "es" %}SSO via Authentik OIDC. Control de acceso basado en roles (RBAC) por endpoint.{% else %}SSO via Authentik OIDC. Role-Based Access Control (RBAC) per endpoint.{% endif %}</div><div class="cc-tags"><span class="cc-tag">OIDC SSO</span><span class="cc-tag">RBAC</span><span class="cc-tag">Sovereign</span></div></div>
+        <div class="cc-card" style="--cc-color:#ef4444;"><div class="cc-head"><div class="cc-icon">🛡️</div><div><div class="cc-num">CC-04</div><div class="cc-title">Network Defense</div></div></div><div class="cc-desc">{% if locale == "es" %}Blacklist/Whitelist con recarga en caliente. Rate limiting por IP. Mitigación DDoS.{% else %}Hot-reloadable Blacklist/Whitelist. Per-IP rate limiting. DDoS mitigation.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Blacklist</span><span class="cc-tag">Rate Limit</span><span class="cc-tag">Anti-DDoS</span></div></div>
+        <div class="cc-card" style="--cc-color:#8b5cf6;"><div class="cc-head"><div class="cc-icon">🤖</div><div><div class="cc-num">CC-05</div><div class="cc-title">AI Security</div></div></div><div class="cc-desc">{% if locale == "es" %}Defensa contra prompt injection. Guardrails de alucinación. Filtrado de outputs.{% else %}Prompt injection defense. Hallucination guardrails. Output filtering.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Anti-Injection</span><span class="cc-tag">Hallucination Guard</span></div></div>
+        <div class="cc-card" style="--cc-color:#06b6d4;"><div class="cc-head"><div class="cc-icon">🗃️</div><div><div class="cc-num">CC-06</div><div class="cc-title">Data Integrity</div></div></div><div class="cc-desc">{% if locale == "es" %}Queries parametrizadas (zero SQLi). Sanitización de inputs. Stripping de HTML.{% else %}Parameterized queries (zero SQLi). Input sanitization. HTML stripping.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Anti-SQLi</span><span class="cc-tag">Sanitization</span></div></div>
+        <div class="cc-card" style="--cc-color:#ec4899;"><div class="cc-head"><div class="cc-icon">📝</div><div><div class="cc-num">CC-07</div><div class="cc-title">Observability & Audit</div></div></div><div class="cc-desc">{% if locale == "es" %}Logging estructurado. Trazabilidad con X-Request-Id. Auditoría a Memento.{% else %}Structured logging. X-Request-Id traceability. Persistent audit to Memento.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Audit Trail</span><span class="cc-tag">Tracing</span></div></div>
+        <div class="cc-card" style="--cc-color:#14b8a6;"><div class="cc-head"><div class="cc-icon">📊</div><div><div class="cc-num">CC-08</div><div class="cc-title">Traffic Intelligence</div></div></div><div class="cc-desc">{% if locale == "es" %}Analíticas en tiempo real por host y ruta. Scoring de anomalías.{% else %}Real-time analytics per host and path. Anomaly scoring.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Real-Time</span><span class="cc-tag">Anomaly Score</span></div></div>
+        <div class="cc-card" style="--cc-color:#f43f5e;"><div class="cc-head"><div class="cc-icon">🚨</div><div><div class="cc-num">CC-09</div><div class="cc-title">Disaster Recovery</div></div></div><div class="cc-desc">{% if locale == "es" %}RTO 15 min. RPO cero (PostgreSQL WAL). Backups cada 6h. Failover vía Argus.{% else %}15min RTO. Zero RPO (PostgreSQL WAL). 6h automated backups. Argus failover.{% endif %}</div><div class="cc-tags"><span class="cc-tag">RTO 15min</span><span class="cc-tag">RPO Zero</span></div></div>
+        <div class="cc-card" style="--cc-color:#6366f1;"><div class="cc-head"><div class="cc-icon">🔍</div><div><div class="cc-num">CC-10</div><div class="cc-title">Vulnerability Mgmt</div></div></div><div class="cc-desc">{% if locale == "es" %}Autoataque automatizado: port scanning, SQLi/XSS probes, auditoría TLS.{% else %}Automated self-attack: port scanning, SQLi/XSS probes, TLS audit.{% endif %}</div><div class="cc-tags"><span class="cc-tag">Pentest</span><span class="cc-tag">TLS Audit</span></div></div>
+        <div class="cc-card" style="--cc-color:#84cc16;"><div class="cc-head"><div class="cc-icon">🔒</div><div><div class="cc-num">CC-11</div><div class="cc-title">Responsible Disclosure</div></div></div><div class="cc-desc">{% if locale == "es" %}Divulgación coordinada. security.txt RFC 9116.{% else %}Coordinated disclosure. security.txt RFC 9116.{% endif %}</div><div class="cc-tags"><span class="cc-tag">RFC 9116</span><span class="cc-tag">PGP</span></div></div>
+        <div class="cc-card" style="--cc-color:#a855f7;"><div class="cc-head"><div class="cc-icon">📋</div><div><div class="cc-num">CC-12</div><div class="cc-title">Compliance Matrix</div></div></div><div class="cc-desc">{% if locale == "es" %}11 marcos: ISO 27001, PCI DSS v4, SOC 2, OWASP, NIST, CIS, GDPR, ISO 27017/18, HIPAA, ISO 22301, NIST CSF.{% else %}11 frameworks: ISO 27001, PCI DSS v4, SOC 2, OWASP, NIST, CIS, GDPR, ISO 27017/18, HIPAA, ISO 22301, NIST CSF.{% endif %}</div><div class="cc-tags"><span class="cc-tag">ISO 27001</span><span class="cc-tag">PCI DSS</span><span class="cc-tag">SOC 2</span><span class="cc-tag">+8</span></div></div>
+    </div>
+
+    <!-- Disaster Recovery Metrics -->
+    <div class="sec-section">
+        <h2 class="sec-h2">🚨 {% if locale == "es" %}Recuperación ante Desastres{% else %}Disaster Recovery{% endif %}</h2>
+        <div class="dr-grid">
+            <div class="dr-item"><div class="dr-val">15 min</div><div class="dr-lbl">RTO</div><span class="dr-sev sev-crit">SEV-1</span></div>
+            <div class="dr-item"><div class="dr-val">0</div><div class="dr-lbl">RPO</div><span class="dr-sev sev-crit">PostgreSQL WAL</span></div>
+            <div class="dr-item"><div class="dr-val">6h</div><div class="dr-lbl">{% if locale == "es" %}Backups{% else %}Backups{% endif %}</div><span class="dr-sev sev-high">{% if locale == "es" %}Cifrados{% else %}Encrypted{% endif %}</span></div>
+            <div class="dr-item"><div class="dr-val">48h</div><div class="dr-lbl">Postmortem</div><span class="dr-sev sev-high">SEV-1/2</span></div>
+        </div>
+    </div>
+
+    <!-- Compliance -->
+    <div class="sec-section">
+        <h2 class="sec-h2">📋 {% if locale == "es" %}Marcos de Cumplimiento{% else %}Compliance{% endif %}</h2>
+        <div class="comp-grid">
+            <div class="comp-card"><div class="comp-name">ISO/IEC 27001</div><div class="comp-desc">ISMS</div></div>
+            <div class="comp-card"><div class="comp-name">PCI DSS v4.0</div><div class="comp-desc">{% if locale == "es" %}Datos de pago{% else %}Payment Data{% endif %}</div></div>
+            <div class="comp-card"><div class="comp-name">SOC 2 Type II</div><div class="comp-desc">{% if locale == "es" %}Seguridad{% else %}Security{% endif %}</div></div>
+            <div class="comp-card"><div class="comp-name">OWASP ASVS v4</div><div class="comp-desc">{% if locale == "es" %}Verificación{% else %}Verification{% endif %}</div></div>
+            <div class="comp-card"><div class="comp-name">NIST 800-53</div><div class="comp-desc">{% if locale == "es" %}Controles{% else %}Controls{% endif %}</div></div>
+            <div class="comp-card"><div class="comp-name">CIS v8</div><div class="comp-desc">{% if locale == "es" %}Higiene{% else %}Hygiene{% endif %}</div></div>
+            <div class="comp-card"><div class="comp-name">GDPR</div><div class="comp-desc">{% if locale == "es" %}Protección{% else %}Protection{% endif %}</div></div>
+            <div class="comp-card"><div class="comp-name">ISO 27017/18</div><div class="comp-desc">{% if locale == "es" %}Cloud{% else %}Cloud{% endif %}</div></div>
+            <div class="comp-card"><div class="comp-name">HIPAA</div><div class="comp-desc">{% if locale == "es" %}Salud{% else %}Health{% endif %}</div></div>
+            <div class="comp-card"><div class="comp-name">ISO 22301</div><div class="comp-desc">{% if locale == "es" %}Continuidad{% else %}Continuity{% endif %}</div></div>
+            <div class="comp-card"><div class="comp-name">NIST CSF v2.0</div><div class="comp-desc">Framework</div></div>
+        </div>
+    </div>
+
+    {% if contact_email %}
+    <div class="sec-cta">
+        <h3>🔒 {% if locale == "es" %}¿Encontraste una vulnerabilidad?{% else %}Found a vulnerability?{% endif %}</h3>
+        <p>{% if locale == "es" %}Envíanos un reporte responsable a{% else %}Send us a responsible report to{% endif %} <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,178 @@
+<style>
+.os-public-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    color: var(--text, #0f172a);
+    border-bottom: 1px solid color-mix(in srgb, var(--border, #dbe3ef) 78%, transparent);
+    background: color-mix(in srgb, var(--bg-card, #ffffff) 92%, transparent);
+    backdrop-filter: blur(18px);
+}
+.os-public-header-inner {
+    max-width: 80rem;
+    margin: 0 auto;
+    min-height: 5rem;
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.os-public-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+    color: var(--text, inherit);
+    text-decoration: none;
+}
+.os-public-brand-logo {
+    height: 2.85rem;
+    width: auto;
+    object-fit: contain;
+}
+.os-public-brand-mark {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--primary, #0f172a) 88%, white 12%), color-mix(in srgb, var(--accent, #06b6d4) 72%, var(--primary, #0f172a) 28%));
+    color: var(--primary-contrast, #fff);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+}
+.os-public-brand-copy {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.05;
+}
+.os-public-brand-copy strong {
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+}
+.os-public-brand-copy span {
+    font-size: 0.72rem;
+    color: var(--text-muted, rgba(15, 23, 42, 0.65));
+}
+.os-public-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.os-public-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+}
+.os-public-nav-link {
+    color: var(--text-muted, rgba(15, 23, 42, 0.72));
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+.os-public-nav-link:hover {
+    color: var(--text, inherit);
+}
+.os-public-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0.7rem 1rem;
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 700;
+    transition: transform 140ms ease, opacity 140ms ease, background 140ms ease;
+}
+.os-public-pill:hover {
+    transform: translateY(-1px);
+}
+.os-public-pill.ghost {
+    border: 1px solid color-mix(in srgb, var(--border, currentColor) 80%, transparent);
+    color: var(--text, inherit);
+    background: color-mix(in srgb, var(--bg-card, #ffffff) 96%, transparent);
+}
+.os-public-pill.primary {
+    background: var(--primary, #0f172a);
+    color: var(--primary-contrast, #fff);
+}
+.os-public-user {
+    font-size: 0.82rem;
+    color: var(--text-muted, rgba(15, 23, 42, 0.72));
+    max-width: 14rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+@media (max-width: 960px) {
+    .os-public-header-inner {
+        padding: 0.9rem 1rem;
+        min-height: auto;
+        align-items: flex-start;
+        gap: 0.9rem;
+    }
+    .os-public-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    .os-public-nav {
+        width: 100%;
+    }
+}
+</style>
+<header class="os-public-header">
+    <div class="os-public-header-inner">
+        <a href="{{ header_home_href | default(value='/') }}" class="os-public-brand">
+            {% if header_logo_src is defined and header_logo_src %}
+            <img src="{{ header_logo_src }}" alt="{{ header_logo_alt | default(value=header_brand | default(value=app_name | default(value='App logo'))) }}" class="os-public-brand-logo">
+            {% else %}
+            <span class="os-public-brand-mark">{{ header_mark | default(value='OS') }}</span>
+            {% endif %}
+            <span class="os-public-brand-copy">
+                <strong>{{ header_brand | default(value=app_name | default(value='ImagineOS')) }}</strong>
+                <span>{{ header_subtitle | default(value='Sovereign Rust app') }}</span>
+            </span>
+        </a>
+        {% if header_nav_links is defined and header_nav_links | length > 0 %}
+        <nav class="os-public-nav">
+            {% for link in header_nav_links %}
+            <a href="{{ link.href }}" class="os-public-nav-link">{{ link.label }}</a>
+            {% endfor %}
+        </nav>
+        {% endif %}
+        <div class="os-public-actions">
+            {% for link in header_action_links | default(value=[]) %}
+            <a href="{{ link.href }}" class="os-public-pill ghost">{{ link.label }}</a>
+            {% endfor %}
+            {% if header_show_auth_actions | default(value=true) %}
+            {% if user_email %}
+            <span class="os-public-user">{{ user_email }}</span>
+            <a href="{{ header_dashboard_href | default(value='/dashboard') }}" class="os-public-pill primary">
+                {{ header_dashboard_label | default(value='Dashboard') }}
+            </a>
+            {% else %}
+                {% if header_guest_login_href is defined %}
+                <a href="{{ header_guest_login_href }}" class="os-public-pill ghost">
+                    {{ header_guest_login_label | default(value='Ingresar') }}
+                </a>
+                {% endif %}
+                {% if header_guest_signup_href is defined %}
+                <a href="{{ header_guest_signup_href }}" class="os-public-pill primary">
+                    {{ header_guest_signup_label | default(value='Crear cuenta') }}
+                </a>
+                {% endif %}
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</header>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Other global header scripts if needed
+});
+</script>

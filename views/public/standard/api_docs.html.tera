@@ -1,0 +1,21 @@
+{% extends "base.html.tera" %}
+{% block title %}API Reference — {{ app_name | default(value="Latinos Trading") }}{% endblock %}
+{% block meta_description %}{% if locale == "es" %}Documentación interactiva de la API de {{ app_name }}.{% else %}Interactive API documentation for {{ app_name }}.{% endif %}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+{% endblock %}
+{% block content %}
+{% include "shared/api_docs.html.tera" %}
+{% endblock %}
+{% block extra_scripts %}
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script>
+SwaggerUIBundle({
+    url: '/api-docs/openapi.json',
+    dom_id: '#swagger-ui',
+    deepLinking: true,
+    presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+    layout: 'BaseLayout',
+});
+</script>
+{% endblock %}

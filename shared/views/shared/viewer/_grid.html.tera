@@ -1,0 +1,60 @@
+<div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+  {% for record in dataset.records %}
+  <a href="{{ record.detail_href | default(value="#") }}" class="group no-underline">
+    <article class="flex h-full flex-col gap-4 rounded-2xl border border-outline-variant/15 bg-surface-container p-5 transition-all hover:border-secondary/30 hover:shadow-lg">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h3 class="font-headline text-lg font-bold text-primary transition-colors group-hover:text-secondary">{{ record.title }}</h3>
+          {% if record.subtitle %}
+          <p class="mt-1 text-sm text-on-surface-variant">{{ record.subtitle }}</p>
+          {% endif %}
+        </div>
+        {% if record.status %}
+        <span class="rounded-full bg-secondary-fixed/30 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-secondary">{{ record.status.label }}</span>
+        {% endif %}
+      </div>
+      <div class="flex flex-wrap gap-2">
+        {% for badge in record.badges %}
+        <span class="rounded-full border border-outline-variant/15 bg-surface-container-low px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">{{ badge.label }}</span>
+        {% endfor %}
+      </div>
+      {% if record.primary_metrics | length > 0 %}
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {% for metric in record.primary_metrics %}
+        <div class="rounded-xl bg-surface-container-low px-4 py-3">
+          <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">{{ metric.label }}</p>
+          <p class="mt-1 text-base font-bold text-primary">
+            {% if metric.value.type == "number" %}
+              {{ metric.value.value | round(method="common", precision=0) }}
+            {% elif metric.value.type == "money" %}
+              {{ metric.value.currency }} {{ metric.value.amount | round(method="common", precision=2) }}
+            {% else %}
+              {{ metric.value.text | default(value=metric.value.iso | default(value="")) }}
+            {% endif %}
+          </p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div class="space-y-2">
+        {% for field in record.fields %}
+        <div class="flex items-center justify-between gap-4 text-sm">
+          <span class="text-on-surface-variant">{{ field.label }}</span>
+          <span class="font-semibold text-primary">
+            {% if field.value.type == "text" %}
+              {{ field.value.text }}
+            {% elif field.value.type == "date" or field.value.type == "datetime" %}
+              {{ field.value.iso }}
+            {% elif field.value.type == "number" %}
+              {{ field.value.value | round(method="common", precision=0) }}
+            {% else %}
+              {{ field.value.label | default(value=field.value.href | default(value="")) }}
+            {% endif %}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+  </a>
+  {% endfor %}
+</div>

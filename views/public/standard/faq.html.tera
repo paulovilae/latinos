@@ -1,0 +1,6 @@
+{% extends "base.html.tera" %}
+{% block title %}{% if locale == "es" %}Preguntas Frecuentes{% else %}FAQ{% endif %} — {{ app_name | default(value="Latinos Trading") }}{% endblock %}
+{% block meta_description %}{% if locale == "es" %}Preguntas frecuentes sobre {{ app_name }}.{% else %}Frequently asked questions about {{ app_name }}.{% endif %}{% endblock %}
+{% block content %}
+{% include "shared/faq.html.tera" %}
+{% endblock %}

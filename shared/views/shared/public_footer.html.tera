@@ -1,0 +1,74 @@
+<footer class="footer">
+    <div class="footer-inner">
+        <p class="footer-copy">
+            © 2026 {{ footer_brand | default(value="ImagineOS") }} —
+            {% if locale is defined and locale == "en" %}All rights reserved.{% else %}Todos los derechos reservados.{% endif %}
+        </p>
+        <div class="footer-links-row">
+            {% set base_links = footer_links | default(value=[]) %}
+            {% set guest_links = footer_guest_links | default(value=[]) %}
+            {% set authenticated_links = footer_authenticated_links | default(value=[]) %}
+            {% for link in base_links %}
+            <a href="{{ link.href }}" class="footer-link">{{ link.label }}</a>{% if not loop.last %}<span class="footer-sep">·</span>{% endif %}
+            {% endfor %}
+            {% if user_email %}
+            {% set state_links = authenticated_links %}
+            {% else %}
+            {% set state_links = guest_links %}
+            {% endif %}
+            {% if base_links | length > 0 and state_links | length > 0 %}<span class="footer-sep">·</span>{% endif %}
+            {% for link in state_links %}
+            <a href="{{ link.href }}" class="footer-link">{{ link.label }}</a>{% if not loop.last %}<span class="footer-sep">·</span>{% endif %}
+            {% endfor %}
+            <span class="footer-sep-bar">|</span>
+            <button type="button" class="footer-btn" data-footer-theme-toggle title="Toggle theme">🌓 Theme</button>
+            {% if footer_locale_switch_href is defined and footer_locale_switch_href %}
+            <a href="{{ footer_locale_switch_href }}" class="footer-btn footer-link" id="footer-lang-btn" title="Switch language">🌐 {{ footer_locale | default(value="ES") }}</a>
+            {% else %}
+            <button type="button" class="footer-btn" id="footer-lang-btn" title="Switch language" disabled>🌐 {{ footer_locale | default(value="ES") }}</button>
+            {% endif %}
+        </div>
+    </div>
+</footer>
+<script>
+(function () {
+    function currentTheme() {
+        var root = document.documentElement;
+        return root.dataset.theme || (root.classList.contains('dark') ? 'dark' : (root.getAttribute('data-theme') || 'light'));
+    }
+
+    function applyFallbackTheme(next) {
+        var root = document.documentElement;
+        root.setAttribute('data-theme', next);
+        root.dataset.theme = next;
+        root.classList.toggle('dark', next === 'dark');
+        localStorage.setItem('theme', next);
+        localStorage.setItem('vetra-theme', next);
+    }
+
+    function toggleTheme() {
+        var next = currentTheme() === 'dark' ? 'light' : 'dark';
+        if (typeof window.vetraSetTheme === 'function') {
+            window.vetraSetTheme(next);
+            return;
+        }
+        if (typeof window.toggleTheme === 'function' && window.toggleTheme !== toggleTheme) {
+            window.toggleTheme();
+            return;
+        }
+        applyFallbackTheme(next);
+    }
+
+    document.addEventListener('click', function (event) {
+        var trigger = event.target.closest('[data-footer-theme-toggle]');
+        if (!trigger) return;
+        toggleTheme();
+    });
+
+    var langBtn = document.getElementById('footer-lang-btn');
+    if (langBtn && langBtn.tagName === 'BUTTON') {
+        var locale = '{{ footer_locale | default(value="ES") | lower }}';
+        langBtn.textContent = '🌐 ' + locale.toUpperCase();
+    }
+})();
+</script>

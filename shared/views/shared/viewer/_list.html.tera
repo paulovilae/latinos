@@ -1,0 +1,45 @@
+<div class="space-y-3">
+  {% for record in dataset.records %}
+  <a href="{{ record.detail_href | default(value="#") }}" class="block no-underline">
+    <article class="flex flex-col gap-3 rounded-2xl border border-outline-variant/15 bg-surface-container p-4 transition-colors hover:border-secondary/30">
+      <div class="flex items-center justify-between gap-4">
+        <div class="min-w-0">
+          <h3 class="truncate font-headline text-lg font-bold text-primary">{{ record.title }}</h3>
+          {% if record.subtitle %}
+          <p class="truncate text-sm text-on-surface-variant">{{ record.subtitle }}</p>
+          {% endif %}
+        </div>
+        {% if record.status %}
+        <span class="rounded-full bg-secondary-fixed/30 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-secondary">{{ record.status.label }}</span>
+        {% endif %}
+      </div>
+      <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+        {% for metric in record.primary_metrics %}
+        <span class="text-on-surface-variant">
+          {{ metric.label }}:
+          <strong class="text-primary">
+            {% if metric.value.type == "number" %}
+              {{ metric.value.value | round(method="common", precision=0) }}
+            {% else %}
+              {{ metric.value.text | default(value=metric.value.iso | default(value="")) }}
+            {% endif %}
+          </strong>
+        </span>
+        {% endfor %}
+        {% for field in record.fields %}
+        <span class="text-on-surface-variant">
+          {{ field.label }}:
+          <strong class="text-primary">
+            {% if field.value.type == "text" %}
+              {{ field.value.text }}
+            {% else %}
+              {{ field.value.iso | default(value=field.value.value | default(value="")) }}
+            {% endif %}
+          </strong>
+        </span>
+        {% endfor %}
+      </div>
+    </article>
+  </a>
+  {% endfor %}
+</div>

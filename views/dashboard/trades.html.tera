@@ -1,0 +1,142 @@
+{% extends "base.html.tera" %}
+
+{% block title %}Trade Executions — {{ app_name }}{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Extend the existing dashboard-layout styles */
+.dashboard-main { padding-bottom: 4rem; }
+.page-title { margin-top: 0; margin-bottom: 2rem; color: white; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.page-title h1 { margin: 0; font-size: 2rem; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+.stat-card { background: rgba(30,41,59,0.5); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.05); }
+.stat-card .label { color: rgba(255,255,255,0.6); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+.stat-card .value { font-size: 1.75rem; font-weight: 900; color: white; }
+.stat-card.stat-green { border-color: rgba(34,197,94,0.3); background: linear-gradient(to bottom right, rgba(34,197,94,0.05), transparent); }
+.stat-card.stat-red { border-color: rgba(239,68,68,0.3); background: linear-gradient(to bottom right, rgba(239,68,68,0.05), transparent); }
+
+/* Table Styles */
+.trades-section { background: rgba(15,23,42,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; overflow: auto; }
+.trades-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2); }
+.trades-header h3 { margin: 0; font-size: 1.25rem; color: white; }
+
+.table { width: 100%; border-collapse: collapse; text-align: left; }
+.table th { padding: 1rem 1.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.5); font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.table td { padding: 1rem 1.5rem; font-size: 0.95rem; border-bottom: 1px solid rgba(255,255,255,0.05); color: white; }
+.table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.side-badge { padding: 4px 8px; border-radius: 4px; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.side-buy { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+.side-sell { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+
+.status-badge { padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; }
+.status-executed { background: rgba(34,197,94,0.1); color: #4ade80; }
+.status-pending { background: rgba(245,158,11,0.1); color: #fbbf24; }
+.status-failed { background: rgba(239,68,68,0.1); color: #f87171; }
+.status-simulated { background: rgba(234,179,8,0.1); color: #fbbf24; border: 1px solid rgba(234,179,8,0.2); }
+.status-paper { background: rgba(99,102,241,0.1); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.2); }
+.status-live { background: rgba(16,185,129,0.1); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
+
+.pnl-positive { color: #4ade80; font-weight: 700; }
+.pnl-negative { color: #f87171; font-weight: 700; }
+
+.empty-state { padding: 4rem 2rem; text-align: center; }
+.empty-state h4 { color: white; font-size: 1.25rem; margin: 0 0 0.5rem 0; }
+.empty-state p { color: rgba(255,255,255,0.5); margin: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    {% include "dashboard/_sidebar.html.tera" %}
+    
+    <div class="dashboard-main">
+        <div class="page-title">
+            <h1>Trade Executions</h1>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">Total Trades</div>
+                <div class="value">{{ total_trades }}</div>
+            </div>
+            <div class="stat-card stat-green">
+                <div class="label">Realized PnL</div>
+                <div class="value">${{ total_pnl | round(method="ceil") }}</div>
+            </div>
+        </div>
+
+        <div class="trades-section">
+            <div class="trades-header">
+                <h3>📜 Execution Logs</h3>
+                <span style="font-size: 0.75rem; color: rgba(255,255,255,0.4);">Showing your bots only</span>
+            </div>
+            
+            {% if trades | length == 0 %}
+            <div class="empty-state">
+                <h4>No trades yet</h4>
+                <p>Deploy a strategy configuration to begin algorithmic trading.</p>
+            </div>
+            {% else %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Symbol</th>
+                        <th>Side</th>
+                        <th>Amount</th>
+                        <th>Price</th>
+                        <th>PnL</th>
+                        <th>Broker</th>
+                        <th>Mode</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trade in trades %}
+                    <tr>
+                        <td style="color: rgba(255,255,255,0.6); font-family: monospace;">{{ trade.timestamp | date(format="%Y-%m-%d %H:%M") }}</td>
+                        <td style="font-weight: 800; font-family: monospace;">{{ trade.symbol }}</td>
+                        <td>
+                            <span class="side-badge {% if trade.side == 'BUY' %}side-buy{% else %}side-sell{% endif %}">{{ trade.side }}</span>
+                        </td>
+                        <td>{{ trade.amount }}</td>
+                        <td>${{ trade.price }}</td>
+                        <td>
+                            {% if trade.pnl %}
+                                {% if trade.pnl > 0 %}
+                                    <span class="pnl-positive">+${{ trade.pnl }}</span>
+                                {% else %}
+                                    <span class="pnl-negative">-${{ trade.pnl | abs }}</span>
+                                {% endif %}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td style="font-family: monospace; color: #94a3b8;">{{ trade.broker | default(value="—") }}</td>
+                        <td>
+                            {% if trade.status == "simulated" %}
+                                <span class="status-badge status-simulated">🧪 Simulated</span>
+                            {% elif trade.status == "paper" %}
+                                <span class="status-badge status-paper">📝 Paper</span>
+                            {% elif trade.status == "filled" or trade.status == "live" %}
+                                <span class="status-badge status-live">💰 Live</span>
+                            {% else %}
+                                <span class="status-badge status-pending">{{ trade.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ trade.status | lower }}">{{ trade.status }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
